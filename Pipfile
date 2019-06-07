@@ -7,6 +7,12 @@ verify_ssl = true
 
 [packages]
 flask = "*"
+tensorflowjs = "==1.0.1"
+"tf-nightly-2.0-preview" = "==2.0.0.dev20190415"
+"tensorflow-estimator-2.0-preview" = "==1.14.0.dev2019041500"
 
 [requires]
 python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true

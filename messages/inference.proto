@@ -1,0 +1,55 @@
+// Request/Response types for the inference server's endpoints.
+//
+// Run `pipenv run build` to build this (or see the README).
+
+syntax = "proto3";
+
+package inference;
+
+// We're going to represent tensors as a flat array + the tensor's dimensions +
+// its data type.
+message Tensor {
+    // From the tensorflow.js [docs](js.tensorflow.org/api/1.1.2/#tensor):
+    //   - dtype ('float32'|'int32'|'bool'|'complex64'|'string')
+    //
+    // We'll use a oneof with flat arrays of different types to give us both the
+    // flat array and the data type.
+
+    message FloatArray {
+        repeated float array = 1;
+    }
+
+    message IntArray {
+        repeated int32 array = 1;
+    }
+
+    message BoolArray {
+        repeated bool array = 1;
+    }
+
+    // TODO: Add support!
+    message Complex {
+        int64 real = 1;
+        int64 complex = 2;
+    }
+
+    message ComplexArray {
+        repeated Complex array = 1;
+    }
+
+    message StringArray {
+        repeated string array = 1;
+    }
+
+    // Flat array + data type:
+    oneof flat_array {
+        FloatArray floats = 1;
+        IntArray ints = 2;
+        BoolArray bools = 3;
+        ComplexArray complex_nums = 4;
+        StringArray strings = 5;
+    }
+
+    // Dimensions:
+    repeated uint64 dimensions = 6;
+}

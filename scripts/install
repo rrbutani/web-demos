@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Grabs dependencies; preps for a build.
+
+set -e
+
+err() {
+    echo -e '\e[1;31m'"${1}"'\e[0m' && exit "${2}"
+}
+
+build_script_path="$(dirname "${0}")/build"
+
+if [ -f "${build_script_path}" ]; then
+    "${build_script_path}" install
+else
+    err "Can't find build script; is it still at ${build_script_path}?" 1
+fi
+
+pipenv install

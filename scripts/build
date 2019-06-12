@@ -12,6 +12,7 @@ declare -A DEPS=( \
 )
 
 PROTOC_DST_DIR=build
+CMD=${1-"run build"}
 
 # $1: example dir
 build_example() {
@@ -22,7 +23,7 @@ build_example() {
 
     # If it does, run it:
     echo -e '\e[1;37m'"Building ${1}..."'\e[0m'
-    (cd "${1}" && npm run build)
+    (cd "${1}" && npm ${CMD})
     return $?
 }
 

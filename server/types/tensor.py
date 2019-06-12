@@ -1,12 +1,14 @@
 
 import numpy as np
-from typing import TypeVar
-from Protobuf import Message
-
+from typing import TypeVar, Dict, Tuple, Callable
+from google.protobuf.message import Message
+from server.types import Tensor
 # TFLite Tensors are really just numpy arrays.
 
+# In lieu of actual enums (from oneofs), we use these:
+
 # [Protobuf field name] => numpy type
-type_map = {
+type_map_pb2numpy: Dict[str, np.generic] = {
     'floats': np.float32,
     'ints': np.int32,
     'bools': np.bool,
@@ -14,27 +16,65 @@ type_map = {
     'strings': np.byte,
 }
 
+# [numpy kind (dtype.kind)] => Protobuf field name
+type_map_numpy2pb: Dict[str, Tuple[str, Callable]] = {
+    'f': ('floats', Tensor.FloatArray),
+    'i': ('ints', Tensor.IntArray),
+    'b': ('bools', Tensor.BoolArray),
+    'c': ('complex_nums', Tensor.ComplexArray),
+    'S': ('strings', Tensor.StringArray),
+}
+
+class ConversionError(Exception):
+    def __init__(self, msg: str) -> None:
+        super(msg)
+
+class InvalidTensorMessage(ValueError):
+    def __init__(self, msg: str) -> None:
+        super(msg)
+
 T = TypeVar('T')
 def _get_oneof_pair(m: Message, field: str, attr: str = None) -> (str, T):
-    ty = m.getOneof(field)
+    try:
+        ty = m.WhichOneof(field)
+    except TypeError:
+        raise InvalidTensorMessage(f"Missing oneof field `{field}` on message (${m}).")
     f = getattr(m, ty)
 
-    if attr != None:
+    if attr is not None:
         f = getattr(f, attr)
 
     return (ty, f)
 
 def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
+    # numpy takes shape as a tuple of ints:
+    shape = tuple(pb.dimensions)
 
+    dtype, arr = _get_oneof_pair(pb, "flat_array", "array")
+    dtype = type_map_pb2numpy[dtype]
+
+    return np.ndarray(shape, dtype=dtype, buffer=np.array(arr, dtype=dtype))
 
 def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
+    dtype = tensor.dtype
+
+    if not (dtype.isnative and dtype.isbuiltin):
+        raise ConversionError(f"Invalid data type ({dtype}) on tensor; cannot convert.")
+
+    field, klass = type_map_numpy2pb[dtype.kind]
+    arr = klass(array=tensor.flatten())
+
+    return Tensor(**{
+        field: arr,
+        'dimensions': tensor.shape
+    })
 
 # Flow:
 # TFJS(Tensor) -> Js-Proto(Tensor) ===> Proto(Tensor) ===> Py-Proto(Tensor) -> numpy(Tensor)
-#                                        _____________________                       |
-#                                       /                     \                      |
-#                      TFJS(Tensor) <-  |  Protobuf Ser/Deser |  <- numpy(Tensor) <=/
-#                                       \_____________________/
+#                                         ____________________                       |
+#                                        /                    \                      |
+#                      TFJS(Tensor) <-   | Protobuf Ser/Deser |  <- numpy(Tensor) <=/
+#                                        \____________________/
 # a) Py-Proto -> numpy: 
 # b) numpy -> Py-Proto: 
 # c) TFJS -> Js-Proto:

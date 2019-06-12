@@ -2,6 +2,8 @@
 
 # Quick and simple build script for the project.
 
+. "$(dirname "${0}")/common"
+
 set -e
 
 declare -A DEPS=( \
@@ -11,7 +13,6 @@ declare -A DEPS=( \
     [npm]="installing nvm: https://github.com/nvm-sh/nvm#installation-and-update" \
 )
 
-PROTOC_DST_DIR=build
 CMD=${1-"run build"}
 
 # $1: example dir

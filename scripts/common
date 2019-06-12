@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+BUILD_DIR=build
+BUILD_SCRIPT_PATH="$(dirname "${0}")/build"
+
+PROTOC_DST_DIR=build
+
+find_or_run() {
+    [ -f "${1}" ] || {
+        mkdir -p "$(dirname ${1})"
+        touch "${1}"
+        return 1
+    }
+
+    return 0
+}

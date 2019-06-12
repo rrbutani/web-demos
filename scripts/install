@@ -2,18 +2,20 @@
 
 # Grabs dependencies; preps for a build.
 
+. "$(dirname "${0}")/common"
+
 set -e
 
 err() {
     echo -e '\e[1;31m'"${1}"'\e[0m' && exit "${2}"
 }
 
-build_script_path="$(dirname "${0}")/build"
-
-if [ -f "${build_script_path}" ]; then
-    "${build_script_path}" install
+if [ -f "${BUILD_SCRIPT_PATH}" ]; then
+    "${BUILD_SCRIPT_PATH}" install
 else
-    err "Can't find build script; is it still at ${build_script_path}?" 1
+    err "Can't find build script; is it still at ${BUILD_SCRIPT_PATH}?" 1
 fi
 
-pipenv install
+find_or_run "${BUILD_DIR}/.deps-installed" || {
+    pipenv install --dev || rm "${BUILD_DIR}/.deps-installed"
+}

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Cleans build files in the project.
+
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# Remove files we know to be removable:
+git clean -idX
+
+# And then the env:
+pipenv clean

@@ -1,8 +1,10 @@
 
 import numpy as np
-from typing import TypeVar, Dict, Tuple, Callable
+from typing import TypeVar, Dict, Tuple, Callable, Iterable, Sized
 from google.protobuf.message import Message
 from server.types import Tensor
+from operator import mul
+from functools import reduce
 # TFLite Tensors are really just numpy arrays.
 
 # In lieu of actual enums (from oneofs), we use these:
@@ -26,12 +28,13 @@ type_map_numpy2pb: Dict[str, Tuple[str, Callable]] = {
 }
 
 class ConversionError(Exception):
-    def __init__(self, msg: str) -> None:
-        super(msg)
+    ...
 
 class InvalidTensorMessage(ValueError):
-    def __init__(self, msg: str) -> None:
-        super(msg)
+    ...
+
+class MisshapenTensor(ValueError):
+    ...
 
 T = TypeVar('T')
 def _get_oneof_pair(m: Message, field: str, attr: str = None) -> (str, T):
@@ -46,12 +49,21 @@ def _get_oneof_pair(m: Message, field: str, attr: str = None) -> (str, T):
 
     return (ty, f)
 
+def check_shape(shape: Iterable[int], array: Sized):
+    expected_elems = reduce(mul, shape, 1)
+    actual_elems = len(array)
+
+    if expected_elems is not actual_elems:
+        raise MisshapenTensor(f"Expected {expected_elems} elements for a tensor with {shape} dimensions, got {actual_elems} elements.")
+
 def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
     # numpy takes shape as a tuple of ints:
     shape = tuple(pb.dimensions)
 
     dtype, arr = _get_oneof_pair(pb, "flat_array", "array")
     dtype = type_map_pb2numpy[dtype]
+
+    check_shape(shape, arr)
 
     return np.ndarray(shape, dtype=dtype, buffer=np.array(arr, dtype=dtype))
 
@@ -62,11 +74,16 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
         raise ConversionError(f"Invalid data type ({dtype}) on tensor; cannot convert.")
 
     field, klass = type_map_numpy2pb[dtype.kind]
-    arr = klass(array=tensor.flatten())
+
+    shape = tensor.shape
+    array = tensor.flatten()
+    check_shape(shape, array)
+
+    array = klass(array=array)
 
     return Tensor(**{
-        field: arr,
-        'dimensions': tensor.shape
+        field: array,
+        'dimensions': shape
     })
 
 # Flow:

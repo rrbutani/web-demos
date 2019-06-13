@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Grabs dev dependencies. Just a `pipenv install --dev` wrapper at the moment.
+
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# First make sure we've got our local dependencies installed:
+check_deps
+
+# Next, pipenv:
+pipenv install-dev
+
+# Finally, record that we were successful:
+mark
+
+echo -e '\e[1;35m'"\nDev Install Successful!"'\e[0m'

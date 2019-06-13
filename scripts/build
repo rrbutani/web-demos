@@ -2,40 +2,7 @@
 
 # Quick and simple build script for the project.
 
-. "$(dirname "${0}")/common"
-
-set -e
-
-declare -A DEPS=( \
-    [jq]="going to https://stedolan.github.io/jq/download/" \
-    [pipenv]='`pip install pipenv`' \
-    [protoc]="going to https://github.com/protocolbuffers/protobuf/releases" \
-    [npm]="installing nvm: https://github.com/nvm-sh/nvm#installation-and-update" \
-)
-
-CMD=${1-"run build"}
-
-# $1: example dir
-build_example() {
-    # Check that the example project has a build script:
-    { [ -f "${1}/package.json" ] &&
-        jq -e '.scripts.build' < "${1}/package.json" > /dev/null
-    } || return 0;
-
-    # If it does, run it:
-    echo -e '\e[1;37m'"Building ${1}..."'\e[0m'
-    (cd "${1}" && npm ${CMD})
-    return $?
-}
-
-# $1: binary name, $2: suggestion
-check_dep() {
-    hash "${1}" 2>/dev/null ||
-        { echo -e '\e[1;31m''Missing `'"${1}"'`; please install it and try again.''\e[0m' &&
-          echo -e '\e[1;34m'"(try ${2})"'\e[0m' &&
-          exit 1
-        }
-}
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # $*: Message files to build
 build_messages() {
@@ -52,18 +19,17 @@ build_messages() {
     return $?
 }
 
-# Check for dependencies:
-for dep in "${!DEPS[@]}"; do
-    check_dep "${dep}" "${DEPS["${dep}"]}"
-done
+# Check dependencies:
+check_deps
 
 # Build the proto files first (the examples will need them):
 shopt -s globstar
 build_messages messages/**/*.proto
 
 # And then the examples:
-for ex in examples/*; do
-    build_example "${ex}"
-done
+run_command_in_examples "run build"
 
-echo -e '\e[1;35m'"\nSuccess!"'\e[0m'
+# Finally, record that we successfully ran a build:
+mark
+
+echo -e '\e[1;35m'"\nBuild Successful!"'\e[0m'

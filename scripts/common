@@ -1,9 +1,35 @@
 #!/usr/bin/env bash
 
+set -e
+
 BUILD_DIR=build
 SCRIPT_DIR="$(dirname "${0}")"
+EXAMPLES_DIR="examples"
 
 PROTOC_DST_DIR=build
+
+declare -A DEPS=( \
+    [jq]="going to https://stedolan.github.io/jq/download/" \
+    [pipenv]='`pip install pipenv`' \
+    [protoc]="going to https://github.com/protocolbuffers/protobuf/releases" \
+    [npm]="installing nvm: https://github.com/nvm-sh/nvm#installation-and-update" \
+)
+
+# $1: binary name, $2: suggestion
+check_dep() {
+    hash "${1}" 2>/dev/null ||
+        { echo -e '\e[1;31m''Missing `'"${1}"'`; please install it and try again.''\e[0m' &&
+          echo -e '\e[1;34m'"(try ${2})"'\e[0m' &&
+          exit 1
+        }
+}
+
+# Check for dependencies:
+check_deps() {
+    for dep in "${!DEPS[@]}"; do
+        check_dep "${dep}" "${DEPS["${dep}"]}"
+    done
+}
 
 # $1: marker file; $2+: command to run
 find_or_run() {
@@ -33,6 +59,18 @@ run_command_in_example() {
     return $?
 }
 
+# $1: command to run
+run_command_in_examples() {
+    for ex in "${EXAMPLES_DIR}"/*; do
+        run_command_in_example "${ex}"
+    done
+}
+
+# $1: error message; $2: exit code
+err() {
+    echo -e '\e[1;31m'"${1}"'\e[0m' && exit "${2}"
+}
+
 # Details, for the curious:
 #
 # This system doesn't understand dependencies that aren't static. For example it
@@ -53,6 +91,9 @@ run_command_in_example() {
 # format = scripts/with install-dev -- black
 # test = scripts/with install-dev install build -- pytest
 # ```
+# At the moment we have three targets that don't have dependencies: build,
+# install, and install-dev. These always run (ignoring their marker files) when
+# their corresponding scripts are directly invoked.
 
 # There are three things:
 #  - the target name that gets passed to the `with` script
@@ -85,6 +126,10 @@ target_name() {
 # $1: target name or marker file -> file path
 script_file() {
     echo "${SCRIPT_DIR}/$(strip_leading_dot "$(basename "${1}")")"
+}
+
+mark() {
+    touch "$(marker_file "${0}")"
 }
 
 # $1: target name -> target name

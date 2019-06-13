@@ -2,20 +2,18 @@
 
 # Grabs dependencies; preps for a build.
 
-. "$(dirname "${0}")/common"
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-set -e
+# First make sure we've got our local dependencies installed:
+check_deps
 
-err() {
-    echo -e '\e[1;31m'"${1}"'\e[0m' && exit "${2}"
-}
+# Then install deps for all the examples:
+run_command_in_examples "install"
 
-if [ -f "${BUILD_SCRIPT_PATH}" ]; then
-    "${BUILD_SCRIPT_PATH}" install
-else
-    err "Can't find build script; is it still at ${BUILD_SCRIPT_PATH}?" 1
-fi
+# Next, pipenv:
+pipenv install
 
-find_or_run "${BUILD_DIR}/.deps-installed" || {
-    pipenv install --dev || rm "${BUILD_DIR}/.deps-installed"
-}
+# Finally, record that we successfully installed:
+mark
+
+echo -e '\e[1;35m'"\nInstall Successful!"'\e[0m'

@@ -1,16 +1,98 @@
 #!/usr/bin/env bash
 
 BUILD_DIR=build
-BUILD_SCRIPT_PATH="$(dirname "${0}")/build"
+SCRIPT_DIR="$(dirname "${0}")"
 
 PROTOC_DST_DIR=build
 
+# $1: marker file; $2+: command to run
 find_or_run() {
+    # If the file doesn't exist..
     [ -f "${1}" ] || {
-        mkdir -p "$(dirname ${1})"
-        touch "${1}"
-        return 1
+        # ..run the command..
+        "${@:2}" && {
+            # ..and if it succeeded, make the file.
+            mkdir -p "$(dirname ${1})"
+            touch "${1}"
+        } || return 1
     }
 
     return 0
+}
+
+# $1: example dir; $2: npm command
+run_command_in_example() {
+    # Check that the example project has a build script:
+    { [ -f "${1}/package.json" ] &&
+        jq -e '.scripts.build' < "${1}/package.json" > /dev/null
+    } || return 0;
+
+    # If it does, run it:
+    echo -e '\e[1;37m'"Building ${1}..."'\e[0m'
+    (cd "${1}" && npm ${2-"run build"})
+    return $?
+}
+
+# Details, for the curious:
+#
+# This system doesn't understand dependencies that aren't static. For example it
+# doesn't understand that if the Pipfile changes we should rerun install when we
+# run `pipenv run run`. However, it does know that `pipenv run run` requires
+# the dependencies to have been installed and for the build script to have been
+# run (run = `scripts/with build install -- python -m server` -- see the
+# Pipfile). So, it'll make sure that up to this point, the build/install scripts
+# have been run _at least once_.
+#
+# This is checked and enforced using the marker files convention for these is
+# defined below. Targets that don't have dependencies (i.e. build) are run as is
+# (scripts/build) and are careful to update their corresponding marker file.
+# Targets that do have dependencies are run with the `with` script: the list of
+# targets that the target depends on are passed in first, followed by --,
+# followed by the target's command. Format and test, for example:
+# ```TOML
+# format = scripts/with install-dev -- black
+# test = scripts/with install-dev install build -- pytest
+# ```
+
+# There are three things:
+#  - the target name that gets passed to the `with` script
+#  - the corresponding script
+#  - that scripts corresponding marker file
+#
+# The convention we're going to use is that all three of these things are the
+# same.
+#
+# For example, the build script lives in `scripts/build`, has 'build' as it's
+# target name and creates the marker file `build/.build`.
+#
+# Similarly for install: `scripts/install`, 'install', `build/.install`.
+
+# $1: string -> string
+strip_leading_dot() {
+    echo "${1#.}"
+}
+
+# $1: script path or target name -> file path
+marker_file() {
+    echo "${BUILD_DIR}/.$(basename "${1}")"
+}
+
+# $1: marker file or script path -> string
+target_name() {
+    echo "$(strip_leading_dot "$(basename "${1}")")"
+}
+
+# $1: target name or marker file -> file path
+script_file() {
+    echo "${SCRIPT_DIR}/$(strip_leading_dot "$(basename "${1}")")"
+}
+
+# $1: target name -> target name
+roundtrip() {
+    echo $(target_name $(marker_file $(script_file $(target_name $(marker_file "${@}")))))
+}
+
+# $1: target name
+test() {
+    [[ "${@}" == $(roundtrip "${@}") ]]; return $?
 }

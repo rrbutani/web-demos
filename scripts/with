@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Runs a command after installing it's dependencies.
+
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+deps=()
+command=""
+
+# Parse the args:
+i=1
+for arg in "${@}"; do
+    ((i++))
+
+    [[ "${arg}" == -- ]] && {
+        command="${@:$i}"
+        break;
+    }
+
+    deps+=($"${arg}")
+done
+
+# Resolve the dependencies:
+for dep_name in "${deps[@]}"; do
+    # If a dependency's marker file doesn't exist..
+    [ -f "$(marker_file "${dep_name}")" ] || {
+        # ..run its script:
+        ("$(script_file)" "${dep_name}") || {
+            err "Failed to resolve ${dep_name}!" $?
+        }
+    }
+done
+
+# Finally, run the command!
+"${command[@]}"

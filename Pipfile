@@ -25,4 +25,6 @@ allow_prereleases = true
 [scripts]
 deps = "scripts/install"
 build = "scripts/build"
-run = "python -m server"
+clean = "scripts/clean" # TODO: write
+run = "scripts/with install build -- python -m server"
+test = "scripts/with install-dev build -- pipenv run pytest" # TODO: test

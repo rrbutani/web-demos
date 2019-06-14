@@ -15,7 +15,6 @@ from server.types import LoadModelRequest, LoadModelResponse
 from server.types import InferenceRequest, InferenceResponse
 
 from server.model_store import ModelStore
-from server.inference import TFLiteInterpreter
 
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
@@ -25,7 +24,6 @@ PORT = 5000
 
 app = Flask(__name__, static_folder='../examples', static_url_path='/examples/')
 model_store = ModelStore()
-interpreter = TFLiteInterpreter()
 
 @app.route('/api/echo/<string:string>')
 def echo(string: str) -> str:
@@ -58,8 +56,11 @@ def load_model() -> LoadModelResponse:
 @api(json, protobuf(receives=InferenceRequest, sends=InferenceResponse, to_dict=False))
 def run_inference() -> InferenceResponse: # TODO: type sig
     tensor: Tensor = request.received_message.tensor
-    tensor = pb_to_tflite_tensor(tensor)
-    print(tensor)
+
+    try:
+        tensor = pb_to_tflite_tensor(tensor)
+    except Exception as e:
+        return InferenceResponse(error=into_error(e))
 
     handle: ModelHandle = request.received_message.handle
 
@@ -71,11 +72,15 @@ def run_inference() -> InferenceResponse: # TODO: type sig
     (tensor, metrics), err = handle.predict(tensor)
 
     if err is not None:
-        response = InferenceResponse(error=into_error(err))
-    else:
+        return InferenceResponse(error=into_error(err))
+
+    try:
         tensor: Tensor = tflite_tensor_to_pb(tensor)
-        metrics: Metrics = into_metrics(metrics)
-        response = InferenceResponse(tensor=tensor, metrics=metrics)
+    except Exception as e:
+        return InferenceResponse(error=into_error(err))
+
+    metrics: Metrics = into_metrics(metrics)
+    response = InferenceResponse(tensor=tensor, metrics=metrics)
 
     return response
 

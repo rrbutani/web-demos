@@ -2,13 +2,15 @@
 from typing import List, Tuple, Union
 
 import tensorflow as tf
-from tf.lite import Interpreter
+# from tensorflow.lite import Interpreter
 
 import numpy as np
 
 print(f"TF Version: {tf.__version__}")
 # tf.enable_eager_execution() # TODO
-tf.logging.set_verbosity(tf.logging.DEBUG) # TODO
+# tf.logging.set_verbosity(tf.logging.DEBUG) # TODO
+
+Interpreter = tf.lite.Interpreter
 
 Error = str
 Tensor = np.ndarray
@@ -45,16 +47,22 @@ class LocalModel:
             return (None, 0), "Tensor was empty."
 
         # Type check input: # TODO!!!
-        expected = input_details["dtype"]
+        # print(input_details)
+        # print(output_details)
+        expected = input_details["dtype"] # TODO: Not sure what this  actually refers to ; doesn't seem to match expectations so I'm going to use the dtype in shape instead. Actually I think it's right and the one in array is wrong. Later.
         actual = tensor.dtype
 
-        print(f"Expected: {expected}, Got: {actual}")
+        if expected != actual:
+            return ((None, 0),
+                f"Tensor Type Mismatch:: Expected: {expected}, Got: {actual}")
 
         # Shape check input: # TODO!!!
-        expected = input_details["???"]
+        expected = tuple(input_details["shape"])
         actual = tensor.shape
 
-        print(f"Expected: {expected}, Got: {actual}")
+        if expected != actual:
+            return ((None, 0),
+                f"Tensor Shape Mismatch:: Expected: {expected}, Got: {actual}")
 
         # Now try to run inference:
 

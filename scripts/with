@@ -25,11 +25,13 @@ for dep_name in "${deps[@]}"; do
     # If a dependency's marker file doesn't exist..
     [ -f "$(marker_file "${dep_name}")" ] || {
         # ..run its script:
-        ("$(script_file)" "${dep_name}") || {
+        echo -e '\e[1;34m'"Resolving ${dep_name}:"'\e[0m'
+        ("$(script_file "${dep_name}")") || {
             err "Failed to resolve ${dep_name}!" $?
         }
+        echo
     }
 done
 
 # Finally, run the command!
-"${command[@]}"
+${command[@]}

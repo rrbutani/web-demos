@@ -8,7 +8,7 @@
 check_deps
 
 # Next, pipenv:
-pipenv install-dev
+PIP_IGNORE_INSTALLED=1 pipenv install --dev
 
 # Finally, record that we were successful:
 mark

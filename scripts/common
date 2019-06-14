@@ -5,6 +5,7 @@ set -e
 BUILD_DIR=build
 SCRIPT_DIR="$(dirname "${0}")"
 EXAMPLES_DIR="examples"
+MESSAGES_DIR="messages"
 
 PROTOC_DST_DIR=build
 
@@ -54,15 +55,15 @@ run_command_in_example() {
     } || return 0;
 
     # If it does, run it:
-    echo -e '\e[1;37m'"Building ${1}..."'\e[0m'
-    (cd "${1}" && npm ${2-"run build"})
+    echo -e '\e[1;37m'"Running \`npm ${2}\` in ${1}..."'\e[0m'
+    (cd "${1}" && npm ${2-run build}) # Intentionally unquoted
     return $?
 }
 
 # $1: command to run
 run_command_in_examples() {
     for ex in "${EXAMPLES_DIR}"/*; do
-        run_command_in_example "${ex}"
+        run_command_in_example "${ex}" "${1}"
     done
 }
 
@@ -129,7 +130,7 @@ script_file() {
 }
 
 mark() {
-    touch "$(marker_file "${0}")"
+    find_or_run "$(marker_file "${0}")" :
 }
 
 # $1: target name -> target name

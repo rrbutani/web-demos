@@ -11,7 +11,7 @@ check_deps
 run_command_in_examples "install"
 
 # Next, pipenv:
-pipenv install
+PIP_IGNORE_INSTALLED=1 pipenv install
 
 # Finally, record that we successfully installed:
 mark

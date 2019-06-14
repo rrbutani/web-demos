@@ -24,7 +24,7 @@ check_deps
 
 # Build the proto files first (the examples will need them):
 shopt -s globstar
-build_messages messages/**/*.proto
+build_messages "${MESSAGES_DIR}"/**/*.proto
 
 # And then the examples:
 run_command_in_examples "run build"

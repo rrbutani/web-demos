@@ -1,10 +1,11 @@
 
 from typing import List, Tuple, Union
+from timeit import timeit
 
 import tensorflow as tf
-# from tensorflow.lite import Interpreter
-
 import numpy as np
+
+from server.types import Metrics
 
 print(f"TF Version: {tf.__version__}")
 # tf.enable_eager_execution() # TODO
@@ -46,17 +47,15 @@ class LocalModel:
         if tensor is None:
             return (None, 0), "Tensor was empty."
 
-        # Type check input: # TODO!!!
-        # print(input_details)
-        # print(output_details)
-        expected = input_details["dtype"] # TODO: Not sure what this  actually refers to ; doesn't seem to match expectations so I'm going to use the dtype in shape instead. Actually I think it's right and the one in array is wrong. Later.
+        # Type check input:
+        expected = input_details["dtype"]
         actual = tensor.dtype
 
         if expected != actual:
             return ((None, 0),
                 f"Tensor Type Mismatch:: Expected: {expected}, Got: {actual}")
 
-        # Shape check input: # TODO!!!
+        # Shape check input:
         expected = tuple(input_details["shape"])
         actual = tensor.shape
 
@@ -68,10 +67,11 @@ class LocalModel:
 
         # Shouldn't need to cast the array:
         self.interp.set_tensor(input_idx, tensor)
-        self.interp.invoke()
 
-        # TODO!!!
-        metrics = 200
+        time = timeit(lambda i: i.inkoke(), self.interp)
+
+        metrics = (Metrics()
+            .time_t_execute(time * (1000 ** 2)))
 
         return (self.interp.get_tensor(output_idx), metrics), None
 

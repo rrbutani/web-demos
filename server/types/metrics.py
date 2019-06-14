@@ -1,24 +1,29 @@
-from server.types import Metrics as MetricsMessage
 from __future__ import annotations
+from typing import Union
+from server.types import Metrics as MetricsMessage
 
 class Metrics:
     def __init__(self, time_to_execute: int = 0, trace_url: str = ""):
         self.time_to_execute(time_to_execute)
-        self.trace_url(trace_url)
+        self.trace(trace_url)
 
-    def time_to_execute(self, time_to_execute: int) -> LocalMetrics:
+    def time_to_execute(self, time_to_execute: Union[int, float]) -> Metrics:
         assert time_to_execute >= 0
 
-        self._time_to_execute = time_to_execute
+        self._time_to_execute = int(time_to_execute)
         return self
 
-    def trace(self, trace: str) -> LocalMetrics:
+    def trace(self, trace: str) -> Metrics:
         self._trace = trace
         return self
 
-    def into_metrics(self) -> Metrics:
-        return Metrics(time_to_execute=self._time_to_execute, trace=self._trace)
+    def into(self) -> Metrics:
+        mm = MetricsMessage()
 
-# # TODO: add overloaded functions once we have traces and such
-# def into_metrics(metrics: LocalMetrics) -> Metrics:
-#     return Metrics(time_to_execute=metrics.)
+        if self._time_to_execute:
+            mm.time_to_execute = self._time_to_execute
+
+        if self._trace:
+            mm.trace = self._trace
+
+        return mm

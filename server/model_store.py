@@ -1,11 +1,11 @@
 
 from typing import List, Tuple, Union
-from timeit import timeit
+import time
 
 import tensorflow as tf
 import numpy as np
 
-from server.types import Metrics
+from server.types.metrics import Metrics
 
 print(f"TF Version: {tf.__version__}")
 # tf.enable_eager_execution() # TODO
@@ -15,7 +15,6 @@ Interpreter = tf.lite.Interpreter
 
 Error = str
 Tensor = np.ndarray
-Metrics = int
 
 class LocalModel:
     def __init__(self, model: str):
@@ -68,10 +67,14 @@ class LocalModel:
         # Shouldn't need to cast the array:
         self.interp.set_tensor(input_idx, tensor)
 
-        time = timeit(lambda i: i.inkoke(), self.interp)
+        begin = time.clock()
+        self.interp.invoke()
+        exec_time = time.clock() - begin
 
         metrics = (Metrics()
-            .time_t_execute(time * (1000 ** 2)))
+            .time_to_execute(exec_time * (1000 ** 2))  # in milliseconds
+            # .trace("") # TODO!!
+        )
 
         return (self.interp.get_tensor(output_idx), metrics), None
 

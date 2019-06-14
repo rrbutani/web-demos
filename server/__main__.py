@@ -10,7 +10,7 @@ import tensorflowjs
 from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
 from server.types.model import Model, ModelHandle, convert_model, convert_handle, into_handle
 from server.types.error import Error, into_error
-from server.types.metrics import Metrics, into_metrics
+from server.types.metrics import Metrics
 from server.types import LoadModelRequest, LoadModelResponse
 from server.types import InferenceRequest, InferenceResponse
 
@@ -79,8 +79,7 @@ def run_inference() -> InferenceResponse: # TODO: type sig
     except Exception as e:
         return InferenceResponse(error=into_error(err))
 
-    metrics: Metrics = into_metrics(metrics)
-    response = InferenceResponse(tensor=tensor, metrics=metrics)
+    response = InferenceResponse(tensor=tensor, metrics=metrics.into())
 
     return response
 

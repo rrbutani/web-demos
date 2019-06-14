@@ -53,3 +53,56 @@ message Tensor {
     // Dimensions:
     repeated uint64 dimensions = 6;
 }
+
+message Model {
+    // TODO!!
+}
+
+message Error {
+    enum Kind {
+        // TODO!!
+        OTHER = 0;
+    }
+
+    Kind kind = 1;
+    string message = 2;
+}
+
+message Metrics {
+    int64 time_to_execute = 1; // in ms (TODO!)
+}
+
+message ModelHandle {
+    int64 id = 1;
+}
+
+// LoadModelRequest = Model
+// LoadModelResponse = oneof { ModelHandle, Error }
+// InferenceRequest = { ModelHandle, Tensor }
+// InferenceResponse = oneof { Tensor, Error }
+
+message LoadModelRequest {
+    Model model = 1;
+}
+
+message LoadModelResponse {
+    oneof response {
+        ModelHandle handle = 1;
+        Error error = 2;
+    }
+}
+
+message InferenceRequest {
+    ModelHandle handle = 1;
+    Tensor tensor = 2;
+}
+
+message InferenceResponse {
+    oneof response {
+        Tensor tensor = 1;
+        Error error = 2;
+    }
+
+    // TODO: not sure if this should be dijoint from error
+    Metrics metrics = 3;
+}

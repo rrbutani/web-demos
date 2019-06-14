@@ -53,7 +53,7 @@ def check_shape(shape: Iterable[int], array: Sized):
     expected_elems = reduce(mul, shape, 1)
     actual_elems = len(array)
 
-    if expected_elems is not actual_elems:
+    if expected_elems != actual_elems:
         raise MisshapenTensor(f"Expected {expected_elems} elements for a tensor with {shape} dimensions, got {actual_elems} elements.")
 
 def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:

@@ -70,6 +70,7 @@ message Error {
 
 message Metrics {
     int64 time_to_execute = 1; // in ms (TODO!)
+    string trace = 2;
 }
 
 message ModelHandle {

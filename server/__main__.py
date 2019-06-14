@@ -8,7 +8,7 @@ import tensorflow as tf
 import tensorflowjs
 
 from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
-from server.types.model import Model, convert_model, convert_handle, into_handle
+from server.types.model import Model, ModelHandle, convert_model, convert_handle, into_handle
 from server.types.error import Error, into_error
 from server.types.metrics import Metrics, into_metrics
 from server.types import LoadModelRequest, LoadModelResponse
@@ -38,12 +38,13 @@ def serve_build_file(example_name: str, path: str):
     return send_from_directory('../examples', example_name + "/dist/" + path)
 
 @app.route('/api/model', methods=['POST'])
-@api(json, protobuf(receives=LoadModelRequest, sends=LoadModelResponse))
+@api(json, protobuf(receives=LoadModelRequest, sends=LoadModelResponse, to_dict=False))
 def load_model() -> LoadModelResponse:
     # TODO!
     model: Model = request.received_message.model
 
-    handle, err = model_store.load(convert_model(model))
+    model, err = convert_model(model)
+    handle, err = model_store.load(model)
 
     if err is not None:
         response = LoadModelResponse(error=into_error(err))
@@ -60,11 +61,14 @@ def run_inference() -> InferenceResponse: # TODO: type sig
     tensor = pb_to_tflite_tensor(tensor)
     print(tensor)
 
-    handle: Handle = request.received_message.handle
+    handle: ModelHandle = request.received_message.handle
 
-    model = model_store.get(convert_handle(handle))
+    handle, err = model_store.get(convert_handle(handle))
 
-    (tensor, metrics), err = interpreter.predict(model, tensor)
+    if err is not None:
+        return InferenceResponse(error=into_error(err))
+
+    (tensor, metrics), err = handle.predict(tensor)
 
     if err is not None:
         response = InferenceResponse(error=into_error(err))

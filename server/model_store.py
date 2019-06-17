@@ -1,9 +1,8 @@
-
-from typing import List, Tuple, Union
 import time
+from typing import List, Tuple, Union
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 from server.types.metrics import Metrics
 
@@ -15,14 +14,16 @@ Interpreter = tf.lite.Interpreter
 
 Error = str
 Tensor = np.ndarray
+Handle = int
+
 
 class LocalModel:
     def __init__(self, model: str):
         assert model is not None
 
-        self.model: str = model # String with the model's contents; used to set
-                                # model_content in the TFLite Interpreter's
-                                # constructor hopefully.
+        # String with the model's contents; used to set model_content in the
+        # TFLite Interpreter's constructor hopefully.
+        self.model: str = model
 
         self.interp: Interpreter = None
 
@@ -38,10 +39,10 @@ class LocalModel:
                 return (None, 0), f"{e}"
 
         input_details = self.interp.get_input_details()[0]
-        input_idx = input_details['index']
+        input_idx = input_details["index"]
 
         output_details = self.interp.get_output_details()[0]
-        output_idx = output_details['index']
+        output_idx = output_details["index"]
 
         if tensor is None:
             return (None, 0), "Tensor was empty."
@@ -51,16 +52,20 @@ class LocalModel:
         actual = tensor.dtype
 
         if expected != actual:
-            return ((None, 0),
-                f"Tensor Type Mismatch:: Expected: {expected}, Got: {actual}")
+            return (
+                (None, 0),
+                f"Tensor Type Mismatch:: Expected: {expected}, Got: {actual}",
+            )
 
         # Shape check input:
         expected = tuple(input_details["shape"])
         actual = tensor.shape
 
         if expected != actual:
-            return ((None, 0),
-                f"Tensor Shape Mismatch:: Expected: {expected}, Got: {actual}")
+            return (
+                (None, 0),
+                f"Tensor Shape Mismatch:: Expected: {expected}, Got: {actual}",
+            )
 
         # Now try to run inference:
 

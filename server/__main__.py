@@ -1,20 +1,29 @@
 #!/usr/bin/env python3.7
 
-
-from flask import Flask, send_from_directory, request
-from flask_pbj import api, json, protobuf
 from typing import Union
+
 import tensorflow as tf
 import tensorflowjs
-
-from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
-from server.types.model import Model, ModelHandle, convert_model, convert_handle, into_handle
-from server.types.error import Error, into_error
-from server.types.metrics import Metrics
-from server.types import LoadModelRequest, LoadModelResponse
-from server.types import InferenceRequest, InferenceResponse
+from flask import Flask, request, send_from_directory
+from flask_pbj import api, json, protobuf
 
 from server.model_store import ModelStore
+from server.types import (
+    InferenceRequest,
+    InferenceResponse,
+    LoadModelRequest,
+    LoadModelResponse,
+)
+from server.types.error import Error, into_error
+from server.types.metrics import Metrics
+from server.types.model import (
+    Model,
+    ModelHandle,
+    convert_handle,
+    convert_model,
+    into_handle,
+)
+from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
 
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
@@ -22,20 +31,23 @@ from server.model_store import ModelStore
 HOST = "0.0.0.0"
 PORT = 5000
 
-app = Flask(__name__, static_folder='../examples', static_url_path='/examples/')
+app = Flask(__name__, static_folder="../examples", static_url_path="/examples/")
 model_store = ModelStore()
 
-@app.route('/api/echo/<string:string>')
+
+@app.route("/api/echo/<string:string>")
 def echo(string: str) -> str:
     return string
 
-@app.route('/ex/<string:example_name>/<path:path>')
-@app.route('/ex/<string:example_name>/', defaults={'path': "index.html"})
+
+@app.route("/ex/<string:example_name>/<path:path>")
+@app.route("/ex/<string:example_name>/", defaults={"path": "index.html"})
 def serve_build_file(example_name: str, path: str):
     print(f"Trying: {example_name}/dist/{path}")
-    return send_from_directory('../examples', example_name + "/dist/" + path)
+    return send_from_directory("../examples", example_name + "/dist/" + path)
 
-@app.route('/api/model', methods=['POST'])
+
+@app.route("/api/model", methods=["POST"])
 @api(json, protobuf(receives=LoadModelRequest, sends=LoadModelResponse, to_dict=False))
 def load_model() -> LoadModelResponse:
     # TODO!
@@ -52,9 +64,9 @@ def load_model() -> LoadModelResponse:
     return response
 
 
-@app.route('/api/inference', methods=['POST'])
+@app.route("/api/inference", methods=["POST"])
 @api(json, protobuf(receives=InferenceRequest, sends=InferenceResponse, to_dict=False))
-def run_inference() -> InferenceResponse: # TODO: type sig
+def run_inference() -> InferenceResponse:  # TODO: type sig
     tensor: Tensor = request.received_message.tensor
 
     try:
@@ -75,19 +87,14 @@ def run_inference() -> InferenceResponse: # TODO: type sig
         return InferenceResponse(error=into_error(err))
 
     try:
-        tensor: Tensor = tflite_tensor_to_pb(tensor)
-    except Exception as e:
+        tensor = tflite_tensor_to_pb(tensor)
+    except Exception as err:
         return InferenceResponse(error=into_error(err))
 
     response = InferenceResponse(tensor=tensor, metrics=metrics.into())
 
     return response
 
-    # Round trip!
-    # return tflite_tensor_to_pb(tensor)
-
-if __name__ == "__main__":
-    app.run(host=HOST, port=PORT, debug=True)
 
 if __name__ == "__main__":
     app.run(host=HOST, port=PORT, debug=True)

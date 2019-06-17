@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Union
 from server.types import Metrics as MetricsMessage
 
+
 class Metrics:
     def __init__(self, time_to_execute: int = 0, trace_url: str = ""):
         self.time_to_execute(time_to_execute)

@@ -9,8 +9,10 @@ from server.model_store import Handle as LocalHandle
 def convert_model(Model) -> str:
     pass
 
+
 def convert_handle(handle: ModelHandle) -> LocalHandle:
     return handle.id
+
 
 def into_handle(handle: LocalHandle) -> ModelHandle:
     return ModelHandle(id=handle)

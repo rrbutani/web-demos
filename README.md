@@ -28,3 +28,5 @@ TODO: format all
 TODO: rename
 TODO: write README
 TODO: credits
+TODO: use exceptions instead of explicit err return types
+TODO: debug env var

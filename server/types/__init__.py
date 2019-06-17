@@ -13,19 +13,29 @@ try:
         line = next(filter(lambda l: "PROTOC_DST_DIR=" in l, f))
 
         if line is None:
-            raise Error(f"Unable to determine build directory; is PROTOC_DST_DIR set in {common_vars}?")
+            raise Exception(
+                f"Unable to determine build directory; is PROTOC_DST_DIR set "
+                "in {common_vars}?"
+            )
         else:
-            build_dir = join(project_root, line[line.index('=')+1:].rstrip(), "python")
+            build_dir = join(
+                project_root, line[line.index("=") + 1 :].rstrip(), "python"
+            )
 except FileNotFoundError:
-    raise Exception(f"Unable to determine build directory; is the build script still in {common_vars}?")
+    raise Exception(
+        f"Unable to determine build directory; is the build script still "
+        "in {common_vars}?"
+    )
 
 print(build_dir)
 
 if isdir(build_dir):
     sys.path.append(build_dir)
 else:
-    raise Exception(f"The python protobuf build directory doesn't seem to "
-                    "exist {build_dir}; try running `pipenv build`?")
+    raise Exception(
+        f"The python protobuf build directory doesn't seem to "
+        "exist {build_dir}; try running `pipenv build`?"
+    )
 
 
 from inference_pb2 import Error, Tensor, Model, ModelHandle, Metrics

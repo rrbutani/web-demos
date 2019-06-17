@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "53932596c4671f3ce47e719e61b309a57ce08399ea94253bdbd34c726e0db53a"
+            "sha256": "dd2bf276392dd65e507541a139d814c4a8c99321fbadd23395999e822424a995"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -371,6 +371,7 @@
             "hashes": [
                 "sha256:99818ef0c70c23ce6417085c960ca2d275db9bd248abeb63da1b4f138aa00cf0"
             ],
+            "index": "pypi",
             "version": "==1.14.0.dev2019060501"
         },
         "tf-nightly-2.0-preview": {

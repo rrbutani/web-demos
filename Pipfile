@@ -4,6 +4,8 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pytest = "~=4.6.3"
+black = "~=19.3b0"
 
 [packages]
 flask = "*"
@@ -29,4 +31,5 @@ dev-deps = "scripts/install-dev"
 build = "scripts/build"
 clean = "scripts/clean"
 run = "scripts/with install build -- python -m server"
-test = "scripts/with install-dev build -- pipenv run pytest" # TODO: test
+format = "scripts/with install-dev -- pipenv run black ."
+test = "scripts/with install-dev install build -- pipenv run pytest"

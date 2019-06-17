@@ -97,3 +97,4 @@ Icon
 ### Project Specific Stuff ###
 build/
 models/
+.pytest_cache/

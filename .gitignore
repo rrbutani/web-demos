@@ -45,7 +45,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Flask stuff:
+# Flask stuff
 instance/
 .webassets-cache
 
@@ -98,3 +98,6 @@ Icon
 build/
 models/
 .pytest_cache/
+
+# Rollup Plugin TypeScript 2
+.rpt2_cache/

@@ -28,8 +28,8 @@ from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
 
-HOST = "0.0.0.0"
-PORT = 5000
+HOST = "0.0.0.0" # TODO: source from env var
+PORT = 5000      # TODO: source from env var
 
 app = Flask(__name__, static_folder="../examples", static_url_path="/examples/")
 model_store = ModelStore()
@@ -97,4 +97,4 @@ def run_inference() -> InferenceResponse:  # TODO: type sig
 
 
 if __name__ == "__main__":
-    app.run(host=HOST, port=PORT, debug=True)
+    app.run(host=HOST, port=PORT, debug=True) # TODO: debug iff env var is set

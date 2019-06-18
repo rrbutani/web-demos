@@ -1,0 +1,21 @@
+{ "name": "web-demos-client"
+, "version": "0.1.0"
+, "description": "client for the inference server"
+, "homepage": "https://centtech.github.com/rahul/web-demos#TODOTODO"
+, "repository":
+  { "type": "git"
+  , "url": "https://centtech.github.com/rahul/web-demos.git"
+  }
+, "license": "Apache-2.0"
+, "private": true
+, "browser": "dist/index"
+, "types": "dist/index.d.ts"
+, "dependencies":
+  { "protobufjs": "~6.8.8"
+  ,
+  }
+, "devDependencies":
+  { "typescript": "~3.5.2"
+  ,
+  }
+}

@@ -10,11 +10,19 @@
 , "private": true
 , "browser": "dist/index"
 , "types": "dist/index.d.ts"
+, "module": "dist/index.es.js"
+, "files": ["dist"]
 , "dependencies":
   { "protobufjs": "~6.8.8"
   }
 , "devDependencies":
   { "typescript": "~3.5.2"
+  , "rollup": "~1.15.6"
+  , "rollup-plugin-typescript2": "~0.21.2"
+  }
+, "scripts":
+  , "build": "rollup -c"
+  }
 , "jest":
   { "verbose": true
   , "rootDir": "."

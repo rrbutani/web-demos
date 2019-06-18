@@ -1,6 +1,8 @@
-import typescript from 'rollup-plugin-typescript2'
 
 import pkg from './package.json'
+
+import typescript from 'rollup-plugin-typescript2'
+import resolve from 'rollup-plugin-node-resolve';
 
 export default
 { input: 'src/index.ts'
@@ -19,5 +21,19 @@ export default
   , ...Object.keys(pkg.peerDependencies || {})
   ]
 , plugins:
-  [ typescript({ typescript: require('typescript') }) ]
+  [ resolve(
+    { "mainFields":
+      [ "module"
+      , "browser"
+      ]
+    , "extensions":
+      [ ".js"
+      , ".json"
+      , ".mjs"
+      , ".cjs"
+      , ".jsx"
+      ]
+    })
+  , typescript({ typescript: require('typescript') })
+  ]
 }

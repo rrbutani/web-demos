@@ -18,6 +18,9 @@
   , "pretty": true
   , "noFallthroughCasesInSwitch": true
   , "allowUnreachableCode": false
+  , "baseUrl": ".",
+    "paths":
+    { "@build/*": ["build/*"] }
   }
 , "include":
   [ "src/"

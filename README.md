@@ -33,3 +33,5 @@ TODO: credits
 TODO: use exceptions instead of explicit err return types
 TODO: debug env var
 TODO: add badges for black, license (apache), etc.
+TODO: docker container that builds and then runs the entire thing (args for  PORT that go and expose the same port after)
+TODO: comment protobuf file(s)

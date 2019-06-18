@@ -76,14 +76,11 @@ class LocalModel:
         self.interp.invoke()
         exec_time = time.clock() - begin
 
-        metrics = (Metrics()
-            .time_to_execute(exec_time * (1000 ** 2))  # in milliseconds
-            # .trace("") # TODO!!
-        )
+        metrics = Metrics().time_to_execute(exec_time * (1000 ** 2))  # in milliseconds
+        # .trace("") # TODO!!
 
         return (self.interp.get_tensor(output_idx), metrics), None
 
-Handle = int
 
 class ModelStore:
     def __init__(self):

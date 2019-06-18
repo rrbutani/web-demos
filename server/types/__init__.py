@@ -1,8 +1,9 @@
 import sys
 import os
 from os.path import abspath, dirname, join, isdir
+from typing import Callable
 
-up = lambda p, n: p if n == 0 else up(dirname(p), n - 1)
+up: Callable(str, int) = lambda p, n: p if n == 0 else up(dirname(p), n - 1)
 
 project_root = up(os.path.abspath(__file__), 3)
 common_vars = join(project_root, "scripts", "common")

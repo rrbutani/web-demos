@@ -1,0 +1,29 @@
+{ "compilerOptions":
+  { "declaration": true
+  , "declarationDir": "./dist"
+  , "module": "es6"
+  , "moduleResolution": "node"
+  , "noImplicitAny": true
+  , "strictNullChecks": true
+  , "sourceMap": true
+  , "removeComments": false
+  , "preserveConstEnums": true
+  , "target": "es5"
+  , "outDir": "./dist"
+  , "noUnusedLocals": true
+  , "noImplicitReturns": true
+  , "noImplicitThis": true
+  , "alwaysStrict": true
+  , "noUnusedParameters": true
+  , "pretty": true
+  , "noFallthroughCasesInSwitch": true
+  , "allowUnreachableCode": false
+  }
+, "include":
+  [ "src/"
+  , "build/"
+  ]
+, "exclude":
+  [ "node_modules/" ]
+, "compileOnSave": true
+}

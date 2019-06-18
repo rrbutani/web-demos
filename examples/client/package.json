@@ -12,10 +12,26 @@
 , "types": "dist/index.d.ts"
 , "dependencies":
   { "protobufjs": "~6.8.8"
-  ,
   }
 , "devDependencies":
   { "typescript": "~3.5.2"
-  ,
+, "jest":
+  { "verbose": true
+  , "rootDir": "."
+  , "collectCoverage": true
+  , "coverageDirectory": "<rootDir>/build/coverage"
+  , "collectCoverageFrom":
+    [ "<rootDir>/src/**/*.{ts,tsx}" ]
+  , "transform":
+    { "\\.{ts,tsx}$": "ts-jest" }
+  , "testMatch":
+    [ "<rootDir>/tests/**/*.{ts,tsx}" ]
+  , "moduleFileExtensions":
+    [ "ts"
+    , "tsx"
+    , "js"
+    , "jsx"
+    , "json"
+    ]
   }
 }

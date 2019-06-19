@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Formats the server and client.
+
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# Server
+black .
+
+# Client
+run_command_in_client_project run format

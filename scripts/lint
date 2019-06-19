@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# Runs the server and client's respective linters.
+
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+ec=0
+
+# Server
+mypy server || ec=$?
+
+# Client
+run_command_in_client_project run lint || ec=$?
+
+exit $?

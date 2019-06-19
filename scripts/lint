@@ -4,12 +4,4 @@
 
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-ec=0
-
-# Server
-mypy server || ec=$?
-
-# Client
-run_command_in_client_project run lint || ec=$?
-
-exit $?
+server_client_pair "mypy server" "run lint" "Linting"

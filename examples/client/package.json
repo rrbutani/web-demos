@@ -36,7 +36,7 @@
   { "build-messages":
       "cross-env TS_NODE_PROJECT=scripts/tsconfig.json ts-node ./scripts/build-messages.ts"
   , "build": "rollup -c"
-  , "lint": "tslint -p . -t verbose"
+  , "lint": "tslint -p . -t stylish"
   , "format": "tsfmt -r"
   , "test": "jest"
   }

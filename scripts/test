@@ -4,8 +4,4 @@
 
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-# Server
-pytest
-
-# Client
-run_command_in_client_project run test
+server_client_pair "pytest" "run test" "Testing"

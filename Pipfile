@@ -29,7 +29,7 @@ allow_prereleases = true
 [scripts]
 deps = "scripts/install"
 dev-deps = "scripts/install-dev"
-build = "scripts/build"
+build = "scripts/with install -- scripts/build"
 clean = "scripts/clean"
 run = "scripts/with install build -- python -m server"
 lint = "scripts/with install-dev install build -- mypy server"

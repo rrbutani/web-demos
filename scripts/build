@@ -5,16 +5,24 @@
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # $*: Message files to build
-build_messages() {
+build_messages_for_server() {
     mkdir -p "${PROTOC_DST_DIR}"/{js,python}
 
-    echo -e '\e[1;37m'"Building ${@}..."'\e[0m'
+    echo -e '\e[1;37m'"Building ${@} (for the server)..."'\e[0m'
 
     protoc \
         --proto_path=messages \
         --python_out="${PROTOC_DST_DIR}/python" \
-        --js_out="${PROTOC_DST_DIR}/js" \
         "${@}"
+
+    return $?
+}
+
+build_messages_for_client() {
+    local messages=("${MESSAGES_DIR}"/*.proto)
+    echo -e '\e[1;37m'"Building ${messages[@]} (for the client)..."'\e[0m'
+
+    run_command_in_client_project run build-messages
 
     return $?
 }
@@ -24,7 +32,8 @@ check_deps
 
 # Build the proto files first (the examples will need them):
 shopt -s globstar
-build_messages "${MESSAGES_DIR}"/**/*.proto
+build_messages_for_server "${MESSAGES_DIR}"/**/*.proto
+build_messages_for_client
 
 # And then the examples:
 run_command_in_examples "run build"

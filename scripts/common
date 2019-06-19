@@ -7,6 +7,8 @@ SCRIPT_DIR="$(dirname "${0}")"
 EXAMPLES_DIR="examples"
 MESSAGES_DIR="messages"
 
+CLIENT_DIR="${EXAMPLES_DIR}/client"
+
 PROTOC_DST_DIR=build
 
 declare -A DEPS=( \
@@ -60,11 +62,16 @@ run_command_in_example() {
     return $?
 }
 
-# $1: command to run
+# $1: npm command to run
 run_command_in_examples() {
     for ex in "${EXAMPLES_DIR}"/*; do
         run_command_in_example "${ex}" "${1}"
     done
+}
+
+# $*: npm command to run
+run_command_in_client_project() {
+    (cd "${CLIENT_DIR}" && npm "${@}")
 }
 
 # $1: error message; $2: exit code

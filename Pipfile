@@ -9,12 +9,12 @@ python_version = "3.7"
 [packages]
 flask = "*"
 tensorflowjs = "==1.0.1"
-"tf-nightly-2.0-preview" = "==2.0.0.dev20190415"
+"tf-nightly-2.0-preview" = "==2.0.0.dev20190503"
 "tensorflow-estimator-2.0-preview" = "==1.14.0.dev2019041500"
 tf-estimator-nightly = "==1.14.0.dev2019060501"
 tb-nightly = "==1.14.0a20190603"
 tensorflow = "==2.0.0b0"
-flask-pbj = {git = "https://github.com/rrbutani/flask-pbj.git"}
+flask-pbj = { git = "https://github.com/rrbutani/flask-pbj.git" }
 numpy = "~=1.15.1"
 protobuf = "~=3.8.0"
 

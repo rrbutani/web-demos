@@ -9,6 +9,8 @@ Currently requires:
   - a modern-ish version of bash (4+)
   - npm
   - [pipenv](https://github.com/pypa/pipenv) (older versions may have trouble)
+  - libssl (pip)
+  - a modern-ish glibc/libstdc++
 
 Run with `pipenv run run`. It _should_ just work.
 
@@ -35,3 +37,4 @@ TODO: debug env var
 TODO: add badges for black, license (apache), etc.
 TODO: docker container that builds and then runs the entire thing (args for  PORT that go and expose the same port after)
 TODO: comment protobuf file(s)
+TODO: reorder targets in this readme and add the lint target

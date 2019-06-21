@@ -5,7 +5,7 @@
  */
 
 import { dirname } from 'path';
-import { mkdirSync as mkdir } from 'fs';
+import { mkdirSync as mkdir, existsSync as exists } from 'fs';
 
 import { pbjs, pbts } from 'protobufjs/cli';
 
@@ -18,7 +18,10 @@ const message_file = config.message_file || "build/messages.js";
 const message_types = config.message_types || "build/types/messages.d.ts";
 
 const throw_err = (err: Error, _: string) => { if (err) throw err; }
-const create = (file: string) => mkdir(dirname(file), { "recursive": true });
+const create = (file: string) => {
+  const path = dirname(file);
+  exists(path) || mkdir(dirname(file), { "recursive": true });
+}
 
 create(message_file)
 create(message_types)

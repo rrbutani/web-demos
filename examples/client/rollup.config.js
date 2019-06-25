@@ -10,7 +10,7 @@ export default
 { input: 'src/index.ts'
 , output:
   [ { file: `${pkg.main}.js`
-    , format: 'umd'
+    , format: 'es'
     , name: pkg.name
     }
   , { file: pkg.module
@@ -32,10 +32,12 @@ export default
       ]
     , extensions:
       [ ".js"
+      , ".jsx"
       , ".json"
       , ".mjs"
       , ".cjs"
-      , ".jsx"
+      , ".ts"
+      , ".tsx"
       ]
     }),
   , commonJS(

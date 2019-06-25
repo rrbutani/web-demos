@@ -16,7 +16,11 @@
 , "peer-dependencies":
   { "@tensorflow/tfjs": "~1.2.1" }
 , "dependencies":
-  { "protobufjs": "~6.8.8" }
+  { "protobufjs": "~6.8.8"
+  , "lodash-es": "~4.17.11"
+  , "@tensorflow/tfjs": "~1.2.1"
+  , "cross-fetch": "~3.0.4"
+  }
 , "devDependencies":
   { "typescript": "~3.5.2"
   , "tslint": "~5.11.0"
@@ -30,6 +34,7 @@
   , "jest": "~24.8.0"
   , "ts-jest": "~24.0.2"
   , "@types/jest": "~24.0.15"
+  , "@types/lodash": "~4.14.134"
   , "cross-env": "~5.2.0"
   }
 , "scripts":

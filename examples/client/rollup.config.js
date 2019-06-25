@@ -9,11 +9,9 @@ import commonJS from 'rollup-plugin-commonjs'
 export default
 { input: 'src/index.ts'
 , output:
-  [ { file: pkg.browser
+  [ { file: `${pkg.main}.js`
     , format: 'umd'
     , name: pkg.name
-    , globals:
-      { 'protobufjs/minimal': 'protobuf' }
     }
   , { file: pkg.module
     , format: 'es'
@@ -23,17 +21,16 @@ export default
   [ // Use _our_ versions of typescript and friends:
   , ...Object.keys(pkg.dependencies || {})
   , ...Object.keys(pkg.peerDependencies || {})
-  , "protobufjs/minimal" // Users will have to add a script tag for:
-  // '//cdn.rawgit.com/dcodeIO/protobuf.js/6.8.8/dist/minimal/protobuf.min.js'
   ]
 , plugins:
   [ builtins()
   , resolve(
-    { "mainFields":
+    { mainFields:
       [ "module"
       , "browser"
+      , "main"
       ]
-    , "extensions":
+    , extensions:
       [ ".js"
       , ".json"
       , ".mjs"
@@ -41,7 +38,13 @@ export default
       , ".jsx"
       ]
     }),
-  , commonJS({ include: 'node_modules/**' })
+  , commonJS(
+    { include: /node_modules/
+    , namedExports:
+      { 'node_modules/protobufjs/minimal.js':
+          [ "Reader", "Writer", "util", "roots" ]
+      }
+    })
   , typescript({ typescript: require('typescript') })
   ]
 }

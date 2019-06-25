@@ -30,7 +30,7 @@ message Tensor {
     // TODO: Add support!
     message Complex {
         int64 real = 1;
-        int64 complex = 2;
+        int64 imaginary = 2;
     }
 
     message ComplexArray {

@@ -60,28 +60,58 @@ class LocalModel:
             )
 
         # Shape check input:
+
+        # Shape checking isn't as straightforward as data type checking, because
+        # the input tensor's shape will differ if it's a batch.
         expected = tuple(input_details["shape"])
         actual = tensor.shape
-        batch_size = 1
+        manual_batch_size = 1
 
+        # This means that if the input isn't the shape the interpreter is
+        # currently configured for, it isn't necessarily an error.
         if expected != actual:
-            # If the tensor's shape matches the model's initial expected shape
-            # or has the right shape for a batch, try to reshape the model's
-            # input tensor.
-            orig_len = len(self.default_input_shape)
-            if actual == self.default_input_shape:
+            def_shape = self.default_input_shape
+            def_rank  = len(def_shape)
+
+            # If the input matches the default shape for this model, we should
+            # resize the interpreter's input tensor:
+            if actual == def_shape:
                 # Reset back to normal:
-                self.interp.resize_tensor_input(input_idx, self.default_input_shape)
-                self.interp.resize_tensor_output(output_idx, self.default_output_shape)
+                self.interp.resize_tensor_input(input_idx, def_shape)
+                self.interp.allocate_tensors()
+
+                # Wrap the tensor up so we can treat it like a batch of 1
                 tensor = [tensor]
-            elif len(actual) == orig_len + 1 and np.all(actual[-orig_len:] == self.default_input_shape):
-                # If we've been asked to do a batch (and if all but the first
-                # element of the shape matches, resize the input and output
-                # accordingly:
-                batch_size = actual[0]
-                # TODO: resolve!
-                # self.interp.resize_tensor_input(input_idx, [batch_size] + self.default_input_shape)
-                # self.interp.resize_tensor_output(output_idx, [batch_size] + self.default_output_shape)
+
+            # If the input has an extra dimension and if its other dimensions
+            # match what we expect, we've got a batch on our hands!
+            elif len(actual) == def_rank + 1 and np.all(actual[-orig_len:] == def_shape):
+
+                # First, we'll try to see if we can resize the interpreter's
+                # input tensor so that it can take the batch directly. This
+                # works sometimes.
+                try:
+                    self.interp.resize_tensor_input(input_idx, actual)
+                    self.interp.allocate_tensors()
+
+                    # If it worked, then we're good to go. We don't need to do
+                    # any manual batch manipulation, so again we'll pretend that
+                    # we've got a (big) batch of one:
+                    tensor = [tensor]
+                except ValueError as e:
+                    # But for some models, this doesn't work. For those, we'll
+                    # fall back to running the batch manually.
+
+                    self.interp.resize_tensor_input(input_idx, def_shape)
+                    self.interp.allocate_tensors()
+
+                    manual_batch_size = actual[0]
+
+                    print(f"Got an error ({e}) while trying to resize for a batch "
+                          f"({expected} to {actual}). Switching to manual batch mode.")
+
+            # If it's not a batch and not the default shape, we can't use this
+            # tensor.
             else:
                 return (
                     (None, 0),

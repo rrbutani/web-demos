@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import mul
-from typing import Callable, Dict, Iterable, Sized, Tuple, TypeVar
+from typing import Callable, Dict, Iterable, Sized, Tuple, TypeVar, Optional
 
 import numpy as np
 from google.protobuf.message import Message
@@ -45,7 +45,7 @@ class MisshapenTensor(ValueError):
 T = TypeVar("T")
 
 
-def _get_oneof_pair(m: Message, field: str, attr: str = None) -> (str, T):
+def _get_oneof_pair(m: Message, field: str, attr: Optional[str] = None) -> Tuple[str, T]:
     try:
         ty = m.WhichOneof(field)
     except TypeError:

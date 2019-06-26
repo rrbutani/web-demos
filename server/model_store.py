@@ -6,10 +6,11 @@ import numpy as np
 import tensorflow as tf
 
 from server.types.metrics import Metrics
+from server.debug import dprint, if_debug
 
-print(f"TF Version: {tf.__version__}")
+dprint(f"TF Version: {tf.__version__}")
 # tf.enable_eager_execution() # TODO
-# tf.logging.set_verbosity(tf.logging.DEBUG) # TODO (on debug)
+if_debug(lambda: tf.logging.set_verbosity(tf.logging.DEBUG))
 
 Interpreter = tf.lite.Interpreter
 
@@ -221,8 +222,11 @@ class LocalModel:
         # Finally, if we're not doing manual batching, wrap the tensor in a list
         # so that we can pretend we're making a batch of size 1:
         if manual_batch_size == 0:
+            dprint("Pseudo manual batch")
             tensor = [tensor]
             manual_batch_size = 1
+        else:
+            dprint(f"Manual batch of size {manual_batch_size}")
 
         return tensor, manual_batch_size
 
@@ -280,7 +284,7 @@ class ModelStore:
         # TODO: remove
         # For now, let's load mnist-lstm in as model 0:
         assert 0 == self._load_from_file("models/mnist-lstm.tflite")
-        print("loaded built-in models!!")
+        dprint("loaded built-in models!!")
 
     def load(self, model: str) -> Handle:
         """

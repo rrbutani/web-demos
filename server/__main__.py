@@ -24,6 +24,7 @@ from server.types.model import (
     into_handle,
 )
 from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
+from server.debug import dprint, if_debug, _DEBUG
 
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
@@ -43,7 +44,7 @@ def echo(string: str) -> str:
 @app.route("/ex/<string:example_name>/<path:path>")
 @app.route("/ex/<string:example_name>/", defaults={"path": "index.html"})
 def serve_build_file(example_name: str, path: str):
-    print(f"Trying: {example_name}/dist/{path}")
+    dprint(f"Trying: {example_name}/dist/{path}")
     return send_from_directory("../examples", example_name + "/dist/" + path)
 
 
@@ -51,50 +52,35 @@ def serve_build_file(example_name: str, path: str):
 @api(json, protobuf(receives=LoadModelRequest, sends=LoadModelResponse, to_dict=False))
 def load_model() -> LoadModelResponse:
     # TODO!
-    model: Model = request.received_message.model
+    pb_model: Model = request.received_message.model
 
-    model, err = convert_model(model)
-    handle, err = model_store.load(model)
+    try:
+        model: str = convert_model(pb_model)
+        handle = model_store.load(model)
 
-    if err is not None:
-        response = LoadModelResponse(error=into_error(err))
-    else:
-        response = LoadModelResponse(handle=into_handle(handle))
-
-    return response
+        return LoadModelResponse(handle=into_handle(handle))
+    except Exception as e:
+        return LoadModelResponse(error=into_error(e))
 
 
 @app.route("/api/inference", methods=["POST"])
 @api(json, protobuf(receives=InferenceRequest, sends=InferenceResponse, to_dict=False))
 def run_inference() -> InferenceResponse:  # TODO: type sig
-    tensor: Tensor = request.received_message.tensor
+    pb_tensor: Tensor = request.received_message.tensor
+    pb_handle: ModelHandle = request.received_message.handle
 
     try:
-        tensor = pb_to_tflite_tensor(tensor)
+        tensor = pb_to_tflite_tensor(pb_tensor)
+        handle = model_store.get(convert_handle(pb_handle))
+
+        tensor, metrics = handle.predict(tensor)
+
+        return InferenceResponse(
+            tensor=tflite_tensor_to_pb(tensor),
+            metrics=metrics.into()
+        )
     except Exception as e:
         return InferenceResponse(error=into_error(e))
 
-    handle: ModelHandle = request.received_message.handle
-
-    handle, err = model_store.get(convert_handle(handle))
-
-    if err is not None:
-        return InferenceResponse(error=into_error(err))
-
-    (tensor, metrics), err = handle.predict(tensor)
-
-    if err is not None:
-        return InferenceResponse(error=into_error(err))
-
-    try:
-        tensor = tflite_tensor_to_pb(tensor)
-    except Exception as err:
-        return InferenceResponse(error=into_error(err))
-
-    response = InferenceResponse(tensor=tensor, metrics=metrics.into())
-
-    return response
-
-
 if __name__ == "__main__":
-    app.run(host=HOST, port=PORT, debug=True)  # TODO: debug iff env var is set
+    app.run(host=HOST, port=PORT, debug=_DEBUG)

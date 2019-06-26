@@ -3,6 +3,8 @@ import os
 from os.path import abspath, dirname, join, isdir
 from typing import Callable
 
+from server.debug import dprint
+
 up: Callable[[str, int], str] = lambda p, n: p if n == 0 else up(dirname(p), n - 1)
 
 project_root = up(os.path.abspath(__file__), 3)
@@ -28,7 +30,7 @@ except FileNotFoundError:
         "in {common_vars}?"
     )
 
-print(build_dir)
+dprint(build_dir)
 
 if isdir(build_dir):
     sys.path.append(build_dir)

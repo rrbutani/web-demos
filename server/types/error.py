@@ -2,6 +2,8 @@ from server.types import Error
 import traceback
 import re
 
+from server.debug import dprint, if_debug
+
 # TODO: Switch usages of this to actually pass in Exceptions
 def into_error(err: Exception) -> Error:
     # TODO: switch case the err types and map to real kinds
@@ -10,8 +12,7 @@ def into_error(err: Exception) -> Error:
     msg = " ".join(re.sub(r'([A-Z])', r' \1', err.__class__.__name__).split())
     msg = f"[{msg}] {err}"
 
-    # TODO: make this only print out if the debug environment variable is set:
-    print(f"Returning Err: `{msg}`")
-    traceback.print_exc()
+    dprint(f"Returning Err: `{msg}`")
+    if_debug(lambda: traceback.print_exc())
 
     return Error(kind=Error.Kind.OTHER, message=f"{msg}")

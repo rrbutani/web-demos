@@ -9,9 +9,9 @@
 , "license": "Apache-2.0"
 , "private": true
 , "source": "src/index.ts"
-, "main": "dist/client.js"
-, "module": "dist/client.mjs"
-, "unpkg": "dist/index.umd.js"
+, "main": "dist/client"
+, "unpkg": "dist/client.js"
+, "module": "dist/client.esm.js"
 , "types": "dist/client.d.ts"
 , "files":
   [ "dist" ]
@@ -27,7 +27,12 @@
   { "typescript": "~3.5.2"
   , "tslint": "~5.11.0"
   , "ts-node": "~8.3.0"
-  , "microbundle": "~0.11.0"
+  , "rollup": "~1.16.2"
+  , "rollup-plugin-typescript2": "~0.21.2"
+  , "rollup-plugin-node-resolve": "~5.0.3"
+  , "rollup-plugin-node-builtins": "~2.1.2"
+  , "rollup-plugin-commonjs": "~10.0.0"
+  , "rollup-plugin-sourcemaps": "~0.4.2"
   , "typescript-formatter": "~7.2.2"
   , "jest": "~24.8.0"
   , "ts-jest": "~24.0.2"
@@ -38,8 +43,7 @@
 , "scripts":
   { "build-messages":
       "cross-env TS_NODE_PROJECT=scripts/tsconfig.json ts-node ./scripts/build-messages.ts"
-  , "build": "microbundle build --globals @tensorflow/tfjs=tf,@tensorflow/tfjs-vis=tfvis,protobufjs/minimal=protobuf"
-  , "watch": "microbundle watch"
+  , "build": "rollup -c"
   , "lint": "tslint -p . -t stylish"
   , "format": "tsfmt -r"
   , "test": "jest"

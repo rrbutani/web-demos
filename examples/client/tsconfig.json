@@ -18,6 +18,7 @@
   , "pretty": true
   , "noFallthroughCasesInSwitch": true
   , "allowUnreachableCode": false
+  , "allowSyntheticDefaultImports": true
   }
 , "include":
   [ "src/"

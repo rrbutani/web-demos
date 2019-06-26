@@ -17,7 +17,7 @@
   { "@tensorflow/tfjs": "~1.2.1" }
 , "dependencies":
   { "protobufjs": "~6.8.8"
-  , "lodash-es": "~4.17.11"
+  , "lodash": "~4.17.11"
   , "@tensorflow/tfjs": "~1.2.1"
   , "cross-fetch": "~3.0.4"
   }

@@ -43,8 +43,6 @@ class LocalModel:
         """
         :raises ModelRegisterError: When given obviously incorrect models.
         """
-        assert model is not None
-
         # String with the model's contents; used to set model_content in the
         # TFLite Interpreter's constructor.
         self.model: Optional[str] = model
@@ -103,7 +101,7 @@ class LocalModel:
                 else:
                     raise ModelLoadError("Internal Error! Got a model without a path or"
                                          " data (this isn't supposed to be possible).")
-            except ValueError as e:
+            except RuntimeError as e:
                 raise ModelLoadError(f"Failed to load the model. Got: `{e}`."
                                      f"(model = `{self.model}`, path = `{self.path}`)")
 
@@ -111,35 +109,59 @@ class LocalModel:
             self.def_shape = tuple(self.interp.get_input_details()[0]["shape"])
             self.def_rank  = len(self.def_shape)
 
-            # TODO: on debug
-            print("Loaded new model.")
+            dprint("Loaded new model.")
 
-    def _resize(self, shape: List[int], bail=False):
+    def _resize_internal(self, shape: Tuple[int]):
         """
-        :raises ValueError: When the interpreter is unable to resize the tensors.
-        :raises TensorTypeError: On error when bail is set to True.
+        :raises RuntimeError: When the interpreter is unable to resize the tensors.
         """
         assert self.interp is not None
 
         input_details = self.interp.get_input_details()[0]
-        current_shape = input_details["shape"]
+        current_shape = tuple(input_details["shape"])
+        input_index = input_details["index"]
 
-        # If we need to resize the input tensor..
-        if shape != current_shape:
-            # ..try to do so:
-            try:
-                # TODO: debug print only
-                print("Attempting to resize `{current_shape}` to `{shape}`..")
-                self.interp.resize_tensor_input(input_details["index"], shape)
-                self.interp.allocate_tensors()
-                print("Success!")
-            except ValueError as e:
-                if bail:
-                    raise TensorTypeError("Unable to resize the model's input tensor to"
-                                         f" match the given tensor. Attempted `{shape}`"
-                                          " last and got `{e}`.")
-                else:
-                    raise e;
+        if current_shape == shape: return
+
+        dprint(f"Attempting to resize `{current_shape}` to `{shape}`..")
+        self.interp.resize_tensor_input(input_index, shape)
+        self.interp.allocate_tensors()
+        dprint("Success!")
+
+    def _resize(self, shape: Tuple[int], backup: Optional[Tuple[int]]=None) -> bool:
+        """
+        :raises RuntimeError: When the interpreter is unable to resize the tensors.
+        :raises TensorTypeError: On error when bail is set to True.
+
+        Returns True if the backup shape was used (i.e. used to set the shape).
+        """
+        assert self.interp is not None
+
+        def throw(shape, e):
+            raise TensorTypeError("Unable to resize the model's input tensor to"
+                                 f" match the given tensor. Attempted `{shape}`"
+                                 f" last and got `{e}`.")
+
+        # Try the first shape:
+        try:
+            print("trying resize 1")
+            self._resize_internal(shape)
+            print("resize 1 success")
+            return False
+        except RuntimeError as e:
+            print("resize 1 failed")
+            if backup is None:
+                throw(shape, e)
+
+        # Try the second shape:
+        try:
+            print("trying resize 2")
+            self._resize_internal(backup)
+            print("resize 2 success")
+            return True
+        except RuntimeError as e:
+            print("resize 2 failed")
+            throw(backup, e)
 
     def _check_tensor(self, tensor: Tensor) -> Tuple[Tensor, int]:
         """
@@ -164,15 +186,9 @@ class LocalModel:
         # If we've got an extra dimension (and if the other dimensions match our
         # original shape), we'll try to load the input tensor as a batch:
         if rank == self.def_rank + 1 and shape[1:] == self.def_shape:
-            # First try native batches:
-            try:
-                self._resize(shape)
-            except ValueError:
-                # If that didn't work, try manual batches and if those don't
-                # work, bail:
-                self._resize(shape[1:], bail=True)
-
-                # If that worked, adjust the parameters:
+            # Try native batches and manual batches as a backup:
+            if self._resize(shape, shape[1:]):
+                # If we're going with manual batches:
                 manual_batch_size = shape[0]
 
         # If we've got the same number of dimensions but a different number of
@@ -180,20 +196,15 @@ class LocalModel:
         # we'll also try to use the input tensor as a batch:
         elif (rank == self.def_rank and shape[1:] == self.def_shape[1:] and
             shape[0] != self.def_shape[0] and self.def_shape[0] == 1):
-            # First try native batches:
-            try:
-                self._resize(shape)
-            except ValueError:
-                # If that didn't work, try manual batches:
-                self._resize(self.def_shape, bail=True)
-
-                # If that worked, adjust:
+            # Native batches or manual batches if that doesn't work:
+            if self._resize(shape, self.def_shape):
+                # If manual batches:
                 manual_batch_size = shape[0]
                 tensor = np.reshape(tensor, [shape[0]] + self.def_shape)
 
         # If the input tensor matches the shape we're looking for, use it as is:
         elif shape == self.def_shape:
-            self._resize(shape, bail=True)
+            self._resize(shape)
 
         # Otherwise, we can't use the input tensor:
         else:
@@ -260,7 +271,7 @@ class LocalModel:
         try:
             return self._run_batch(tensor, manual_batch_size)
         except Exception as e:
-            raise Exception(f"Encountered an error while trying to run inference: {e}.")
+            raise Exception(f"Encountered an error while trying to run inference: `{e}`.")
 
 class ModelStore:
     def __init__(self):

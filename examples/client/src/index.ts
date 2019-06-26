@@ -1,14 +1,23 @@
 import { inference } from "../build/messages";
 import { Tensor as TfJsTensor, tensor } from "@tensorflow/tfjs";
 import { fetch } from 'cross-fetch';
-
-import { chunk, invert, flatMap } from "lodash-es";
+import { chunk, invert, flatMap } from "lodash";
 
 import PbTensor = inference.Tensor;
 import Req = inference.InferenceRequest;
 import Resp = inference.InferenceResponse;
 import Handle = inference.ModelHandle;
+import PbError = inference.Error;
 // import Metrics = inference.Metrics; // TODO
+
+function print_error(err: PbError): string {
+  return `Kind: ${err.kind}, Message: ${err.message}`
+}
+
+@Override
+PbError.toString = function(): string {
+  return print_error(this);
+}
 
 const HOST = "ncore-0"; // TODO: env var
 const PORT = 5000;      // TODO: env var
@@ -319,13 +328,22 @@ export class Model {
     // const output: PbTensor =
     //   unwrap(response.tensor, new PbTensor, "No Tensor in Response!");
 
-
-    if (response.tensor instanceof PbTensor) {
+    if (response.response === "tensor" && response.tensor instanceof PbTensor) {
+      console.log(`Took ${response.metrics.time_to_execute} ms.`);
       return pb_to_tfjs_tensor(response.tensor);
+    } else if (response.response === "error" && response.error instanceof PbError) {
+      throw Error(`Got an error: '${print_error(response.error)}'`)
     } else {
-      console.log(response);
-      throw Error("No Tensor in Response!");
+      throw Error(`Invalid Response; expected tensor or error, got '${response.response}'`);
     }
+
+
+    // if (response.tensor instanceof PbTensor) {
+
+    // } else {
+    //   console.log(response);
+    //   throw Error("No Tensor in Response!");
+    // }
 
     // const output: PbTensor =
     //   response.tensor instanceof PbTensor ? response.tensor : (throw Error("No Tensor in Response!"))
@@ -335,4 +353,3 @@ export class Model {
 }
 
 export const MnistModel = Model.MnistModel;
-

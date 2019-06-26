@@ -101,3 +101,6 @@ models/
 
 # Rollup Plugin TypeScript 2
 .rpt2_cache/
+
+# Microbundler
+.rts2_cache*/

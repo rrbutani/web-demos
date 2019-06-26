@@ -1,4 +1,5 @@
 import time
+import os
 from typing import List, Tuple, Union, Optional
 
 import numpy as np
@@ -8,7 +9,7 @@ from server.types.metrics import Metrics
 
 print(f"TF Version: {tf.__version__}")
 # tf.enable_eager_execution() # TODO
-# tf.logging.set_verbosity(tf.logging.DEBUG) # TODO
+# tf.logging.set_verbosity(tf.logging.DEBUG) # TODO (on debug)
 
 Interpreter = tf.lite.Interpreter
 
@@ -16,132 +17,213 @@ Error = str
 Tensor = np.ndarray
 Handle = int
 
+class ModelRegisterError(Exception):
+    ...
+
+class ModelLoadError(Exception):
+    ...
+
+class InvalidHandleError(Exception):
+    ...
+
+class TensorTypeError(Exception):
+    ...
+
+# Can't raise exceptions in lambdas!
+def raise_err(err):
+    raise err
+
+# TODO: spin off into an error module/file/thing
+def equal_or_error(expected, actual, msg, ex):
+    if expected != actual:
+        raise ex(f"{msg}; Expected: `{expected}`, Got: `{actual}`")
 
 class LocalModel:
-    def __init__(self, model: str):
+    def __init__(self, model: Optional[str] = None, path: Optional[str] = None):
+        """
+        :raises ModelRegisterError: When given obviously incorrect models.
+        """
         assert model is not None
 
         # String with the model's contents; used to set model_content in the
-        # TFLite Interpreter's constructor hopefully.
-        self.model: str = model
+        # TFLite Interpreter's constructor.
+        self.model: Optional[str] = model
+
+        # Path for models that exist on disk. Models specified by path will be
+        # loaded if self.model isn't set.
+        self.path: Optional[str] = path
+
+        from_str, from_file = self.model is not None, self.path is not None
+
+        # Validate the options we were passed:
+        {   # (this is supposed to be a switch case, I'm sorry)
+            (True, True):   self._check_str_model,
+            (True, False):  self._check_str_model,
+            (False, True):  self._check_file_model,
+            (False, False): lambda: raise_err(ModelRegisterError("No Model specified!"))
+        }[(from_str, from_file)]()
 
         self.interp: Optional[Interpreter] = None
-        self.default_input_shape: Optional[List[int]] = None
-        self.default_output_shape: Optional[List[int]] = None
+        self.def_shape: Optional[List[int]] = None
+        self.def_rank: Optional[int] = None
 
-    def predict(self, tensor: Tensor) -> Tuple[Tuple[Tensor, Metrics], Error]:
-        assert self.model is not None
+    def _check_str_model(self):
+        """
+        :raises ModelRegisterError: On empty string models.
+        """
+        if self.model == "":
+            raise ModelRegisterError("Provided model was empty.")
 
+    def _check_file_model(self):
+        """
+        :raises ModelRegisterError: On obviously incorrect/invalid file models.
+        """
+        if not os.path.exists(self.path):
+            raise ModelRegisterError("Specified model path doesn't exist.")
+        if not os.path.isfile(self.path):
+            raise ModelRegisterError("Specified model path isn't a file.")
+        if not os.path.splitext(self.path)[1] == ".tflite":
+            raise ModelRegisterError("Specified file doesn't seem to be a TFLite model.")
+
+    def _prepare_interpreter(self):
+        """
+        :raises ModelLoadError: When the given model cannot be loaded.
+        """
+        # If we have yet to create an interpreter for this model..
         if self.interp is None:
-            # Try to load the model:
+            # ..do so:
             try:
-                self.interp = Interpreter(model_content=self.model)
-                self.interp.allocate_tensors()
+                # From a string, if we've got it:
+                if self.model is not None:
+                    self.interp = Interpreter(model_content=self.model)
+                # If not, try a file if we've got one:
+                elif self.path is not None:
+                    self.interp = Interpreter(model_path=self.path)
+                # Failing that, bail:
+                else:
+                    raise ModelLoadError("Internal Error! Got a model without a path or"
+                                         " data (this isn't supposed to be possible).")
             except ValueError as e:
-                return (None, 0), f"{e}"
+                raise ModelLoadError(f"Failed to load the model. Got: `{e}`."
+                                     f"(model = `{self.model}`, path = `{self.path}`)")
+
+            # Finally, some more initialization:
+            self.def_shape = tuple(self.interp.get_input_details()[0]["shape"])
+            self.def_rank  = len(self.def_shape)
+
+            # TODO: on debug
+            print("Loaded new model.")
+
+    def _resize(self, shape: List[int], bail=False):
+        """
+        :raises ValueError: When the interpreter is unable to resize the tensors.
+        :raises TensorTypeError: On error when bail is set to True.
+        """
+        assert self.interp is not None
 
         input_details = self.interp.get_input_details()[0]
-        input_idx = input_details["index"]
+        current_shape = input_details["shape"]
 
-        output_details = self.interp.get_output_details()[0]
-        output_idx = output_details["index"]
+        # If we need to resize the input tensor..
+        if shape != current_shape:
+            # ..try to do so:
+            try:
+                # TODO: debug print only
+                print("Attempting to resize `{current_shape}` to `{shape}`..")
+                self.interp.resize_tensor_input(input_details["index"], shape)
+                self.interp.allocate_tensors()
+                print("Success!")
+            except ValueError as e:
+                if bail:
+                    raise TensorTypeError("Unable to resize the model's input tensor to"
+                                         f" match the given tensor. Attempted `{shape}`"
+                                          " last and got `{e}`.")
+                else:
+                    raise e;
 
-        if tensor is None:
-            return (None, 0), "Tensor was empty."
+    def _check_tensor(self, tensor: Tensor) -> Tuple[Tensor, int]:
+        """
+        :raises TensorTypeError: When the given tensor cannot be used.
+        """
+        assert self.interp is not None
 
-        # Type check input:
-        expected = input_details["dtype"]
-        actual = tensor.dtype
+        input_details = self.interp.get_input_details()[0]
 
-        if expected != actual:
-            return (
-                (None, 0),
-                f"Tensor Type Mismatch:: Expected: {expected}, Got: {actual}",
-            )
+        # Check the tensor's data type:
+        equal_or_error(input_details["dtype"], tensor.dtype, "Data types don't match",
+            TensorTypeError)
 
-        # Shape check input:
+        # And its shape:
 
         # Shape checking isn't as straightforward as data type checking, because
         # the input tensor's shape will differ if it's a batch.
-        expected = tuple(input_details["shape"])
-        actual = tensor.shape
-        manual_batch_size = 1
 
-        # This means that if the input isn't the shape the interpreter is
-        # currently configured for, it isn't necessarily an error.
-        if expected != actual:
-            def_shape = self.default_input_shape
-            def_rank  = len(def_shape)
+        manual_batch_size = 0
+        shape, rank = tensor.shape, len(tensor.shape)
 
-            # If the input matches the default shape for this model, we should
-            # resize the interpreter's input tensor:
-            if actual == def_shape:
-                # Reset back to normal:
-                self.interp.resize_tensor_input(input_idx, def_shape)
-                self.interp.allocate_tensors()
+        # If we've got an extra dimension (and if the other dimensions match our
+        # original shape), we'll try to load the input tensor as a batch:
+        if rank == self.def_rank + 1 and shape[1:] == self.def_shape:
+            # First try native batches:
+            try:
+                self._resize(shape)
+            except ValueError:
+                # If that didn't work, try manual batches and if those don't
+                # work, bail:
+                self._resize(shape[1:], bail=True)
 
-                # Wrap the tensor up so we can treat it like a batch of 1
-                tensor = [tensor]
+                # If that worked, adjust the parameters:
+                manual_batch_size = shape[0]
 
-            # If the input has an extra dimension and if its other dimensions
-            # match what we expect, we've got a batch on our hands!
-            elif len(actual) == def_rank + 1 and np.all(actual[-orig_len:] == def_shape):
+        # If we've got the same number of dimensions but a different number of
+        # the first dimension _and_ the first dimension is expected to be 1,
+        # we'll also try to use the input tensor as a batch:
+        elif (rank == self.def_rank and shape[1:] == self.def_shape[1:] and
+            shape[0] != self.def_shape[0] and self.def_shape[0] == 1):
+            # First try native batches:
+            try:
+                self._resize(shape)
+            except ValueError:
+                # If that didn't work, try manual batches:
+                self._resize(self.def_shape, bail=True)
 
-                # First, we'll try to see if we can resize the interpreter's
-                # input tensor so that it can take the batch directly. This
-                # works sometimes.
-                try:
-                    self.interp.resize_tensor_input(input_idx, actual)
-                    self.interp.allocate_tensors()
+                # If that worked, adjust:
+                manual_batch_size = shape[0]
+                tensor = np.reshape(tensor, [shape[0]] + self.def_shape)
 
-                    # If it worked, then we're good to go. We don't need to do
-                    # any manual batch manipulation, so again we'll pretend that
-                    # we've got a (big) batch of one:
-                    tensor = [tensor]
-                except ValueError as e:
-                    # But for some models, this doesn't work. For those, we'll
-                    # fall back to running the batch manually.
+        # If the input tensor matches the shape we're looking for, use it as is:
+        elif shape == self.def_shape:
+            self._resize(shape, bail=True)
 
-                    self.interp.resize_tensor_input(input_idx, def_shape)
-                    self.interp.allocate_tensors()
-
-                    manual_batch_size = actual[0]
-
-                    print(f"Got an error ({e}) while trying to resize for a batch "
-                          f"({expected} to {actual}). Switching to manual batch mode.")
-
-            # If it's not a batch and not the default shape, we can't use this
-            # tensor.
-            else:
-                return (
-                    (None, 0),
-                    f"Tensor Shape Mismatch:: Expected: {expected}, Got: {actual}",
-                )
-
-            self.interp.allocate_tensors()
-            # elif orig_len == orig_len
+        # Otherwise, we can't use the input tensor:
         else:
+            shapes = [self.def_shape, ['X'] + self.def_shape]
+            if self.def_shape[0] == 1:
+                exp = (f"`{shapes[0]}`, `{shapes[1]}` (batch), or "
+                       f"`{['X'] + self.def_shape[1:]}` (batch)")
+            else:
+                exp = f"`{shapes[0]}` or `{shapes[1]}` (batch)"
+
+            raise TensorTypeError(f"Tensor Shape Mismatch; Expected {exp}, Got: "
+                                  f"`{shape}`")
+
+        # Finally, if we're not doing manual batching, wrap the tensor in a list
+        # so that we can pretend we're making a batch of size 1:
+        if manual_batch_size == 0:
             tensor = [tensor]
+            manual_batch_size = 1
 
-            # if orig_len <= len(expected) <= orig_len + 1 and actual[-orig_len:] == self.default_input_shape:
-            #     print(f"Resizing input tensor from `{expected}` to `{actual}`..")
-            #     self.interp.resize_tensor_input(input_idx, actual)
-            #     self.interp.allocate_tensors()
-            #     print("success!")
-            # else:
-            #     return (
-            #         (None, 0),
-            #         f"Tensor Shape Mismatch:: Expected: {expected}, Got: {actual}",
-            #     )
+        return tensor, manual_batch_size
 
-        # Now try to run inference:
+    def _run_batch(self, tensor: Tensor, batch_size: int) -> Tuple[Tensor, Metrics]:
+        assert self.interp is not None
 
-        output = None
-        exec_time = 0
+        input_idx = self.interp.get_input_details()[0]["index"]
+        output_idx = self.interp.get_output_details()[0]["index"]
+
+        output, exec_time = None, 0
+
         for i in range(batch_size):
-            # print(f"Part {i}: {tensor[i]}")
-
-            # Shouldn't need to cast the array:
             self.interp.set_tensor(input_idx, tensor[i])
 
             begin = time.clock()
@@ -154,41 +236,64 @@ class LocalModel:
             else:
                 output = np.append(output, output_part, axis=0)
 
-            # output = np.append(output, self.interp.get_tensor(output_idx), axis=0)
-
-        metrics = Metrics().time_to_execute(exec_time * (1000 ** 2))  # in milliseconds
+        metrics = Metrics().time_to_execute(exec_time * (1000 ** 2)) # in milliseconds
             # .trace("") # TODO!!
-        # print(f"final: {output}")
-        return (output, metrics), None
 
-        # # Shouldn't need to cast the array:
-        # self.interp.set_tensor(input_idx, tensor)
+        return output, metrics
 
-        # begin = time.clock()
-        # self.interp.invoke()
-        # exec_time = time.clock() - begin
+    def predict(self, tensor: Optional[Tensor]) -> Tuple[Tensor, Metrics]:
+        """
+        :raises TensorTypeError: When the given tensor doesn't match the model.
+        :raises ModelLoadError: If the given model cannot be loaded.
+        """
 
-        # metrics = Metrics().time_to_execute(exec_time * (1000 ** 2))  # in milliseconds
-        # # .trace("") # TODO!!
+        # Load the model if it's not already loaded:
+        self._prepare_interpreter()
 
-        # return (self.interp.get_tensor(output_idx), metrics), None
+        # Check the input tensor:
+        if tensor is None:
+            raise TensorTypeError("Got an empty Tensor.")
 
+        tensor, manual_batch_size = self._check_tensor(tensor)
+
+        # And finally, try to run inference:
+        try:
+            return self._run_batch(tensor, manual_batch_size)
+        except Exception as e:
+            raise Exception(f"Encountered an error while trying to run inference: {e}.")
 
 class ModelStore:
     def __init__(self):
         self.models: List[LocalModel] = []
 
-    # Is really an infallible operation.
-    def load(self, model: str) -> Tuple[Handle, Error]:
-        m = LocalModel(model)
+        # TODO: remove
+        # For now, let's load mnist-lstm in as model 0:
+        assert 0 == self._load_from_file("models/mnist-lstm.tflite")
+        print("loaded built-in models!!")
 
-        handle = len(self.models)
-        self.models.append(m)
+    def load(self, model: str) -> Handle:
+        """
+        :raises ModelRegisterError: When given an obviously incorrect model.
+        """
+        self.models.append(LocalModel(model=model))
 
-        return handle, None
+        return len(self.models) - 1
 
-    def get(self, handle: Handle) -> Tuple[LocalModel, Error]:
+    def _load_from_file(self, path: str) -> Handle:
+        """
+        :raises ModelRegisterError: When given an obviously incorrect model.
+        """
+        self.models.append(LocalModel(path=path))
+
+        return len(self.models) - 1
+
+    def get(self, handle: Handle) -> LocalModel:
+        """
+        :raises InvalidHandleError: When asked for a handle that doesn't exist.
+        """
         if handle >= len(self.models):
-            return -1, "Invalid Handle"
+            raise InvalidHandleError(f"Handle with id {handle} does not exist."
+                                     f" {len(self.models)} handles are "
+                                      "currently registered.")
 
-        return self.models[handle], None
+        return self.models[handle]

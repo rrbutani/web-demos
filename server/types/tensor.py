@@ -110,10 +110,9 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
 # c) TFJS -> Js-Proto:
 # d) Js-Proto -> TFJS:
 
-# Plan:
+# Plan: (TODO)
 #  1) Python Tensor serialization/deserialization (the two functions above).
 #  2) Add a tests folder + a tests script + a dev dependency for the test framework
-#  3) Add a roundtrip test for serialization/deserialization of TFLite (numpy) Tensors.
 #  4) Test flask-pbj and patch it up to the point where it can deserialize/serialize protobufs (don't care about JSON).
 #     - if this doesn't work, do it manually for now.
 #  5) Figure out how to generate protobufs for JS and how to use the JS protobuf runtime.
@@ -122,6 +121,8 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
 #     - test framework, later
 #     - TS, later
 #  7) TFJS -> Proto, Proto -> TJFS routines (async? idk)
-#  8) Add tests for ^
 #  9) Add an inference endpoint to the server.
 #  10) Cobble together the MNIST demo (or mobilenet, I guess - hardcoded model).
+#
+#  3) Add a roundtrip test for serialization/deserialization of TFLite (numpy) Tensors.
+#  8) Add tests for ^

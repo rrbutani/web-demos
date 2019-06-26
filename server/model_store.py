@@ -10,7 +10,7 @@ from server.debug import dprint, if_debug
 
 dprint(f"TF Version: {tf.__version__}")
 # tf.enable_eager_execution() # TODO
-if_debug(lambda: tf.logging.set_verbosity(tf.logging.DEBUG))
+# if_debug(lambda: tf.logging.set_verbosity(tf.logging.DEBUG)) # TODO
 
 Interpreter = tf.lite.Interpreter
 
@@ -145,23 +145,17 @@ class LocalModel:
 
         # Try the first shape:
         try:
-            print("trying resize 1")
             self._resize_internal(shape)
-            print("resize 1 success")
             return False
         except RuntimeError as e:
-            print("resize 1 failed")
             if backup is None:
                 throw(shape, e)
 
         # Try the second shape:
         try:
-            print("trying resize 2")
             self._resize_internal(backup)
-            print("resize 2 success")
             return True
         except RuntimeError as e:
-            print("resize 2 failed")
             throw(backup, e)
 
     def _check_tensor(self, tensor: Tensor) -> Tuple[Tensor, int]:
@@ -180,7 +174,6 @@ class LocalModel:
 
         # Shape checking isn't as straightforward as data type checking, because
         # the input tensor's shape will differ if it's a batch.
-
         manual_batch_size = 0
         shape, rank = tensor.shape, len(tensor.shape)
 

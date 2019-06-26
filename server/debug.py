@@ -8,3 +8,5 @@ def dprint(*args, **kwargs):
 
 def if_debug(func):
     if _DEBUG: func()
+
+dprint("\n**************************** Debug logging enabled! ****************************\n")

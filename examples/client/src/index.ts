@@ -1,7 +1,7 @@
+import { tensor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
+import { fetch } from "cross-fetch";
+import { chunk, flatMap, invert } from "lodash";
 import { inference } from "../build/messages";
-import { Tensor as TfJsTensor, tensor } from "@tensorflow/tfjs";
-import { fetch } from 'cross-fetch';
-import { chunk, invert, flatMap } from "lodash";
 
 import PbTensor = inference.Tensor;
 import Req = inference.InferenceRequest;
@@ -11,13 +11,13 @@ import PbError = inference.Error;
 import Metrics = inference.Metrics;
 
 function print_error(err: PbError): string {
-  return `Kind: ${err.kind}, Message: ${err.message}`
+  return `Kind: ${err.kind}, Message: ${err.message}`;
 }
 
 PbError.toString = function(): string {
   // @ts-ignore
   return print_error(this);
-}
+};
 
 const HOST = "ncore-0"; // TODO: env var
 const PORT = 5000;      // TODO: env var
@@ -25,10 +25,9 @@ const PORT = 5000;      // TODO: env var
 function exhaust(_: never): never {
   console.log("if you're seeing this something has gone very very wrong...");
 
-  while (true);
+  while (true) { }
 }
 
-// type TfJsDataTypes = keyof DataTypeMap;
 const sample_tfjs = tensor([0]);
 type TfJsDataType = (typeof sample_tfjs.dtype);
 
@@ -40,27 +39,19 @@ type T2PTypeMap = {
   [K in TfJsDataType]: PbDataType
 };
 
-// type Constructs<T> = { create (arr: T): T };
-// type Constructs<T> = new (...args: any[]) => T;
 type Constructs<T> = (properties: T) => T;
-// type ConstructsAlt<F, T> = (properties: Record<F, number[]>) => T;
-
-// // type ArrayClassConstructor<T, I> = typeof T extends I ? Constructable : never;
-// type ArrayClassConstructor<T, I> = ReturnType<T['new']> extends I;
 
 /// Protobuf to array class constructor map
 type Pb2ArrMap = {
   [K in PbDataType]: Constructs<Exclude<PbTensor[K], null> | undefined>
 };
 
-// const thing: ArrayClassConstructor<inference.Tensor.IFloatArray> = inference.Tensor.FloatArray;
-
 const type_map_tfjs2pb: T2PTypeMap = {
-  "float32": "floats",
-  "int32": "ints",
-  "bool": "bools",
-  "complex64": "complex_nums",
-  "string": "strings",
+  float32: "floats",
+  int32: "ints",
+  bool: "bools",
+  complex64: "complex_nums",
+  string: "strings",
 };
 
 // TODO: the interfaces for each kind of array are currently identical because
@@ -96,49 +87,25 @@ const type_map_tfjs2pb: T2PTypeMap = {
 // in JavaScript. The other types are mostly okay, so I'm just going to leave
 // this as is, and we'll be careful not to mix up floats and ints below.
 const type_map_pb_arr: Pb2ArrMap = {
-  "floats": PbTensor.FloatArray.create,
-  "ints": PbTensor.IntArray.create,
-  "bools": PbTensor.BoolArray.create,
-  "complex_nums": PbTensor.ComplexArray.create,
-  "strings": PbTensor.StringArray.create
-}
+  floats: PbTensor.FloatArray.create,
+  ints: PbTensor.IntArray.create,
+  bools: PbTensor.BoolArray.create,
+  complex_nums: PbTensor.ComplexArray.create,
+  strings: PbTensor.StringArray.create,
+};
 
 /// P2T = Protobuf to TFJS
 type P2TTypeMap = {
   [K in PbDataType]: TfJsDataType
 };
 
-// const type_map_pb2tfjs = new Map([...Object.entries(type_map_tfjs2pb)].reverse());
-
 type ValueUnion<T extends Record<PropertyKey, PropertyKey>> = {
   [K in keyof T]: { key: K, value: T[K] }
-}[keyof T]
+}[keyof T];
 
 type Inverted<T extends Record<PropertyKey, PropertyKey>> = {
-  [V in ValueUnion<T>['value']]: Extract<ValueUnion<T>, { value: V }>['key']
-} & { }
-
-// function invert<T extends Record<PropertyKey, PropertyKey>>(map: T): Inverted<T> {
-//   let obj: Record<PropertyKey, PropertyKey> = {};
-
-//   for (const [key, val] of Object.entries(map)) {
-//     obj[val as PropertyKey] = key;
-//   }
-
-//   return obj;
-// }
-
-// declare function invert<
-//     T extends Record<PropertyKey, PropertyKey>
-// >(obj: T): InvertResult<T>;
-
-// type AllValues<T extends Record<PropertyKey, PropertyKey>> = {
-//     [P in keyof T]: { key: P, value: T[P] }
-// }[keyof T]
-// type InvertResult<T extends Record<PropertyKey, PropertyKey>> = {
-//     [P in AllValues<T>['value']]: Extract<AllValues<T>, { value: P }>['key']
-// }
-// declare function invert<T extends Record<PropertyKey, PropertyKey>>(obj: T): Inverted<T>;
+  [V in ValueUnion<T>["value"]]: Extract<ValueUnion<T>, { value: V }>["key"]
+} & {};
 
 function invert_map<T extends Record<PropertyKey, PropertyKey>>(obj: T): Inverted<T> {
   // @ts-ignore
@@ -147,60 +114,9 @@ function invert_map<T extends Record<PropertyKey, PropertyKey>>(obj: T): Inverte
 
 const type_map_pb2tfjs: P2TTypeMap = invert_map(type_map_tfjs2pb);
 
-// function lookup<K, V>(map: { [K]: V }): { [V]: K } {
-
-// }
-
-export function echo(arg : PbTensor) : PbTensor {
-  console.log(arg);
-  console.log("REALLY_LONG_MARKER_STRING_IE_DYE")
-  return new inference.Tensor();
-}
-
-// type Long = number;
-// function convert_shape(shape: (number|Long)[]): number[] {
-//   return shape;
-// }
-
-// async function pb_to_tfjs_tensor(pb_tensor: PbTensor): Promise<TfJsTensor> {
-//   const pb_dtype: PbDataType = pb_tensor.flat_array!; // TODO: handle undefined
-//   const dtype: TfJsDataType  = type_map_pb2tfjs[pb_dtype];
-//   const shape = pb_tensor.dimensions as number[]; // TODO: Long?
-
-//   // See the comment on array in the tfjs_to_pb_tensor function below.
-//   // const array = pb_tensor[pb_dtype]!.array!;
-//   let array: number[];
-
-//   let tfjs_tensor: TfJsTensor;
-
-//   // TODO: handle null/undefined
-//   switch (pb_dtype) {
-//     case "floats":
-//     case "ints":
-//     case "bools":
-//     case "strings":
-//       array = pb_tensor[pb_dtype]!.array!;
-//       // tfjs_tensor = tensor(pb_tensor[pb_dtype]!.array!, shape, dtype);
-//     break;
-
-//     case "complex_nums": // TODO: Check
-//       array = flatMap(pb_tensor[pb_dtype]!.array!,
-//         (c: PbTensor.Complex): number[] =>
-//           [c.real as number, c.imaginary as number]);
-
-//       // tfjs_tensor = tensor(array, shape, dtype);
-//     break;
-
-//     default:
-//       exhaust(pb_dtype);
-//   }
-
-//   return tensor(array, shape, dtype);
-// }
-
 function pb_to_tfjs_tensor(pb_tensor: PbTensor): TfJsTensor {
   const pb_dtype: PbDataType = pb_tensor.flat_array!; // TODO: handle undefined
-  const dtype: TfJsDataType  = type_map_pb2tfjs[pb_dtype];
+  const dtype: TfJsDataType = type_map_pb2tfjs[pb_dtype];
   const shape = pb_tensor.dimensions as number[]; // TODO: Long?
 
   // See the comment on array in the tfjs_to_pb_tensor function below.
@@ -241,30 +157,30 @@ async function tfjs_to_pb_tensor(tensor: TfJsTensor): Promise<PbTensor> {
     case "floats":
     case "ints":
       array = type_map_pb_arr[dtype]({
-        array: Array.from(await tensor.data())
+        array: Array.from(await tensor.data()),
       });
-    break;
+      break;
 
     case "bools":
       array = type_map_pb_arr[dtype]({
-        array: Array.from(await tensor.data()).map((i: number): boolean => !!i)
+        array: Array.from(await tensor.data()).map((i: number): boolean => !!i),
       });
-    break;
+      break;
 
     case "strings":
       array = type_map_pb_arr[dtype]({
-        array: Array.from(await tensor.data<"string">())
+        array: Array.from(await tensor.data<"string">()),
       });
-    break;
+      break;
 
     case "complex_nums":
       array = type_map_pb_arr[dtype]({
         array: chunk(Array.from(await tensor.data<"complex64">()), 2)
           .map(([r, i]: [number, number]): PbTensor.Complex =>
-            PbTensor.Complex.create({ real: r, imaginary: i })
-          )
-      })
-    break;
+            PbTensor.Complex.create({ real: r, imaginary: i }),
+          ),
+      });
+      break;
 
     default:
       exhaust(dtype);
@@ -280,41 +196,30 @@ async function extract(resp: Response): Promise<Uint8Array> {
   return new Uint8Array(await resp.arrayBuffer());
 }
 
-// function unwrap<T extends U, U>(val: U, ty: T, err_msg: string): T {
-//   if (val instanceof (ty as any))
-//     return (val as T);
-//   else
-//     throw Error(err_msg);
-// }
-
-// interface Constructable {
-//   new (...args: any[]): any
-// }
-
 export class Model {
-  handle: Handle;
+
+  public static MnistModel = new Model(new Handle({ id: 0 }));
+  public handle: Handle;
 
   private constructor(handle: Handle) {
     this.handle = handle;
   }
-
-  static MnistModel = new Model(new Handle({ id: 0 }));
 
   // // TODO
   // static load_model(model: urlLike | ByteString): Model {
 
   // }
 
-  async predict(tensor: TfJsTensor): Promise<TfJsTensor> {
+  public async predict(tensor: TfJsTensor): Promise<TfJsTensor> {
     const request: Req = new Req({
       handle: this.handle,
-      tensor: await tfjs_to_pb_tensor(tensor)
+      tensor: await tfjs_to_pb_tensor(tensor),
     });
 
     const raw_response = await fetch(
       `http://${HOST}:${PORT}/api/inference`,
       { method: 'POST'
-        , headers:
+      , headers:
         { 'Accept': 'application/x-protobuf'
         , 'Content-Type': 'application/x-protobuf'
         }
@@ -325,8 +230,6 @@ export class Model {
     const response: Resp = Resp.decode(await extract(raw_response));
 
     // Ignore Metrics for now (TODO).
-    // const output: PbTensor =
-    //   unwrap(response.tensor, new PbTensor, "No Tensor in Response!");
 
     if (response.response === "tensor" && response.tensor instanceof PbTensor) {
       if (response.metrics instanceof Metrics) {
@@ -335,23 +238,10 @@ export class Model {
       }
       return pb_to_tfjs_tensor(response.tensor);
     } else if (response.response === "error" && response.error instanceof PbError) {
-      throw Error(`Got an error: '${print_error(response.error)}'`)
+      throw Error(`Got an error: '${print_error(response.error)}'`);
     } else {
       throw Error(`Invalid Response; expected tensor or error, got '${response.response}'`);
     }
-
-
-    // if (response.tensor instanceof PbTensor) {
-
-    // } else {
-    //   console.log(response);
-    //   throw Error("No Tensor in Response!");
-    // }
-
-    // const output: PbTensor =
-    //   response.tensor instanceof PbTensor ? response.tensor : (throw Error("No Tensor in Response!"))
-
-    // return pb_to_tfjs_tensor(output);
   }
 }
 

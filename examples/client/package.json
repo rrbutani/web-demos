@@ -42,7 +42,7 @@
   , "build": "tsc && cross-env NODE_ENV=production parcel build src/index.ts --no-minify --out-dir ./dist"
   , "watch": "cross-env NODE_ENV=development parcel src/index.ts --out-dir ./dist --open"
   , "lint": "tslint -p . -t stylish"
-  , "format": "tsfmt -r"
+  , "format": "tsfmt -r && tslint -p . -t stylish --fix"
   , "test": "jest"
   }
 , "jest":

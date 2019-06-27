@@ -9,7 +9,7 @@ def into_error(err: Exception) -> Error:
     # TODO: switch case the err types and map to real kinds
     # (which we'll define later, I guess)
 
-    msg = " ".join(re.sub(r'([A-Z])', r' \1', err.__class__.__name__).split())
+    msg = " ".join(re.sub(r"([A-Z])", r" \1", err.__class__.__name__).split())
     msg = f"[{msg}] {err}"
 
     dprint(f"Returning Err: `{msg}`")

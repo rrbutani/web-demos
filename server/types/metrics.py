@@ -18,7 +18,7 @@ class Metrics:
         self._trace = trace
         return self
 
-    def into(self) -> Metrics:
+    def into(self) -> MetricsMessage:
         mm = MetricsMessage()
 
         if self._time_to_execute:

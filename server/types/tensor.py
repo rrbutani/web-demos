@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import mul
-from typing import Callable, Dict, Iterable, Sized, Tuple, TypeVar, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Sized, Tuple, TypeVar
 
 import numpy as np
 from google.protobuf.message import Message
@@ -45,7 +45,9 @@ class MisshapenTensor(ValueError):
 T = TypeVar("T")
 
 
-def _get_oneof_pair(m: Message, field: str, attr: Optional[str] = None) -> Tuple[str, T]:
+def _get_oneof_pair(
+    m: Message, field: str, attr: Optional[str] = None
+) -> Tuple[str, T]:
     try:
         ty = m.WhichOneof(field)
     except TypeError:
@@ -73,6 +75,7 @@ def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
     # numpy takes shape as a tuple of ints:
     shape = tuple(pb.dimensions)
 
+    arr: List[int]
     dtype, arr = _get_oneof_pair(pb, "flat_array", "array")
     dtype = type_map_pb2numpy[dtype]
 

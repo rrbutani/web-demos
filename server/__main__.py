@@ -76,11 +76,11 @@ def run_inference() -> InferenceResponse:  # TODO: type sig
         tensor, metrics = handle.predict(tensor)
 
         return InferenceResponse(
-            tensor=tflite_tensor_to_pb(tensor),
-            metrics=metrics.into()
+            tensor=tflite_tensor_to_pb(tensor), metrics=metrics.into()
         )
     except Exception as e:
         return InferenceResponse(error=into_error(e))
+
 
 if __name__ == "__main__":
     app.run(host=HOST, port=PORT, debug=_DEBUG)

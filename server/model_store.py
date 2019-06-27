@@ -18,26 +18,33 @@ Error = str
 Tensor = np.ndarray
 Handle = int
 
+
 class ModelRegisterError(Exception):
     ...
+
 
 class ModelLoadError(Exception):
     ...
 
+
 class InvalidHandleError(Exception):
     ...
 
+
 class TensorTypeError(Exception):
     ...
+
 
 # Can't raise exceptions in lambdas!
 def raise_err(err):
     raise err
 
+
 # TODO: spin off into an error module/file/thing
 def equal_or_error(expected, actual, msg, ex):
     if expected != actual:
         raise ex(f"{msg}; Expected: `{expected}`, Got: `{actual}`")
+
 
 class LocalModel:
     def __init__(self, model: Optional[str] = None, path: Optional[str] = None):
@@ -55,11 +62,13 @@ class LocalModel:
         from_str, from_file = self.model is not None, self.path is not None
 
         # Validate the options we were passed:
-        {   # (this is supposed to be a switch case, I'm sorry)
-            (True, True):   self._check_str_model,
-            (True, False):  self._check_str_model,
-            (False, True):  self._check_file_model,
-            (False, False): lambda: raise_err(ModelRegisterError("No Model specified!"))
+        {  # (this is supposed to be a switch case, I'm sorry)
+            (True, True): self._check_str_model,
+            (True, False): self._check_str_model,
+            (False, True): self._check_file_model,
+            (False, False): lambda: raise_err(
+                ModelRegisterError("No Model specified!")
+            ),
         }[(from_str, from_file)]()
 
         self.interp: Optional[Interpreter] = None
@@ -82,7 +91,9 @@ class LocalModel:
         if not os.path.isfile(self.path):
             raise ModelRegisterError("Specified model path isn't a file.")
         if not os.path.splitext(self.path)[1] == ".tflite":
-            raise ModelRegisterError("Specified file doesn't seem to be a TFLite model.")
+            raise ModelRegisterError(
+                "Specified file doesn't seem to be a TFLite model."
+            )
 
     def _prepare_interpreter(self):
         """
@@ -100,15 +111,19 @@ class LocalModel:
                     self.interp = Interpreter(model_path=self.path)
                 # Failing that, bail:
                 else:
-                    raise ModelLoadError("Internal Error! Got a model without a path or"
-                                         " data (this isn't supposed to be possible).")
+                    raise ModelLoadError(
+                        "Internal Error! Got a model without a path or"
+                        " data (this isn't supposed to be possible)."
+                    )
             except RuntimeError as e:
-                raise ModelLoadError(f"Failed to load the model. Got: `{e}`."
-                                     f"(model = `{self.model}`, path = `{self.path}`)")
+                raise ModelLoadError(
+                    f"Failed to load the model. Got: `{e}`."
+                    f"(model = `{self.model}`, path = `{self.path}`)"
+                )
 
             # Finally, some more initialization:
             self.def_shape = tuple(self.interp.get_input_details()[0]["shape"])
-            self.def_rank  = len(self.def_shape)
+            self.def_rank = len(self.def_shape)
 
             dprint("Loaded new model.")
 
@@ -122,14 +137,15 @@ class LocalModel:
         current_shape = tuple(input_details["shape"])
         input_index = input_details["index"]
 
-        if current_shape == shape: return
+        if current_shape == shape:
+            return
 
         dprint(f"Attempting to resize `{current_shape}` to `{shape}`..")
         self.interp.resize_tensor_input(input_index, shape)
         self.interp.allocate_tensors()
         dprint("Success!")
 
-    def _resize(self, shape: Tuple[int], backup: Optional[Tuple[int]]=None) -> bool:
+    def _resize(self, shape: Tuple[int], backup: Optional[Tuple[int]] = None) -> bool:
         """
         :raises RuntimeError: When the interpreter is unable to resize the tensors.
         :raises TensorTypeError: On error when bail is set to True.
@@ -139,9 +155,11 @@ class LocalModel:
         assert self.interp is not None
 
         def throw(shape, e):
-            raise TensorTypeError("Unable to resize the model's input tensor to"
-                                 f" match the given tensor. Attempted `{shape}`"
-                                 f" last and got `{e}`.")
+            raise TensorTypeError(
+                "Unable to resize the model's input tensor to"
+                f" match the given tensor. Attempted `{shape}`"
+                f" last and got `{e}`."
+            )
 
         # Try the first shape:
         try:
@@ -167,8 +185,12 @@ class LocalModel:
         input_details = self.interp.get_input_details()[0]
 
         # Check the tensor's data type:
-        equal_or_error(input_details["dtype"], tensor.dtype, "Data types don't match",
-            TensorTypeError)
+        equal_or_error(
+            input_details["dtype"],
+            tensor.dtype,
+            "Data types don't match",
+            TensorTypeError,
+        )
 
         # And its shape:
 
@@ -188,8 +210,12 @@ class LocalModel:
         # If we've got the same number of dimensions but a different number of
         # the first dimension _and_ the first dimension is expected to be 1,
         # we'll also try to use the input tensor as a batch:
-        elif (rank == self.def_rank and shape[1:] == self.def_shape[1:] and
-            shape[0] != self.def_shape[0] and self.def_shape[0] == 1):
+        elif (
+            rank == self.def_rank
+            and shape[1:] == self.def_shape[1:]
+            and shape[0] != self.def_shape[0]
+            and self.def_shape[0] == 1
+        ):
             # Native batches or manual batches if that doesn't work:
             if self._resize(shape, self.def_shape):
                 # If manual batches:
@@ -202,15 +228,18 @@ class LocalModel:
 
         # Otherwise, we can't use the input tensor:
         else:
-            shapes = [self.def_shape, ['X'] + self.def_shape]
+            shapes = [self.def_shape, ["X"] + self.def_shape]
             if self.def_shape[0] == 1:
-                exp = (f"`{shapes[0]}`, `{shapes[1]}` (batch), or "
-                       f"`{['X'] + self.def_shape[1:]}` (batch)")
+                exp = (
+                    f"`{shapes[0]}`, `{shapes[1]}` (batch), or "
+                    f"`{['X'] + self.def_shape[1:]}` (batch)"
+                )
             else:
                 exp = f"`{shapes[0]}` or `{shapes[1]}` (batch)"
 
-            raise TensorTypeError(f"Tensor Shape Mismatch; Expected {exp}, Got: "
-                                  f"`{shape}`")
+            raise TensorTypeError(
+                f"Tensor Shape Mismatch; Expected {exp}, Got: " f"`{shape}`"
+            )
 
         # Finally, if we're not doing manual batching, wrap the tensor in a list
         # so that we can pretend we're making a batch of size 1:
@@ -244,8 +273,8 @@ class LocalModel:
             else:
                 output = np.append(output, output_part, axis=0)
 
-        metrics = Metrics().time_to_execute(exec_time * (10 ** 6)) # in microseconds
-            # .trace("") # TODO!!
+        metrics = Metrics().time_to_execute(exec_time * (10 ** 6))  # in microseconds
+        # .trace("") # TODO!!
 
         return output, metrics
 
@@ -268,7 +297,10 @@ class LocalModel:
         try:
             return self._run_batch(tensor, manual_batch_size)
         except Exception as e:
-            raise Exception(f"Encountered an error while trying to run inference: `{e}`.")
+            raise Exception(
+                f"Encountered an error while trying to run inference: `{e}`."
+            )
+
 
 class ModelStore:
     def __init__(self):
@@ -300,8 +332,10 @@ class ModelStore:
         :raises InvalidHandleError: When asked for a handle that doesn't exist.
         """
         if handle >= len(self.models):
-            raise InvalidHandleError(f"Handle with id {handle} does not exist."
-                                     f" {len(self.models)} handles are "
-                                      "currently registered.")
+            raise InvalidHandleError(
+                f"Handle with id {handle} does not exist."
+                f" {len(self.models)} handles are "
+                "currently registered."
+            )
 
         return self.models[handle]

@@ -199,6 +199,7 @@ async function extract(resp: Response): Promise<Uint8Array> {
 export class Model {
 
   public static MnistModel = new Model(new Handle({ id: 0 }));
+  public static MobileNetFloatModel = new Model(new Handle({ id: 1 }));
   public handle: Handle;
 
   private constructor(handle: Handle) {
@@ -246,3 +247,4 @@ export class Model {
 }
 
 export const MnistModel = Model.MnistModel;
+export const MobileNetFloatModel = Model.MobileNetFloatModel;

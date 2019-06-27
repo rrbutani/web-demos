@@ -244,7 +244,7 @@ class LocalModel:
             else:
                 output = np.append(output, output_part, axis=0)
 
-        metrics = Metrics().time_to_execute(exec_time * (1000 ** 2)) # in milliseconds
+        metrics = Metrics().time_to_execute(exec_time * (10 ** 6)) # in microseconds
             # .trace("") # TODO!!
 
         return output, metrics

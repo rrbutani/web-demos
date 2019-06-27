@@ -330,7 +330,7 @@ export class Model {
 
     if (response.response === "tensor" && response.tensor instanceof PbTensor) {
       if (response.metrics instanceof Metrics) {
-        console.log(`Took ${response.metrics.time_to_execute} ms.`);
+        console.log(`Took ${response.metrics.time_to_execute} μs.`);
         // TODO: trace
       }
       return pb_to_tfjs_tensor(response.tensor);

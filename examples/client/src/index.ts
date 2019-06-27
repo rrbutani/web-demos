@@ -8,14 +8,14 @@ import Req = inference.InferenceRequest;
 import Resp = inference.InferenceResponse;
 import Handle = inference.ModelHandle;
 import PbError = inference.Error;
-// import Metrics = inference.Metrics; // TODO
+import Metrics = inference.Metrics;
 
 function print_error(err: PbError): string {
   return `Kind: ${err.kind}, Message: ${err.message}`
 }
 
-@Override
 PbError.toString = function(): string {
+  // @ts-ignore
   return print_error(this);
 }
 
@@ -329,7 +329,10 @@ export class Model {
     //   unwrap(response.tensor, new PbTensor, "No Tensor in Response!");
 
     if (response.response === "tensor" && response.tensor instanceof PbTensor) {
-      console.log(`Took ${response.metrics.time_to_execute} ms.`);
+      if (response.metrics instanceof Metrics) {
+        console.log(`Took ${response.metrics.time_to_execute} ms.`);
+        // TODO: trace
+      }
       return pb_to_tfjs_tensor(response.tensor);
     } else if (response.response === "error" && response.error instanceof PbError) {
       throw Error(`Got an error: '${print_error(response.error)}'`)

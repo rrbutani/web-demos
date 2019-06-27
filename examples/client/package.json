@@ -16,11 +16,11 @@
 , "files":
   [ "dist" ]
 , "peer-dependencies":
-  { "@tensorflow/tfjs": "~1.2.1" }
+  { "@tensorflow/tfjs": "~1.2.2" }
 , "dependencies":
   { "protobufjs": "~6.8.8"
   , "lodash": "~4.17.11"
-  , "@tensorflow/tfjs": "~1.2.1"
+  , "@tensorflow/tfjs": "~1.2.2"
   , "cross-fetch": "~3.0.4"
   }
 , "devDependencies":

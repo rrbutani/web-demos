@@ -87,12 +87,12 @@ class LocalModel:
         :raises ModelRegisterError: On obviously incorrect/invalid file models.
         """
         if not os.path.exists(self.path):
-            raise ModelRegisterError("Specified model path doesn't exist.")
+            raise ModelRegisterError(f"Model path ({self.path}) doesn't exist.")
         if not os.path.isfile(self.path):
-            raise ModelRegisterError("Specified model path isn't a file.")
+            raise ModelRegisterError(f"Model path ({self.path}) isn't a file.")
         if not os.path.splitext(self.path)[1] == ".tflite":
             raise ModelRegisterError(
-                "Specified file doesn't seem to be a TFLite model."
+                f"File ({self.path}) doesn't seem to be a TFLite model."
             )
 
     def _prepare_interpreter(self):
@@ -124,6 +124,8 @@ class LocalModel:
             # Finally, some more initialization:
             self.def_shape = tuple(self.interp.get_input_details()[0]["shape"])
             self.def_rank = len(self.def_shape)
+
+            self.interp.allocate_tensors()
 
             dprint("Loaded new model.")
 
@@ -222,23 +224,31 @@ class LocalModel:
                 manual_batch_size = shape[0]
                 tensor = np.reshape(tensor, [shape[0]] + self.def_shape)
 
+        # If our model is expecting a batch of one, but the input tensor is
+        # singular, wrap the input tensor to make it a batch of one:
+        elif rank == self.def_rank - 1 and self.def_shape[0] == 1 and shape == self.def_shape[1:]:
+            self._resize(self.def_shape)
+            tensor = np.reshape(tensor, self.def_shape)
+
         # If the input tensor matches the shape we're looking for, use it as is:
         elif shape == self.def_shape:
             self._resize(shape)
 
         # Otherwise, we can't use the input tensor:
         else:
-            shapes = [self.def_shape, ["X"] + self.def_shape]
-            if self.def_shape[0] == 1:
+            def_shape = list(self.def_shape)
+            shapes = [def_shape, ["X"] + def_shape]
+            if def_shape[0] == 1:
                 exp = (
-                    f"`{shapes[0]}`, `{shapes[1]}` (batch), or "
-                    f"`{['X'] + self.def_shape[1:]}` (batch)"
+                    f"`{shapes[0]}`, `{shapes[1]}` (batch), "
+                    f"`{['X'] + def_shape[1:]}` (batch), or "
+                    f"`{def_shape[1:]}` (singular)"
                 )
             else:
                 exp = f"`{shapes[0]}` or `{shapes[1]}` (batch)"
 
             raise TensorTypeError(
-                f"Tensor Shape Mismatch; Expected {exp}, Got: " f"`{shape}`"
+                f"Tensor Shape Mismatch; Expected {exp}, Got: " f"`{list(shape)}`"
             )
 
         # Finally, if we're not doing manual batching, wrap the tensor in a list

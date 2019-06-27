@@ -14,7 +14,7 @@
  * limitations under the License.
  * =============================================================================
  */
-
+import * as client from 'web-demos-client';
 import * as tf from '@tensorflow/tfjs';
 
 // This is a helper class for loading and managing MNIST data specifically.
@@ -229,8 +229,9 @@ async function showPredictions(model) {
   // Code wrapped in a tf.tidy() function callback will have their tensors freed
   // from GPU memory after execution without having to call dispose().
   // The tf.tidy callback runs synchronously.
-  tf.tidy(() => {
-    const output = model.predict(examples.xs);
+  {
+    let output = await client.MnistModel
+      .predict(examples.xs.reshape([testExamples, 1, 28, 28]));
 
     // tf.argMax() returns the indices of the maximum values in the tensor along
     // a specific axis. Categorical classification tasks like this one often
@@ -249,7 +250,8 @@ async function showPredictions(model) {
     const predictions = Array.from(output.argMax(axis).dataSync());
 
     ui.showTestResults(examples, predictions, labels);
-  });
+    output.dispose();
+  };
 }
 
 function createModel() {

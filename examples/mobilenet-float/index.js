@@ -15,6 +15,7 @@
  * =============================================================================
  */
 
+import * as client from 'web-demos-client';
 import * as tf from '@tensorflow/tfjs';
 
 import {IMAGENET_CLASSES} from './imagenet_classes';
@@ -67,7 +68,7 @@ async function predict(imgElement) {
   // The second start time excludes the extraction and preprocessing and
   // includes only the predict() call.
   let startTime2;
-  const logits = tf.tidy(() => {
+  const logits = await (async () => {
     // tf.browser.fromPixels() returns a Tensor from an image element.
     const img = tf.browser.fromPixels(imgElement).toFloat();
 
@@ -76,12 +77,17 @@ async function predict(imgElement) {
     const normalized = img.sub(offset).div(offset);
 
     // Reshape to a single-element batch so we can pass it to predict.
-    const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
+    // const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]);
 
     startTime2 = performance.now();
     // Make a prediction through mobilenet.
-    return mobilenet.predict(batched);
-  });
+    const result = await client.MobileNetFloatModel.predict(normalized);
+
+    img.dispose();
+    normalized.dispose();
+
+    return result;
+  })();
 
   // Convert logits to probabilities and class names.
   const classes = await getTopKClasses(logits, TOPK_PREDICTIONS);
@@ -120,7 +126,7 @@ export async function getTopKClasses(logits, topK) {
   const topClassesAndProbs = [];
   for (let i = 0; i < topkIndices.length; i++) {
     topClassesAndProbs.push({
-      className: IMAGENET_CLASSES[topkIndices[i]],
+      className: IMAGENET_CLASSES[topkIndices[i] - 1],
       probability: topkValues[i]
     })
   }

@@ -2,6 +2,7 @@
 
 from os import listdir
 from os.path import dirname, exists, isdir, isfile, join
+from string import capwords
 from typing import Union
 
 from flask import Flask, request, render_template, send_from_directory
@@ -44,11 +45,18 @@ app = Flask(
 )
 model_store = ModelStore()
 
+# snake_case/kebab-case to Title Case
+def name_to_title(name: str):
+    return " ".join(
+        [capwords(word) for word in name.replace("_", " ").replace("-", " ").split()]
+    )
 
+
+@app.route("/")
 @app.route("/ex/")
 def example_index_page() -> str:
     examples = [
-        (f"ex/{ex}", ex)
+        (ex, name_to_title(ex))
         for ex in listdir(EX_DIR)
         if isdir(join(EX_DIR, ex)) and isfile(join(EX_DIR, ex, "dist", "index.html"))
     ]

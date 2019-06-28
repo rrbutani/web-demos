@@ -6,7 +6,7 @@
 
 # $*: Message files to build
 build_messages_for_server() {
-    mkdir -p "${PROTOC_DST_DIR}"/{js,python}
+    mkdir -p "${PROTOC_DST_DIR}"/{python}
 
     echo -e '\e[1;37m'"Building ${@} (for the server)..."'\e[0m'
 

@@ -63,6 +63,7 @@ def example_index_page() -> str:
         for ex in listdir(EX_DIR)
         if isdir(join(EX_DIR, ex)) and isfile(join(EX_DIR, ex, "dist", "index.html"))
     ]
+    examples.sort()
     return render_template("example-index-page.html", examples=examples)
 
 

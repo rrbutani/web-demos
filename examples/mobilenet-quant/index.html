@@ -1,0 +1,101 @@
+<!--
+Copyright 2018 Google LLC. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================
+-->
+
+<!doctype html>
+
+<head>
+  <title>TensorFlow.js: Using a pretrained MobileNet</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../shared/tfjs-examples.css" />
+</head>
+
+<style>
+  .pred-container {
+    margin-bottom: 20px;
+  }
+
+  .pred-container > div {
+    display: inline-block;
+    margin-right: 20px;
+    vertical-align: top;
+  }
+
+  .row {
+    display: table-row;
+  }
+  .cell {
+    display: table-cell;
+    padding-right: 20px;
+  }
+
+  #file-container {
+    margin-bottom: 20px;
+  }
+</style>
+
+<body>
+  <div class="tfjs-example-container">
+    <section class='title-area'>
+      <h1>TensorFlow.js + TensorFlow Lite: Using a pretrained MobileNet</h1>
+    </section>
+
+    <section>
+      <p class='section-head'>Description</p>
+      <p>
+        This demo uses the pretrained floating point Mobilenet_V1_1.0_224_quant model hosted
+        <a href="https://www.tensorflow.org/lite/guide/hosted_models#quantized_models">here</a>.
+      </p>
+      <p>
+        It is not trained to recognize human faces. For best performance, upload images of objects
+        like piano, coffee mugs, bottles, etc. You can see all the objects types it has been trained to recognize in <a
+          href="https://github.com/tensorflow/tfjs-examples/blob/master/mobilenet/imagenet_classes.js">imagenet_classes.js</a>.
+      </p>
+
+      <p>
+        This demo runs using both TensorFlow.js and TensorFlow Lite. Submitted images are converted to tensors on the client side (with TensorFlow.js) and are then serialized and sent to a simple server that deserializes the tensor, runs them through the model mentioned above (TensorFlow Lite), and returns the serialized output tensor. More information <a href="/ex">here</a>.
+      </p>
+
+      <p>
+        There first of the execution times below measures how long the entire prediction process takes, including the time taken to serialize/deserialize the tensors and make requests. The second execution time measures only how long the call to <a href="https://www.tensorflow.org/api_docs/python/tf/lite/Interpreter#invoke">invoke</a> on the server takes.
+      </p>
+
+      <p>
+        For comparison, see the <a href="https://storage.googleapis.com/tfjs-examples/mobilenet/dist/index.html">original version of this demo</a> that runs entirely in the browser. Please note that the original demo used a floating point model (not quantized).
+      </p>
+    </section>
+
+    <section>
+      <p class='section-head'>Status</p>
+      <div id="status"></div>
+    </section>
+
+    <section>
+      <p class='section-head'>Model Output</p>
+
+      <div id="file-container" style="display: none">
+        Upload an image: <input type="file" id="files" name="files[]" multiple />
+      </div>
+
+      <div id="predictions"></div>
+
+      <img style="display: none" id="cat" src="cat.jpg" width=224 height=224 />
+    </section>
+
+    <script src="index.js"></script>
+  </div>
+</body>

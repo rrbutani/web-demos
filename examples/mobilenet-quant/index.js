@@ -115,7 +115,7 @@ export async function getTopKClasses(logits, topK) {
   const topkValues = new Float32Array(topK);
   const topkIndices = new Int32Array(topK);
   for (let i = 0; i < topK; i++) {
-    topkValues[i] = valuesAndIndices[i].value;
+    topkValues[i] = valuesAndIndices[i].value / 255;
     topkIndices[i] = valuesAndIndices[i].index;
   }
 

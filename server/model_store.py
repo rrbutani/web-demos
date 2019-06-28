@@ -226,7 +226,11 @@ class LocalModel:
 
         # If our model is expecting a batch of one, but the input tensor is
         # singular, wrap the input tensor to make it a batch of one:
-        elif rank == self.def_rank - 1 and self.def_shape[0] == 1 and shape == self.def_shape[1:]:
+        elif (
+            rank == self.def_rank - 1
+            and self.def_shape[0] == 1
+            and shape == self.def_shape[1:]
+        ):
             self._resize(self.def_shape)
             tensor = np.reshape(tensor, self.def_shape)
 

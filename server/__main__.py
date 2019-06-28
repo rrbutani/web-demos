@@ -1,11 +1,13 @@
 #!/usr/bin/env python3.7
 
+from os import listdir
+from os.path import dirname, exists, isdir, isfile, join
 from typing import Union
 
+from flask import Flask, request, render_template, send_from_directory
+from flask_pbj import api, json, protobuf
 import tensorflow as tf
 import tensorflowjs
-from flask import Flask, request, send_from_directory
-from flask_pbj import api, json, protobuf
 
 from server.model_store import ModelStore
 from server.types import (
@@ -24,16 +26,33 @@ from server.types.model import (
     into_handle,
 )
 from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
-from server.debug import dprint, if_debug, _DEBUG
+from server.debug import _DEBUG, dprint, if_debug
 
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
 
 HOST = "0.0.0.0"  # TODO: source from env var
 PORT = 5000  # TODO: source from env var
+EX_DIR = join(dirname(__file__), "..", "examples")
+TEMPLATE_DIR = join(dirname(__file__), "templates")
 
-app = Flask(__name__, static_folder="../examples", static_url_path="/examples/")
+app = Flask(
+    __name__,
+    static_folder=EX_DIR,
+    static_url_path="/examples/",
+    template_folder=TEMPLATE_DIR,
+)
 model_store = ModelStore()
+
+
+@app.route("/ex/")
+def example_index_page() -> str:
+    examples = [
+        (f"ex/{ex}", ex)
+        for ex in listdir(EX_DIR)
+        if isdir(join(EX_DIR, ex)) and isfile(join(EX_DIR, ex, "dist", "index.html"))
+    ]
+    return render_template("example-index-page.html", examples=examples)
 
 
 @app.route("/api/echo/<string:string>")
@@ -44,8 +63,9 @@ def echo(string: str) -> str:
 @app.route("/ex/<string:example_name>/<path:path>")
 @app.route("/ex/<string:example_name>/", defaults={"path": "index.html"})
 def serve_build_file(example_name: str, path: str):
-    dprint(f"Trying: {example_name}/dist/{path}")
-    return send_from_directory("../examples", example_name + "/dist/" + path)
+    p = join(example_name, "dist", path)
+    dprint(f"Trying: {p}")
+    return send_from_directory(EX_DIR, p)
 
 
 @app.route("/api/model", methods=["POST"])

@@ -323,8 +323,10 @@ class ModelStore:
         # TODO: remove
         # For now, let's load mnist-lstm in as model 0:
         assert 0 == self._load_from_file("models/mnist-lstm.tflite")
-        # And mobilenet_float_v1_1.0_244 as model 1:
-        assert 1 == self._load_from_file("models/mobilenet_float_v1_1.0_244.tflite")
+        # And mobilenet_v1_1.0_224_float as model 1:
+        assert 1 == self._load_from_file("models/mobilenet_v1_1.0_224_float.tflite")
+        # And mobilenet_v1_1.0_224_quant as model 2:
+        assert 2 == self._load_from_file("models/mobilenet_v1_1.0_224_quant.tflite")
         dprint("loaded built-in models!!")
 
     def load(self, model: str) -> Handle:

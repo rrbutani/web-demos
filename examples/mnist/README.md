@@ -1,15 +1,7 @@
-# TensorFlow.js Example: Training MNIST
+# Example: Training MNIST
 
-This example shows you how to train MNIST (using the layers API).
+This example is directly borrowed from [here](https://github.com/tensorflow/tfjs-examples/tree/3fe65db5673477c84faf52467b39f99673c86879/mnist).
 
-You can check out the tutorial that accompanies this example [here](https://www.tensorflow.org/js/tutorials/training/handwritten_digit_cnn).
+For comparison, a hosted example of the original is available [here](https://storage.googleapis.com/tfjs-examples/mnist/dist/index.html).
 
-This model will compute accuracy over 1000 random test set examples every 5
-steps, plotting loss and accuracy as the model is training. Training time can
-be reduced by computing accuracy over fewer examples less often.
-
-Note: currently the entire dataset of MNIST images is stored in a PNG image we have
-sprited, and the code in `data.js` is responsible for converting it into
-`Tensor`s. This will become much simpler in the near future.
-
-[See this example live!](https://storage.googleapis.com/tfjs-examples/mnist/dist/index.html)
+The version present in this repo currently runs training in the browser using Tensorflow.js but runs validation (the images shown on the example's page)against a static pre-trained model running in a TensorFlow Lite interpreter running on the server.

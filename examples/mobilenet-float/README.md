@@ -1,12 +1,7 @@
-# TensorFlow.js Example: Mobilenet
+# Example: Mobilenet Float
 
-This example shows you how to load a pretrained mobilenet model.
+This example is directly borrowed from [here](https://github.com/tensorflow/tfjs-examples/tree/3fe65db5673477c84faf52467b39f99673c86879/mobilenet).
 
-The mobilenet used in this example was ported from
-[this](https://github.com/fchollet/deep-learning-models/releases/download/v0.6/mobilenet_2_5_224_tf.h5)
-Keras pretrained mobilenet model and hosted online for your convenience.
+For comparison, a hosted example of the original is available [here](https://storage.googleapis.com/tfjs-examples/mobilenet/dist/index.html).
 
-If you want, you can port your own mobilenet model by using the Keras converter script which
-can be found [here](https://github.com/tensorflow/tfjs-converter).
-
-[See this example live!](https://storage.googleapis.com/tfjs-examples/mobilenet/dist/index.html)
+This example runs against the `Mobilenet_V1_1.0_224` model provided [here](https://www.tensorflow.org/lite/guide/hosted_models#floating_point_models).

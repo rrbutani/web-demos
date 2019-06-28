@@ -98,7 +98,7 @@ async function predict(imgElement) {
   const totalTime1 = performance.now() - startTime1;
   const totalTime2 = (time_to_execute / 1000) + performance.now() - startTime2;
   status(`Done in ${Math.floor(totalTime1)} ms ` +
-      `(not including preprocessing: ${Math.floor(totalTime2)} ms)`);
+      `(not including preprocessing/transit/serialization: ${Math.floor(totalTime2)} ms)`);
 
   // Show the classes in the DOM.
   showResults(imgElement, classes);

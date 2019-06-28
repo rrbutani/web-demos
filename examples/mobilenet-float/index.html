@@ -51,18 +51,31 @@ limitations under the License.
 <body>
   <div class="tfjs-example-container">
     <section class='title-area'>
-      <h1>TensorFlow.js: Using a pretrained MobileNet</h1>
+      <h1>TensorFlow.js + TensorFlow Lite: Using a pretrained MobileNet</h1>
     </section>
 
     <section>
       <p class='section-head'>Description</p>
       <p>
-        This demo uses the pretrained MobileNet_25_224 model from Keras which you can find
-        <a href="https://github.com/fchollet/deep-learning-models/releases/download/v0.6/mobilenet_2_5_224_tf.h5">here</a>.
-
+        This demo uses the pretrained floating point Mobilenet_V1_1.0_224 model hosted
+        <a href="https://www.tensorflow.org/lite/guide/hosted_models#floating_point_models">here</a>.
+      </p>
+      <p>
         It is not trained to recognize human faces. For best performance, upload images of objects
         like piano, coffee mugs, bottles, etc. You can see all the objects types it has been trained to recognize in <a
           href="https://github.com/tensorflow/tfjs-examples/blob/master/mobilenet/imagenet_classes.js">imagenet_classes.js</a>.
+      </p>
+
+      <p>
+        This demo runs using both TensorFlow.js and TensorFlow Lite. Submitted images are converted to tensors on the client side (with TensorFlow.js) and are then serialized and sent to a simple server that deserializes the tensor, runs them through the model mentioned above (TensorFlow Lite), and returns the serialized output tensor. More information <a href="/ex">here</a>.
+      </p>
+
+      <p>
+        There first of the execution times below measures how long the entire prediction process takes, including the time taken to serialize/deserialize the tensors and make requests. The second execution time measures only how long the call to <a href="https://www.tensorflow.org/api_docs/python/tf/lite/Interpreter#invoke">invoke</a> on the server takes.
+      </p>
+
+      <p>
+        For comparison, see the <a href="https://storage.googleapis.com/tfjs-examples/mobilenet/dist/index.html">original version of this demo</a> that runs entirely in the browser.
       </p>
     </section>
 

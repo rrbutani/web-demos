@@ -5,7 +5,7 @@ from os.path import dirname, exists, isdir, isfile, join
 from string import capwords
 from typing import Union
 
-from flask import Flask, request, render_template, send_from_directory
+from flask import Flask, redirect, request, render_template, send_from_directory
 from flask_pbj import api, json, protobuf
 import tensorflow as tf
 import tensorflowjs
@@ -51,8 +51,11 @@ def name_to_title(name: str):
         [capwords(word) for word in name.replace("_", " ").replace("-", " ").split()]
     )
 
+@app.route('/')
+def hello():
+    return redirect("ex", code=302)
 
-@app.route("/")
+
 @app.route("/ex/")
 def example_index_page() -> str:
     examples = [

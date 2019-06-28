@@ -184,11 +184,17 @@ class LocalModel:
         """
         assert self.interp is not None
 
-        input_details = self.interp.get_input_details()[0]
+        dtype = self.interp.get_input_details()[0]["dtype"]
+
+        # Handle data types that aren't representable on the TFJS side:
+        if ((dtype == np.uint8 or dtype == np.int8 or dtype == np.int16 or dtype == np.int64)
+                and tensor.dtype == np.int32):
+            dprint(f"Warning: Casting tensor elements from {tensor.dtype} to {dtype}!")
+            tensor = tensor.astype(dtype)
 
         # Check the tensor's data type:
         equal_or_error(
-            input_details["dtype"],
+            dtype,
             tensor.dtype,
             "Data types don't match",
             TensorTypeError,

@@ -24,11 +24,19 @@ type_map_pb2numpy: Dict[str, np.generic] = {
 type_map_numpy2pb: Dict[str, Tuple[str, Callable]] = {
     "f": ("floats", Tensor.FloatArray),
     "i": ("ints", Tensor.IntArray),
-    "b": ("bools", Tensor.BoolArray),
+    "?": ("bools", Tensor.BoolArray),
     "c": ("complex_nums", Tensor.ComplexArray),
     "S": ("strings", Tensor.StringArray),
+    # We also have data types that we can't represent in the TFJS world that
+    # we'll map as best as we can:
+    # List of data type kinds: docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
+    "u": ("ints", Tensor.IntArray), # uint8 -> int32
+    "b": ("ints", Tensor.IntArray), # signed byte -> int32
+    "B": ("ints", Tensor.IntArray), # unsigned byte -> int32
+    "U": ("strings", Tensor.StringArray), # Unicode string -> string
+    # Leaving 'm' (timedelta), 'M' (datetime), 'O' (Python objects), and 'V'
+    # (raw data (void)) unmapped.
 }
-
 
 class ConversionError(Exception):
     ...

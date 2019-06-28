@@ -214,6 +214,7 @@ export class Model {
 
   public static MnistModel = new Model(new Handle({ id: 0 }));
   public static MobileNetFloatModel = new Model(new Handle({ id: 1 }));
+  public static MobileNetQuantModel = new Model(new Handle({ id: 2 }));
   public handle: Handle;
 
   private constructor(handle: Handle) {
@@ -267,3 +268,4 @@ export class Model {
 
 export const MnistModel = Model.MnistModel;
 export const MobileNetFloatModel = Model.MobileNetFloatModel;
+export const MobileNetQuantModel = Model.MobileNetQuantModel;

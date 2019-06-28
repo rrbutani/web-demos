@@ -8,7 +8,7 @@ import Req = inference.InferenceRequest;
 import Resp = inference.InferenceResponse;
 import Handle = inference.ModelHandle;
 import PbError = inference.Error;
-import Metrics = inference.Metrics;
+import PbMetrics = inference.Metrics;
 
 function print_error(err: PbError): string {
   return `Kind: ${err.kind}, Message: ${err.message}`;
@@ -196,6 +196,20 @@ async function extract(resp: Response): Promise<Uint8Array> {
   return new Uint8Array(await resp.arrayBuffer());
 }
 
+export class Metrics {
+
+  public time_to_execute: number; // in microseconds
+
+  private constructor(time_to_execute: number) {
+    this.time_to_execute = time_to_execute;
+        // TODO: trace
+  }
+
+  public static from(metrics: PbMetrics): Metrics {
+    return new Metrics(<number>metrics.time_to_execute);
+  }
+}
+
 export class Model {
 
   public static MnistModel = new Model(new Handle({ id: 0 }));
@@ -211,7 +225,7 @@ export class Model {
 
   // }
 
-  public async predict(tensor: TfJsTensor): Promise<TfJsTensor> {
+  public async predict_with_metrics(tensor: TfJsTensor): Promise<[TfJsTensor, Metrics]> {
     const request: Req = new Req({
       handle: this.handle,
       tensor: await tfjs_to_pb_tensor(tensor),
@@ -219,10 +233,10 @@ export class Model {
 
     const raw_response = await fetch(
       `http://${HOST}:${PORT}/api/inference`,
-      { method: 'POST'
+      { method: "POST"
       , headers:
-        { 'Accept': 'application/x-protobuf'
-        , 'Content-Type': 'application/x-protobuf'
+        { "Accept": "application/x-protobuf"
+        , "Content-Type": "application/x-protobuf"
         }
       , body: Req.encode(request).finish()
       }
@@ -232,17 +246,22 @@ export class Model {
 
     // Ignore Metrics for now (TODO).
 
+    if (!(response.metrics instanceof PbMetrics)) throw Error(`No Metrics in response.`);
+    const metrics: Metrics = Metrics.from(response.metrics);
+
+    console.log(`Took ${metrics.time_to_execute} μs.`);
+
     if (response.response === "tensor" && response.tensor instanceof PbTensor) {
-      if (response.metrics instanceof Metrics) {
-        console.log(`Took ${response.metrics.time_to_execute} μs.`);
-        // TODO: trace
-      }
-      return pb_to_tfjs_tensor(response.tensor);
+      return [ pb_to_tfjs_tensor(response.tensor), metrics ];
     } else if (response.response === "error" && response.error instanceof PbError) {
       throw Error(`Got an error: '${print_error(response.error)}'`);
     } else {
       throw Error(`Invalid Response; expected tensor or error, got '${response.response}'`);
     }
+  }
+
+  public async predict(tensor: TfJsTensor): Promise<TfJsTensor> {
+    return (await this.predict_with_metrics(tensor))[0];
   }
 }
 

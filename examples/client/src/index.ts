@@ -245,14 +245,14 @@ export class Model {
 
     const response: Resp = Resp.decode(await extract(raw_response));
 
-    // Ignore Metrics for now (TODO).
-
-    if (!(response.metrics instanceof PbMetrics)) throw Error(`No Metrics in response.`);
-    const metrics: Metrics = Metrics.from(response.metrics);
-
-    console.log(`Took ${metrics.time_to_execute} μs.`);
-
     if (response.response === "tensor" && response.tensor instanceof PbTensor) {
+      if (!(response.metrics instanceof PbMetrics)) {
+        throw Error(`No Metrics in response.`);
+      }
+
+      const metrics: Metrics = Metrics.from(response.metrics);
+      console.log(`Took ${metrics.time_to_execute} μs.`);
+
       return [ pb_to_tfjs_tensor(response.tensor), metrics ];
     } else if (response.response === "error" && response.error instanceof PbError) {
       throw Error(`Got an error: '${print_error(response.error)}'`);

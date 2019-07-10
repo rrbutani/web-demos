@@ -68,7 +68,7 @@
     ]
   }
 , "config":
-  { "message_dir": "../../messages"
+  { "message_dir": "../messages"
   , "message_file": "build/messages.js"
   , "message_types": "build/messages.d.ts"
   }

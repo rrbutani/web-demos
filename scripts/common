@@ -57,15 +57,15 @@ run_command_in_example() {
     } || return 0;
 
     # If it does, run it:
-    echo -e '\e[1;37m'"Running \`npm ${2}\` in ${1}..."'\e[0m'
-    (cd "${1}" && npm ${2-run build}) # Intentionally unquoted
+    echo -e '\e[1;37m'"Running \`npm ${@:2}\` in ${1}..."'\e[0m'
+    (cd "${1}" && npm "${@:2}")
     return $?
 }
 
 # $1: npm command to run
 run_command_in_examples() {
     for ex in "${EXAMPLES_DIR}"/*; do
-        run_command_in_example "${ex}" "${1}"
+        run_command_in_example "${ex}" "${@}"
     done
 }
 

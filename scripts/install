@@ -8,7 +8,9 @@
 check_deps
 
 # Then install deps for all the examples:
-run_command_in_examples "install"
+run_command_in_client_project install
+run_command_in_examples install
+
 
 # Next, pipenv:
 PIP_IGNORE_INSTALLED=1 pipenv install

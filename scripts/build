@@ -19,7 +19,7 @@ build_messages_for_server() {
 }
 
 build_messages_for_client() {
-    local messages=("${MESSAGES_DIR}"/*.proto)
+    local messages=("${MESSAGES_DIR}"/*.proto) # TODO: take this as an arg in the build script...
     echo -e '\e[1;37m'"Building ${messages[@]} (for the client)..."'\e[0m'
 
     run_command_in_client_project run build-messages
@@ -30,13 +30,16 @@ build_messages_for_client() {
 # Check dependencies:
 check_deps
 
-# Build the proto files first (the examples will need them):
+# Build the proto files first (the client and the examples will need them):
 shopt -s globstar
 build_messages_for_server "${MESSAGES_DIR}"/**/*.proto
 build_messages_for_client
 
+# Then the client:
+run_command_in_client_project run build
+
 # And then the examples:
-run_command_in_examples "run build"
+run_command_in_examples run build
 
 # Finally, record that we successfully ran a build:
 mark

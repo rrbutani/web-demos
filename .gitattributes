@@ -1,0 +1,2 @@
+# Tell linguist not to ignore the client dir:
+examples/client linguist-vendored

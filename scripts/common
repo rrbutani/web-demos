@@ -7,7 +7,7 @@ SCRIPT_DIR="$(dirname "${0}")"
 EXAMPLES_DIR="examples"
 MESSAGES_DIR="messages"
 
-CLIENT_DIR="${EXAMPLES_DIR}/client"
+CLIENT_DIR="client"
 
 PROTOC_DST_DIR=build
 

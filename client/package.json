@@ -47,6 +47,7 @@
   , "lint": "tslint -p . -t stylish"
   , "format": "tsfmt -r && tslint -p . -t stylish --fix"
   , "test": "jest"
+  , "check-formatting": "tsfmt --verify"
   }
 , "jest":
   { "verbose": true

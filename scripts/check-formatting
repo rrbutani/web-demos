@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Runs formatting and linting checks on the server and client (without making
+# changes)
+
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+server_client_pair "black --check --diff ." "run check-formatting" "Checking formatting"

@@ -35,3 +35,4 @@ run = "scripts/with install build -- python -m server"
 lint = "scripts/with install-dev install build -- scripts/lint" # mypy, tslint
 format = "scripts/with install-dev -- scripts/format"           # black, tsfmt
 test = "scripts/with install-dev install build -- scripts/test" # pytest, jest
+check = "scripts/with install-dev -- scripts/check-formatting && scripts/lint"

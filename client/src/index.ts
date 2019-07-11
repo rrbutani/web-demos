@@ -1,4 +1,4 @@
-import { tensor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
+import { tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
 import { fetch } from "cross-fetch";
 import { chunk, flatMap, invert } from "lodash";
 import { inference } from "../build/messages";
@@ -22,13 +22,23 @@ PbError.toString = function(): string {
 const HOST = "ncore-0"; // TODO: env var
 const PORT = 5000;      // TODO: env var
 
+const DEBUG = true;     // TODO: env var
+
+function dprint(p: string) {
+  if (DEBUG) {
+    // tslint:disable-next-line:no-console
+    console.log(p);
+  }
+}
+
 function exhaust(_: never): never {
+  // tslint:disable-next-line:no-console
   console.log("if you're seeing this something has gone very very wrong...");
 
   while (true) { }
 }
 
-const sample_tfjs = tensor([0]);
+const sample_tfjs = tfjs_tensor_constructor([0]);
 type TfJsDataType = (typeof sample_tfjs.dtype);
 
 const sample_pb = new PbTensor();
@@ -46,6 +56,7 @@ type Pb2ArrMap = {
   [K in PbDataType]: Constructs<Exclude<PbTensor[K], null> | undefined>
 };
 
+// tslint:disable:object-literal-sort-keys
 const type_map_tfjs2pb: T2PTypeMap = {
   float32: "floats",
   int32: "ints",
@@ -53,6 +64,7 @@ const type_map_tfjs2pb: T2PTypeMap = {
   complex64: "complex_nums",
   string: "strings",
 };
+// tslint:enable:object-literal-sort-keys
 
 // TODO: the interfaces for each kind of array are currently identical because
 // each kind currently just has a single member named 'array' of type <type>[].
@@ -86,6 +98,8 @@ const type_map_tfjs2pb: T2PTypeMap = {
 // Really though, the problem is that we use the number type for floats and ints
 // in JavaScript. The other types are mostly okay, so I'm just going to leave
 // this as is, and we'll be careful not to mix up floats and ints below.
+
+// tslint:disable:object-literal-sort-keys
 const type_map_pb_arr: Pb2ArrMap = {
   floats: PbTensor.FloatArray.create,
   ints: PbTensor.IntArray.create,
@@ -93,6 +107,7 @@ const type_map_pb_arr: Pb2ArrMap = {
   complex_nums: PbTensor.ComplexArray.create,
   strings: PbTensor.StringArray.create,
 };
+// tslint:enable:object-literal-sort-keys
 
 /// P2T = Protobuf to TFJS
 type P2TTypeMap = {
@@ -128,20 +143,21 @@ function pb_to_tfjs_tensor(pb_tensor: PbTensor): TfJsTensor {
     case "ints":
     case "bools":
     case "strings":
-      return tensor(pb_tensor[pb_dtype]!.array!, shape, dtype);
+      return tfjs_tensor_constructor(pb_tensor[pb_dtype]!.array!, shape, dtype);
 
     case "complex_nums": // TODO: Check
       const array = flatMap(pb_tensor[pb_dtype]!.array!,
         (c: PbTensor.Complex): number[] =>
           [c.real as number, c.imaginary as number]);
 
-      return tensor(array, shape, dtype);
+      return tfjs_tensor_constructor(array, shape, dtype);
 
     default:
       return exhaust(pb_dtype);
   }
 }
 
+// tslint:disable-next-line:no-shadowed-variable
 async function tfjs_to_pb_tensor(tensor: TfJsTensor): Promise<PbTensor> {
   const shape = tensor.shape;
   const dtype: PbDataType = type_map_tfjs2pb[tensor.dtype];
@@ -198,15 +214,15 @@ async function extract(resp: Response): Promise<Uint8Array> {
 
 export class Metrics {
 
+  public static from(metrics: PbMetrics): Metrics {
+    return new Metrics(metrics.time_to_execute as number);
+  }
+
   public time_to_execute: number; // in microseconds
 
   private constructor(time_to_execute: number) {
     this.time_to_execute = time_to_execute;
-        // TODO: trace
-  }
-
-  public static from(metrics: PbMetrics): Metrics {
-    return new Metrics(<number>metrics.time_to_execute);
+    // TODO: trace
   }
 }
 
@@ -234,13 +250,15 @@ export class Model {
 
     const raw_response = await fetch(
       `http://${HOST}:${PORT}/api/inference`,
-      { method: "POST"
-      , headers:
-        { "Accept": "application/x-protobuf"
-        , "Content-Type": "application/x-protobuf"
-        }
-      , body: Req.encode(request).finish()
-      }
+      {
+        body: Req.encode(request).finish(),
+        headers:
+        {
+          "Accept": "application/x-protobuf",
+          "Content-Type": "application/x-protobuf",
+        },
+        method: "POST",
+      },
     );
 
     const response: Resp = Resp.decode(await extract(raw_response));
@@ -251,9 +269,9 @@ export class Model {
       }
 
       const metrics: Metrics = Metrics.from(response.metrics);
-      console.log(`Took ${metrics.time_to_execute} μs.`);
+      dprint(`Took ${metrics.time_to_execute} μs.`);
 
-      return [ pb_to_tfjs_tensor(response.tensor), metrics ];
+      return [pb_to_tfjs_tensor(response.tensor), metrics];
     } else if (response.response === "error" && response.error instanceof PbError) {
       throw Error(`Got an error: '${print_error(response.error)}'`);
     } else {

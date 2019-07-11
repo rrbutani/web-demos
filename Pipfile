@@ -21,7 +21,7 @@ protobuf = "~=3.8.0"
 [dev-packages]
 pytest = "~=4.6.3"
 black = "~=19.3b0"
-mypy = "~=0.701"
+mypy = "~=0.711"
 
 [pipenv]
 allow_prereleases = true

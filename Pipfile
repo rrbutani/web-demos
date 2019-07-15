@@ -22,6 +22,7 @@ protobuf = "~=3.8.0"
 pytest = "~=4.6.3"
 black = "~=19.3b0"
 mypy = "~=0.711"
+mypy-protobuf = "~=1.12"
 
 [pipenv]
 allow_prereleases = true
@@ -29,7 +30,7 @@ allow_prereleases = true
 [scripts]
 deps = "scripts/install"
 dev-deps = "scripts/install-dev"
-build = "scripts/with install -- scripts/build"
+build = "scripts/with install-dev -- scripts/build"
 clean = "scripts/clean"
 run = "scripts/with install build -- python -m server"
 lint = "scripts/with install-dev install build -- scripts/lint" # mypy, tslint

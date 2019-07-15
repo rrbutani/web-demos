@@ -13,6 +13,7 @@ build_messages_for_server() {
     protoc \
         --proto_path=messages \
         --python_out="${PROTOC_DST_DIR}/python" \
+        --mypy_out="${PROTOC_DST_DIR}/python" \
         "${@}"
 
     return $?

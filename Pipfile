@@ -20,6 +20,8 @@ pytest = "~=4.6.3"
 black = "~=19.3b0"
 mypy = "~=0.711"
 mypy-protobuf = "~=1.12"
+tensorflow-stubs = { git = "https://github.com/persephone-tools/tensorflow-stubs", ref = "641bc92c723c6445686de107059234826429ad82" }
+numpy-stubs = { git = "https://github.com/numpy/numpy-stubs", ref = "a57ec5671096cf59530dcda21a93c0d880cc759e" }
 
 [pipenv]
 allow_prereleases = true

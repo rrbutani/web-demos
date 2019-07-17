@@ -19,9 +19,6 @@ PbError.toString = function(): string {
   return print_error(this);
 };
 
-const HOST = "ncore-0"; // TODO: env var
-const PORT = 5000;      // TODO: env var
-
 const DEBUG = true;     // TODO: env var
 
 function dprint(p: string) {
@@ -249,7 +246,7 @@ export class Model {
     });
 
     const raw_response = await fetch(
-      `http://${HOST}:${PORT}/api/inference`,
+      `/api/inference`,
       {
         body: Req.encode(request).finish(),
         headers:

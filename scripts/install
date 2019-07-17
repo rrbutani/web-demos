@@ -7,8 +7,6 @@
 # Note: This target handles dependency tracking itself and doesn't drop marker
 # files!
 
-readonly marker=".$(basename "${0}")"
-
 # In order to install, we need our local dependencies to be installed:
 resolve_deps local-deps
 

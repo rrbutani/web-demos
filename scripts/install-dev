@@ -4,13 +4,16 @@
 
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-# First make sure we've got our local dependencies installed:
-check_deps
+# Note: This target handles dependency tracking itself!
+
+# In order to install, we need our local dependencies to be installed:
+resolve_deps local-deps
+
+pipenv_dev_install() {
+    pipenv install --dev && print "Dev Install Successful!" $PURPLE;
+}
 
 # Next, pipenv:
-PIP_IGNORE_INSTALLED=1 pipenv install --dev
-
-# Finally, record that we were successful:
-mark
-
-echo -e '\e[1;35m'"\nDev Install Successful!"'\e[0m'
+PIP_IGNORE_INSTALLED=1 \
+run_command_in_server pipenv_dev_install Pipfile "${marker}" ||
+    err "Failed to install python dev dependencies." $?

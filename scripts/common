@@ -2,35 +2,60 @@
 
 set -e
 
-BUILD_DIR=build
-SCRIPT_DIR="$(dirname "${0}")"
-EXAMPLES_DIR="examples"
-MESSAGES_DIR="messages"
+readonly BUILD_DIR=build
+readonly SCRIPT_DIR="$(dirname "${0}")"
+readonly EXAMPLES_DIR="examples"
+readonly MESSAGES_DIR="messages"
+readonly CLIENT_DIR="client"
+readonly PROTOC_DST_DIR="build"
 
-CLIENT_DIR="client"
+readonly NC='\e[0m'
+readonly RED='\e[1;31m'
+readonly GREEN='\e[1;32m'
+readonly YELLOW='\e[1;33m'
+readonly BLUE='\e[1;34m'
+readonly PURPLE='\e[1;35m'
+readonly CYAN='\e[1;36m'
+readonly BOLD='\e[1;37m'
 
-PROTOC_DST_DIR=build
+# $1: message; $2?: color
+print() {
+    echo -en "${2-${NC}}"
+    echo -en "${1}"
+    echo -en "${NC}\n"
+}
 
-declare -A DEPS=( \
-    [jq]="going to https://stedolan.github.io/jq/download/" \
-    [pipenv]='`pip install pipenv`' \
-    [protoc]="going to https://github.com/protocolbuffers/protobuf/releases" \
-    [npm]="installing nvm: https://github.com/nvm-sh/nvm#installation-and-update" \
-)
+# $1: message; $2?: color
+dprint() {
+    [ -z ${DEBUG+x} ] || print "${@}"
+}
+
+# $1: error message; $2: exit code
+err() {
+    print "${1}" $RED && exit "${2}"
+}
 
 # $1: binary name, $2: suggestion
-check_dep() {
+check_local_dep() {
     hash "${1}" 2>/dev/null ||
-        { echo -e '\e[1;31m''Missing `'"${1}"'`; please install it and try again.''\e[0m' &&
-          echo -e '\e[1;34m'"(try ${2})"'\e[0m' &&
+        { print 'Missing `'"${1}"'`; please install it and try again.' $RED &&
+          print "(try ${2})" $BLUE &&
           exit 1
         }
 }
 
-# Check for dependencies:
-check_deps() {
-    for dep in "${!DEPS[@]}"; do
-        check_dep "${dep}" "${DEPS["${dep}"]}"
+# $@: dependency names
+resolve_deps() {
+    for dep_name in "${@}"; do
+        # If a dependency's marker file doesn't exist..
+        [ -f "$(marker_file "${dep_name}")" ] || {
+            # ..run its script:
+            echo
+            print "Resolving ${dep_name}:" $BLUE
+            ("$(script_file "${dep_name}")") || {
+                err "Failed to resolve ${dep_name}!" $?
+            }
+        }
     done
 }
 
@@ -49,47 +74,112 @@ find_or_run() {
     return 0
 }
 
-# $1: example dir; $2: npm command
+# $1: dependency; $2: marker file
+# Returns 0 if $1 is older than $2
+#         1 if $1 is newer than $2 (or the same file)
+#         2 if $2 doesn't exist
+#         5 if $1 doesn't exist
+#         6 if FORCE_REBUILD is set
+check_if_newer() {
+    [ -z "${FORCE_REBUILD+x}" ] || return 6
+    [ -e "${1}" ] || { dprint '`'"${1}"'`'" doesn't seem to exist, assuming this the intent is to build unconditionally.."; return 5; }
+    [ -e "${2}" ] || return 2
+
+    [ "${1}" -ot "${2}" ]
+}
+
+# $1: dependency; $2: marker file; $3+: command to run
+conditionally_run() {
+    # If the marker says we've run the command since the dependency was last
+    # updated, do nothing.
+    { check_if_newer "${1}" "${2}" &&
+        dprint "\`${1}\` is up to date." $BROWN
+    } || {
+        # Otherwise, run the command..
+        cmd="${@:3}"
+        print "\nRunning \`${cmd}\` in '$(basename $(pwd))'..." $BOLD
+        "${@:3}" && {
+            # ..and if it succeeded, update the marker file:
+            mkdir -p "$(dirname "${2}")"
+            touch "${2}"
+        } || return $?
+    }
+
+    return 0
+}
+
+# $1: example dir; $2: npm command; $3?: dependency; $4?: marker file
 run_command_in_example() {
     # Check that the example project has a build script:
     { [ -f "${1}/package.json" ] &&
         jq -e '.scripts.build' < "${1}/package.json" > /dev/null
     } || return 0;
 
-    # If it does, run it:
-    echo -e '\e[1;37m'"Running \`npm ${@:2}\` in ${1}..."'\e[0m'
-    (cd "${1}" && npm "${@:2}")
-    return $?
+    # If it does and if we were given a marker file, run conditionally:
+    [ ! -z "${4}" ] && {
+        (cd "${1}" && conditionally_run "${3}" "${BUILD_DIR}/${4}" npm ${2})
+        return $?
+    } || {
+        # Otherwise, run unconditionally:
+        (cd "${1}" && conditionally_run "..." "." npm ${2})
+        return $?
+    }
+    # (cd "${1}" && conditionally_run "${3-_}" "${BUILD_DIR}/${4}")
+    # print "Running \`npm ${2}\` in ${1}..." $BOLD
+    # (cd "${1}" && npm ${2})
+    # return $?
 }
 
-# $1: npm command to run
+# $1: npm command to run; $2?: dependency; $3?: marker file
 run_command_in_examples() {
     for ex in "${EXAMPLES_DIR}"/*; do
         run_command_in_example "${ex}" "${@}"
     done
 }
 
-# $*: npm command to run
+# $1: npm command to run; $2?: dependency; $3?: marker file
 run_command_in_client_project() {
-    (cd "${CLIENT_DIR}" && npm "${@}")
+    run_command_in_example "${CLIENT_DIR}" "${@}"
 }
 
-# $1: server command; $2: client command; $3: operation name
+# $1: command to run; $2?: dependency; $3?: marker file
+run_command_in_server() {
+    conditionally_run "${2-"..."}" "${BUILD_DIR}/${3-"."}" ${1}
+}
+
+# $*: server commands; '--'; $*: client commands; '--'; $*: operation name
+# runs unconditionally
 server_client_pair() {
     local ec=0
+    local server client name
 
-    echo -e '\e[1;37m'"Server: ${3-running an operation}..."'\e[0m'
-    ${1} || ec=$?
+    while [[ "${1}" != -- ]]; do
+        server+=("${1}")
+        shift 1 || return $?
+    done
 
-    echo -e '\e[1;37m'"Client: ${3-running an operation}..."'\e[0m'
-    run_command_in_client_project ${2} || ec=$?
+    shift 1 || return $?
+
+    while [[ "${1}" != -- ]]; do
+        client+=("${1}")
+        shift 1 || return $?
+    done
+
+    shift 1 || return $?
+
+    name=("${@}")
+
+    print "Server: ${name[@]-running an operation}..." $BOLD
+    for cmd in "${server[@]}"; do
+        ${cmd} || ec=$?
+    done
+
+    print "Client: ${name[@]-running an operation}..." $BOLD
+    for cmd in "${client[@]}"; do
+        run_command_in_client_project ${cmd} || ec=$?
+    done
 
     return ${ec}
-}
-
-# $1: error message; $2: exit code
-err() {
-    echo -e '\e[1;31m'"${1}"'\e[0m' && exit "${2}"
 }
 
 # Details, for the curious:
@@ -115,6 +205,13 @@ err() {
 # At the moment we have three targets that don't have dependencies: build,
 # install, and install-dev. These always run (ignoring their marker files) when
 # their corresponding scripts are directly invoked.
+#
+# We're going to let the individual scripts handle non-static dependencies. If
+# a script has a dependency that isn't static (or isn't a closed loop), it
+# should not create a marker file so that our system always invokes it and then
+# it should perform whatever actions it deems necessary.
+#
+# For example, install: this should be re-run whenever the Pipfile is updated.
 
 # There are three things:
 #  - the target name that gets passed to the `with` script

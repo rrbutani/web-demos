@@ -1,16 +1,20 @@
-import time
 import os
-from typing import cast, Any, List, Iterable, Tuple, Union, Optional, NoReturn as Never, TypeVar, Callable
+import time
+from typing import Any, Callable, Iterable, List
+from typing import NoReturn as Never
+from typing import Optional, Tuple, TypeVar, Union, cast
 
 import numpy as np
 import tensorflow as tf
 
-from server.types.metrics import Metrics
 from server.debug import dprint, if_debug
+from server.types.metrics import Metrics
 
 dprint(f"TF Version: {tf.__version__}")
 tf.compat.v1.enable_eager_execution()
-_: None = if_debug(lambda: tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.DEBUG))
+_: None = if_debug(
+    lambda: tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.DEBUG)
+)
 
 Interpreter = tf.lite.Interpreter
 
@@ -39,7 +43,8 @@ class TensorTypeError(Exception):
 def raise_err(err: Exception) -> Never:
     raise err
 
-T = TypeVar('T')
+
+T = TypeVar("T")
 
 # TODO: spin off into an error module/file/thing
 def equal_or_error(expected: T, actual: T, msg: str, ex: Callable[[str], Any]) -> None:
@@ -64,7 +69,7 @@ class LocalModel:
 
         # Validate the options we were passed:
         # (this is supposed to be a switch case, I'm sorry)
-        { # type: ignore
+        {  # type: ignore
             (True, True): self._check_str_model,
             (True, False): self._check_str_model,
             (False, True): self._check_file_model,
@@ -81,7 +86,7 @@ class LocalModel:
         """
         :raises ModelRegisterError: On empty string models.
         """
-        assert(self.model is not None)
+        assert self.model is not None
 
         if self.model == "":
             raise ModelRegisterError("Provided model was empty.")
@@ -90,7 +95,7 @@ class LocalModel:
         """
         :raises ModelRegisterError: On obviously incorrect/invalid file models.
         """
-        assert(self.path is not None)
+        assert self.path is not None
 
         if not os.path.exists(self.path):
             raise ModelRegisterError(f"Model path ({self.path}) doesn't exist.")
@@ -151,7 +156,9 @@ class LocalModel:
             self.interp.allocate_tensors()
             dprint("Success!")
 
-    def _resize(self, shape: Tuple[int, ...], backup: Optional[Tuple[int, ...]] = None) -> bool:
+    def _resize(
+        self, shape: Tuple[int, ...], backup: Optional[Tuple[int, ...]] = None
+    ) -> bool:
         """
         :raises RuntimeError: When the interpreter is unable to resize the tensors.
         :raises TensorTypeError: On error when bail is set to True.
@@ -300,7 +307,9 @@ class LocalModel:
             else:
                 output = np.append(output, output_part, axis=0)
 
-        metrics = Metrics().time_to_execute(int(exec_time * (10 ** 6)))  # in microseconds
+        metrics = Metrics().time_to_execute(
+            int(exec_time * (10 ** 6))
+        )  # in microseconds
         # .trace("") # TODO!!
 
         assert output is not None

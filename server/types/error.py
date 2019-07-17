@@ -1,8 +1,9 @@
-from server.types import Error
-import traceback
 import re
+import traceback
 
 from server.debug import dprint, if_debug
+from server.types import Error
+
 
 # TODO: Switch usages of this to actually pass in Exceptions
 def into_error(err: Exception) -> Error:

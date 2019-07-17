@@ -1,6 +1,18 @@
 from functools import reduce
 from operator import mul
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sized, Tuple, TypeVar, Type, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sized,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+)
 
 import numpy as np
 from google.protobuf.message import Message
@@ -122,12 +134,14 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
     array = klass(array=array)
 
     if array is None:
-        raise ConversionError(f"Failed to create a protobuf array; tried to use `({klass})`")
+        raise ConversionError(
+            f"Failed to create a protobuf array; tried to use `({klass})`"
+        )
 
     # mypy can't figure out that array will be one of the acceptable types for
     # field in Tensor because of the values in type_map_numpy2pb, but this is
     # sound (typescript, however, does understand this - check the client).
-    return Tensor(**{field: array, "dimensions": shape}) # type: ignore
+    return Tensor(**{field: array, "dimensions": shape})  # type: ignore
 
 
 # Flow for moving Tensors around:

@@ -1,7 +1,7 @@
 import os
 import stat
 import sys
-from typing import Any, Callable, TypeVar, Tuple, Type, Optional, List
+from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar
 
 import tensorflow as tf
 
@@ -12,11 +12,14 @@ NCORE_PATH: str = "/dev/ncore_pci"
 _NCORE: Optional[bool] = None
 _DELEGATE_LIB_PATH: Optional[str] = None
 
+
 class InvalidDelegateLibrary(Exception):
     ...
 
+
 class NCoreNotPresent(Exception):
     ...
+
 
 def check_for_ncore() -> Tuple[bool, Optional[str]]:
     """
@@ -36,50 +39,68 @@ def check_for_ncore() -> Tuple[bool, Optional[str]]:
                 raise InvalidDelegateLibrary(f"`{lib_path}` doesn't seem to exist.")
 
             if os.path.splitext(lib_path)[1] != ".so":
-                raise InvalidDelegateLibrary(f"`{lib_path}` doesn't appear to be a shared object.")
+                raise InvalidDelegateLibrary(
+                    f"`{lib_path}` doesn't appear to be a shared object."
+                )
 
             return True, lib_path
 
         # If it wasn't but NCORE was set, error:
         else:
-            raise NCoreNotPresent(f"`{NCORE_PATH}`:: exists: {exists}, block device: {block_device}.")
+            raise NCoreNotPresent(
+                f"`{NCORE_PATH}`:: exists: {exists}, block device: {block_device}."
+            )
     else:
         return False, None
+
 
 if _NCORE is None:
     _NCORE, _DELEGATE_LIB_PATH = check_for_ncore()
 
 present: bool = _NCORE
 
-T = TypeVar('T')
+T = TypeVar("T")
+
+
 def if_ncore(func: Callable[[], None]) -> Optional[T]:
     if _NCORE:
         return func()
     else:
         return None
 
+
 def delegate_lib_path() -> Optional[str]:
     return _DELEGATE_LIB_PATH
 
-def get_ncore_delegate_instance(options:Any = None) -> Optional[List[tf.lite.Delegate]]:
+
+def get_ncore_delegate_instance(
+    options: Any = None
+) -> Optional[List[tf.lite.Delegate]]:
     if _NCORE and _DELEGATE_LIB_PATH is not None:
         try:
             dprint("Making a new NCore delegate!")
-            return [ tf.lite.experimental.load_delegate(_DELEGATE_LIB_PATH, options=options) ]
+            return [
+                tf.lite.experimental.load_delegate(_DELEGATE_LIB_PATH, options=options)
+            ]
         except ValueError as e:
-            raise InvalidDelegateLibrary(f"Error while loading `{_DELEGATE_LIB_PATH}`: {e}")
+            raise InvalidDelegateLibrary(
+                f"Error while loading `{_DELEGATE_LIB_PATH}`: {e}"
+            )
     else:
         return None
 
-if_ncore(lambda: print(
-    "\n****************************** Running on NCore!! ******************************\n"
-))
 
-            # try:
-            #     tf.lite.experimental.load_delegate()
+if_ncore(
+    lambda: print(
+        "\n****************************** Running on NCore!! ******************************\n"
+    )
+)
 
-            # except ValueError as e:
-            #     raise InvalidDelegateLibrary(f"Error while loading `{lib_path}`: {e}")
+# try:
+#     tf.lite.experimental.load_delegate()
+
+# except ValueError as e:
+#     raise InvalidDelegateLibrary(f"Error while loading `{lib_path}`: {e}")
 
 
 # TODO:

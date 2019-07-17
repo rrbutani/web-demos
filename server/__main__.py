@@ -3,13 +3,14 @@
 from os import listdir
 from os.path import dirname, exists, isdir, isfile, join
 from string import capwords
-from typing import Union, TypeVar, Any
+from typing import Any, TypeVar, Union
 
-from flask import Flask, redirect, request, render_template, send_from_directory
-from flask_pbj import api, json, protobuf
 import tensorflow as tf
 import tensorflowjs
+from flask import Flask, redirect, render_template, request, send_from_directory
+from flask_pbj import api, json, protobuf
 
+from server.debug import _DEBUG, dprint, if_debug
 from server.model_store import ModelStore
 from server.types import (
     InferenceRequest,
@@ -27,7 +28,6 @@ from server.types.model import (
     into_handle,
 )
 from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
-from server.debug import _DEBUG, dprint, if_debug
 
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
@@ -74,6 +74,7 @@ def example_index_page() -> Response:
 @app.route("/api/echo/<string:string>")
 def echo(string: str) -> str:
     return string
+
 
 @app.route("/ex/<string:example_name>/<path:path>")
 @app.route("/ex/<string:example_name>/", defaults={"path": "index.html"})

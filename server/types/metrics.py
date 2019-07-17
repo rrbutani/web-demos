@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Union
+
 from server.types import Metrics as MetricsMessage
 
 

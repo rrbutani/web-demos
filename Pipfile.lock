@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "887afb074aae599ac37d4c2d564eebdc2c9e436ceb322a445a94d4914b5623bb"
+            "sha256": "c649124a2fb98c76d029d2b73091c116830a8952902bee5e4103f0b7e694820a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -326,9 +326,10 @@
         },
         "tensorflow-estimator-2.0-preview": {
             "hashes": [
-                "sha256:659e3313131a965871ff13e5dcc49ecbc3842bbffbd95e2097daf54f654328bf"
+                "sha256:72529e9e1d3173de5b245717a5b1949a04f55cddcefadbedfdc130976f50906f"
             ],
-            "version": "==1.14.0.dev2019071700"
+            "index": "pypi",
+            "version": "==1.14.0.dev2019071500"
         },
         "tensorflow-hub": {
             "hashes": [
@@ -365,10 +366,10 @@
         },
         "werkzeug": {
             "hashes": [
-                "sha256:865856ebb55c4dcd0630cdd8f3331a1847a819dda7e8c750d3db6f2aa6c0209c",
-                "sha256:a0b915f0815982fb2a09161cb8f31708052d0951c3ba433ccc5e1aa276507ca6"
+                "sha256:87ae4e5b5366da2347eb3116c0e6c681a0e939a33b2805e2c0cbd282664932c4",
+                "sha256:a13b74dd3c45f758d4ebdb224be8f1ab8ef58b3c0ffc1783a8c7d9f4f50227e6"
             ],
-            "version": "==0.15.4"
+            "version": "==0.15.5"
         },
         "wheel": {
             "hashes": [

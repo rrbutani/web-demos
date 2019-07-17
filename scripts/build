@@ -4,45 +4,69 @@
 
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-# $*: Message files to build
-build_messages_for_server() {
-    mkdir -p "${PROTOC_DST_DIR}"/python
+# Note: This target handles dependency tracking itself!
 
-    echo -e '\e[1;37m'"Building ${@} (for the server)..."'\e[0m'
+readonly PYTHON_PROTO_DIR="${PROTOC_DST_DIR}/python"
 
+# $1: Message file to build
+build_message_for_server() {
     protoc \
         --proto_path=messages \
-        --python_out="${PROTOC_DST_DIR}/python" \
-        --mypy_out="${PROTOC_DST_DIR}/python" \
-        "${@}"
+        --python_out="${PYTHON_PROTO_DIR}" \
+        --mypy_out="${PYTHON_PROTO_DIR}" \
+        "${1}"
 
     return $?
 }
 
+# $*: Message files to build
+build_messages_for_server() {
+    local ec=0
+
+    mkdir -p "${PYTHON_PROTO_DIR}"
+
+    for msg in "${@}"; do
+        message="Building \`${msg}\` (for the server)..." \
+        run_command_in_server "build_message_for_server ${msg}" "${msg}" ".${msg}" || ec=$?
+    done
+
+    unset message
+    return $ec
+}
+
+# $*: Message files to build
 build_messages_for_client() {
-    local messages=("${MESSAGES_DIR}"/*.proto) # TODO: take this as an arg in the build script...
-    echo -e '\e[1;37m'"Building ${messages[@]} (for the client)..."'\e[0m'
+    local ec=0
 
-    run_command_in_client_project run build-messages
+    for msg in "${@}"; do
+        message="Building \`${msg}\` (for the client)..." \
+        full_msg_path="$(realpath ${msg})"
+        run_command_in_client_project "run build-messages -- '${full_msg_path}'" "${full_msg_path}" ".${msg}" || ec=$?
+    done
 
-    return $?
+    unset message
+    return $ec
 }
 
-# Check dependencies:
-check_deps
+# In order to build, we need local dependencies and project dependencies:
+resolve_deps local-deps install
 
 # Build the proto files first (the client and the examples will need them):
 shopt -s globstar
 build_messages_for_server "${MESSAGES_DIR}"/**/*.proto
-build_messages_for_client
+build_messages_for_client "${MESSAGES_DIR}"/**/*.proto
 
-# Then the client:
-run_command_in_client_project run build
+if [ ! -z "${BUILD_THOROUGH}" ]; then
+    # Then the client (since rollup tracks it's own dependencies, always run):
+    run_command_in_client_project "run build"
 
-# And then the examples:
-run_command_in_examples run build
+    # And finally, the examples (since parcel tracks it's own dependencies, always
+    # run):
+    run_command_in_examples "run build"
+else
+    # If we're not being thorough, use the project folder as the dependency:
+    run_command_in_client_project "run build" "." ".built"
+    run_command_in_examples "run build" "." ".built"
+fi
 
-# Finally, record that we successfully ran a build:
-mark
-
-echo -e '\e[1;35m'"\nBuild Successful!"'\e[0m'
+print "\nBuild Successful!" $PURPLE

@@ -4,8 +4,9 @@
  * Quick and simple script that builds the protobuf messages.
  */
 
-import { dirname } from 'path';
 import { mkdirSync as mkdir, existsSync as exists } from 'fs';
+import { dirname, basename, join } from 'path';
+import { argv } from 'process';
 
 import { pbjs, pbts } from 'protobufjs/cli';
 
@@ -13,9 +14,8 @@ import pkg from './../package.json';
 
 const config = pkg.config;
 
-const message_dir = config.message_dir || "messages";
-const message_file = config.message_file || "build/messages.js";
-const message_types = config.message_types || "build/types/messages.d.ts";
+const message_build = config.message_build_folder || "build";
+const message_types = config.message_types_folder || "build";
 
 const throw_err = (err: Error, _: string) => { if (err) throw err; }
 const create = (file: string) => {
@@ -23,29 +23,37 @@ const create = (file: string) => {
   exists(path) || mkdir(dirname(file), { "recursive": true });
 }
 
-create(message_file)
-create(message_types)
+const messages: string[] =
+  argv.filter((arg: string) => arg.endsWith('.proto'));
 
-pbjs.main(
-  [ "--target"
-  , "static-module"
-  , "--wrap"
-  , "es6"
-  , "--es6"
-  , "--keep-case"
-  , "--path"
-  , message_dir
-  , "--out"
-  , message_file
-  , `${message_dir}/*.proto`
-  ]
-, throw_err
-);
+messages.forEach((m) => {
+  const message_js_file = join(message_build, basename(m, '.proto') + ".js");
+  const message_typings = join(message_types, basename(m, '.proto') + ".d.ts");
 
-pbts.main(
-  [ message_file
-  , "--out"
-  , message_types
-  ]
-, throw_err
-)
+  create(message_js_file);
+  create(message_typings);
+
+  pbjs.main(
+    [ "--target"
+    , "static-module"
+    , "--wrap"
+    , "es6"
+    , "--es6"
+    , "--keep-case"
+    , "--path"
+    , dirname(m)
+    , "--out"
+    , message_js_file
+    , m
+    ]
+  , throw_err
+  );
+
+  pbts.main(
+    [ message_js_file
+    , "--out"
+    , message_typings
+    ]
+  , throw_err
+  )
+})

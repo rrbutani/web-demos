@@ -1,7 +1,7 @@
 import { tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
 import { fetch } from "cross-fetch";
 import { chunk, flatMap, invert } from "lodash";
-import { inference } from "../build/messages";
+import { inference } from "../build/inference";
 
 import PbTensor = inference.Tensor;
 import Req = inference.InferenceRequest;

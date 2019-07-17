@@ -1,16 +1,20 @@
 import os
+import sys
+from typing import Any, Callable, TypeVar, Optional
 
 _DEBUG = "DEBUG" in os.environ
 
-
-def dprint(*args, **kwargs):
+def dprint(*args: Any, **kwargs: Any) -> None:
     if _DEBUG:
+        kwargs['file'] = sys.stderr
         print(*args, **kwargs)
 
-
-def if_debug(func):
+T = TypeVar('T')
+def if_debug(func: Callable[[], T]) -> Optional[T]:
     if _DEBUG:
-        func()
+        return func()
+    else:
+        return None
 
 
 dprint(

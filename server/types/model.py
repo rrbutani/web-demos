@@ -1,12 +1,12 @@
 from server.types import Model, ModelHandle
 
-from typing import Tuple
+from typing import Tuple, cast
 
 # Blurring the lines here a bit
 from server.model_store import Handle as LocalHandle
 
 # TODO!!!
-def convert_model(Model) -> str:
+def convert_model(model: Model) -> str:
     pass
 
 

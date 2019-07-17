@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import mul
-from typing import Callable, Dict, Iterable, List, Optional, Sized, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sized, Tuple, TypeVar, Type, cast
 
 import numpy as np
 from google.protobuf.message import Message
@@ -12,7 +12,7 @@ from server.types import Tensor
 # In lieu of actual enums (from oneofs), we use these:
 
 # [Protobuf field name] => numpy type
-type_map_pb2numpy: Dict[str, np.generic] = {
+type_map_pb2numpy: Dict[str, Type[np.generic]] = {
     "floats": np.float32,
     "ints": np.int32,
     "bools": np.bool,
@@ -21,7 +21,7 @@ type_map_pb2numpy: Dict[str, np.generic] = {
 }
 
 # [numpy kind (dtype.kind)] => Protobuf field name
-type_map_numpy2pb: Dict[str, Tuple[str, Callable]] = {
+type_map_numpy2pb: Dict[str, Tuple[str, Type[Any]]] = {
     "f": ("floats", Tensor.FloatArray),
     "i": ("ints", Tensor.IntArray),
     "?": ("bools", Tensor.BoolArray),
@@ -30,13 +30,14 @@ type_map_numpy2pb: Dict[str, Tuple[str, Callable]] = {
     # We also have data types that we can't represent in the TFJS world that
     # we'll map as best as we can:
     # List of data type kinds: docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
-    "u": ("ints", Tensor.IntArray), # uint8 -> int32
-    "b": ("ints", Tensor.IntArray), # signed byte -> int32
-    "B": ("ints", Tensor.IntArray), # unsigned byte -> int32
-    "U": ("strings", Tensor.StringArray), # Unicode string -> string
+    "u": ("ints", Tensor.IntArray),  # uint8 -> int32
+    "b": ("ints", Tensor.IntArray),  # signed byte -> int32
+    "B": ("ints", Tensor.IntArray),  # unsigned byte -> int32
+    "U": ("strings", Tensor.StringArray),  # Unicode string -> string
     # Leaving 'm' (timedelta), 'M' (datetime), 'O' (Python objects), and 'V'
     # (raw data (void)) unmapped.
 }
+
 
 class ConversionError(Exception):
     ...
@@ -56,6 +57,9 @@ T = TypeVar("T")
 def _get_oneof_pair(
     m: Message, field: str, attr: Optional[str] = None
 ) -> Tuple[str, T]:
+    """
+    :raises InvalidTensorMessage: On tensors that are missing fields.
+    """
     try:
         ty = m.WhichOneof(field)
     except TypeError:
@@ -68,24 +72,31 @@ def _get_oneof_pair(
     return (ty, f)
 
 
-def check_shape(shape: Iterable[int], array: Sized):
+def check_shape(shape: Iterable[int], array: Sized) -> None:
+    """
+    :raises MisshapenTensor: On tensors with inconsistent shapes.
+    """
     expected_elems = reduce(mul, shape, 1)
     actual_elems = len(array)
 
     if expected_elems != actual_elems:
         raise MisshapenTensor(
             f"Expected {expected_elems} elements for a tensor with {shape} dimensions, "
-            "got {actual_elems} elements."
+            f"got {actual_elems} elements."
         )
 
 
 def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
+    """
+    :raises MisshapenTensor: On tensors with inconsistent shapes.
+    :raises InvalidTensorMessage: On tensors that are missing fields.
+    """
     # numpy takes shape as a tuple of ints:
     shape = tuple(pb.dimensions)
 
     arr: List[int]
-    dtype, arr = _get_oneof_pair(pb, "flat_array", "array")
-    dtype = type_map_pb2numpy[dtype]
+    pb_dtype, arr = _get_oneof_pair(pb, "flat_array", "array")
+    dtype = type_map_pb2numpy[pb_dtype]
 
     check_shape(shape, arr)
 
@@ -93,6 +104,10 @@ def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
 
 
 def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
+    """
+    :raises ConversionError: On tensors that cannot be serialized.
+    :raises MisshapenTensor: On tensors with inconsistent shapes.
+    """
     dtype = tensor.dtype
 
     if not (dtype.isnative and dtype.isbuiltin):
@@ -106,7 +121,13 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
 
     array = klass(array=array)
 
-    return Tensor(**{field: array, "dimensions": shape})
+    if array is None:
+        raise ConversionError(f"Failed to create a protobuf array; tried to use `({klass})`")
+
+    # mypy can't figure out that array will be one of the acceptable types for
+    # field in Tensor because of the values in type_map_numpy2pb, but this is
+    # sound (typescript, however, does understand this - check the client).
+    return Tensor(**{field: array, "dimensions": shape}) # type: ignore
 
 
 # Flow for moving Tensors around:
@@ -122,18 +143,6 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
 # d) Js-Proto -> TFJS:
 
 # Plan: (TODO)
-#  1) Python Tensor serialization/deserialization (the two functions above).
-#  2) Add a tests folder + a tests script + a dev dependency for the test framework
-#  4) Test flask-pbj and patch it up to the point where it can deserialize/serialize protobufs (don't care about JSON).
-#     - if this doesn't work, do it manually for now.
-#  5) Figure out how to generate protobufs for JS and how to use the JS protobuf runtime.
-#  6) Create a JS package that has the protobuf runtime + can be used by the other examples.
-#     - give it a build script so that it can be built by the main build script? or do it like shared
-#     - test framework, later
-#     - TS, later
-#  7) TFJS -> Proto, Proto -> TJFS routines (async? idk)
-#  9) Add an inference endpoint to the server.
-#  10) Cobble together the MNIST demo (or mobilenet, I guess - hardcoded model).
-#
+
 #  3) Add a roundtrip test for serialization/deserialization of TFLite (numpy) Tensors.
 #  8) Add tests for ^

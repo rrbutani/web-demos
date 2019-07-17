@@ -13,6 +13,6 @@ def into_error(err: Exception) -> Error:
     msg = f"[{msg}] {err}"
 
     dprint(f"Returning Err: `{msg}`")
-    if_debug(lambda: traceback.print_exc())
+    _: None = if_debug(lambda: traceback.print_exc())
 
     return Error(kind=Error.Kind.OTHER, message=f"{msg}")

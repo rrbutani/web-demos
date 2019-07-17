@@ -3,7 +3,7 @@
 from os import listdir
 from os.path import dirname, exists, isdir, isfile, join
 from string import capwords
-from typing import Union
+from typing import Union, TypeVar, Any
 
 from flask import Flask, redirect, request, render_template, send_from_directory
 from flask_pbj import api, json, protobuf
@@ -45,19 +45,23 @@ app = Flask(
 )
 model_store = ModelStore()
 
+# Not ideal, but good enough:
+Response = Any
+
 # snake_case/kebab-case to Title Case
-def name_to_title(name: str):
+def name_to_title(name: str) -> str:
     return " ".join(
         [capwords(word) for word in name.replace("_", " ").replace("-", " ").split()]
     )
 
-@app.route('/')
-def hello():
+
+@app.route("/")
+def hello() -> Response:
     return redirect("ex", code=302)
 
 
 @app.route("/ex/")
-def example_index_page() -> str:
+def example_index_page() -> Response:
     examples = [
         (ex, name_to_title(ex))
         for ex in listdir(EX_DIR)
@@ -71,10 +75,9 @@ def example_index_page() -> str:
 def echo(string: str) -> str:
     return string
 
-
 @app.route("/ex/<string:example_name>/<path:path>")
 @app.route("/ex/<string:example_name>/", defaults={"path": "index.html"})
-def serve_build_file(example_name: str, path: str):
+def serve_build_file(example_name: str, path: str) -> Response:
     p = join(example_name, "dist", path)
     dprint(f"Trying: {p}")
     return send_from_directory(EX_DIR, p)
@@ -97,7 +100,7 @@ def load_model() -> LoadModelResponse:
 
 @app.route("/api/inference", methods=["POST"])
 @api(json, protobuf(receives=InferenceRequest, sends=InferenceResponse, to_dict=False))
-def run_inference() -> InferenceResponse:  # TODO: type sig
+def run_inference() -> InferenceResponse:
     pb_tensor: Tensor = request.received_message.tensor
     pb_handle: ModelHandle = request.received_message.handle
 

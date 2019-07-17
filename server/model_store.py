@@ -1,6 +1,6 @@
 import time
 import os
-from typing import List, Tuple, Union, Optional
+from typing import cast, Any, List, Iterable, Tuple, Union, Optional, NoReturn as Never, TypeVar, Callable
 
 import numpy as np
 import tensorflow as tf
@@ -9,8 +9,8 @@ from server.types.metrics import Metrics
 from server.debug import dprint, if_debug
 
 dprint(f"TF Version: {tf.__version__}")
-# tf.enable_eager_execution() # TODO
-# if_debug(lambda: tf.logging.set_verbosity(tf.logging.DEBUG)) # TODO
+tf.compat.v1.enable_eager_execution()
+_: None = if_debug(lambda: tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.DEBUG))
 
 Interpreter = tf.lite.Interpreter
 
@@ -36,12 +36,13 @@ class TensorTypeError(Exception):
 
 
 # Can't raise exceptions in lambdas!
-def raise_err(err):
+def raise_err(err: Exception) -> Never:
     raise err
 
+T = TypeVar('T')
 
 # TODO: spin off into an error module/file/thing
-def equal_or_error(expected, actual, msg, ex):
+def equal_or_error(expected: T, actual: T, msg: str, ex: Callable[[str], Any]) -> None:
     if expected != actual:
         raise ex(f"{msg}; Expected: `{expected}`, Got: `{actual}`")
 
@@ -62,7 +63,8 @@ class LocalModel:
         from_str, from_file = self.model is not None, self.path is not None
 
         # Validate the options we were passed:
-        {  # (this is supposed to be a switch case, I'm sorry)
+        # (this is supposed to be a switch case, I'm sorry)
+        { # type: ignore
             (True, True): self._check_str_model,
             (True, False): self._check_str_model,
             (False, True): self._check_file_model,
@@ -71,21 +73,25 @@ class LocalModel:
             ),
         }[(from_str, from_file)]()
 
-        self.interp: Optional[Interpreter] = None
-        self.def_shape: Optional[List[int]] = None
+        self.interp: Optional[tf.lite.Interpreter] = None
+        self.def_shape: Optional[Tuple[int, ...]] = None
         self.def_rank: Optional[int] = None
 
-    def _check_str_model(self):
+    def _check_str_model(self) -> None:
         """
         :raises ModelRegisterError: On empty string models.
         """
+        assert(self.model is not None)
+
         if self.model == "":
             raise ModelRegisterError("Provided model was empty.")
 
-    def _check_file_model(self):
+    def _check_file_model(self) -> None:
         """
         :raises ModelRegisterError: On obviously incorrect/invalid file models.
         """
+        assert(self.path is not None)
+
         if not os.path.exists(self.path):
             raise ModelRegisterError(f"Model path ({self.path}) doesn't exist.")
         if not os.path.isfile(self.path):
@@ -95,7 +101,7 @@ class LocalModel:
                 f"File ({self.path}) doesn't seem to be a TFLite model."
             )
 
-    def _prepare_interpreter(self):
+    def _prepare_interpreter(self) -> None:
         """
         :raises ModelLoadError: When the given model cannot be loaded.
         """
@@ -129,7 +135,7 @@ class LocalModel:
 
             dprint("Loaded new model.")
 
-    def _resize_internal(self, shape: Tuple[int]):
+    def _resize_internal(self, shape: Tuple[int, ...]) -> None:
         """
         :raises RuntimeError: When the interpreter is unable to resize the tensors.
         """
@@ -139,15 +145,13 @@ class LocalModel:
         current_shape = tuple(input_details["shape"])
         input_index = input_details["index"]
 
-        if current_shape == shape:
-            return
+        if current_shape != shape:
+            dprint(f"Attempting to resize `{current_shape}` to `{shape}`..")
+            self.interp.resize_tensor_input(input_index, shape)
+            self.interp.allocate_tensors()
+            dprint("Success!")
 
-        dprint(f"Attempting to resize `{current_shape}` to `{shape}`..")
-        self.interp.resize_tensor_input(input_index, shape)
-        self.interp.allocate_tensors()
-        dprint("Success!")
-
-    def _resize(self, shape: Tuple[int], backup: Optional[Tuple[int]] = None) -> bool:
+    def _resize(self, shape: Tuple[int, ...], backup: Optional[Tuple[int, ...]] = None) -> bool:
         """
         :raises RuntimeError: When the interpreter is unable to resize the tensors.
         :raises TensorTypeError: On error when bail is set to True.
@@ -156,7 +160,7 @@ class LocalModel:
         """
         assert self.interp is not None
 
-        def throw(shape, e):
+        def throw(shape: Iterable[int], e: Exception) -> Never:
             raise TensorTypeError(
                 "Unable to resize the model's input tensor to"
                 f" match the given tensor. Attempted `{shape}`"
@@ -187,18 +191,17 @@ class LocalModel:
         dtype = self.interp.get_input_details()[0]["dtype"]
 
         # Handle data types that aren't representable on the TFJS side:
-        if ((dtype == np.uint8 or dtype == np.int8 or dtype == np.int16 or dtype == np.int64)
-                and tensor.dtype == np.int32):
+        if (
+            dtype == np.uint8
+            or dtype == np.int8
+            or dtype == np.int16
+            or dtype == np.int64
+        ) and tensor.dtype == np.int32:
             dprint(f"Warning: Casting tensor elements from {tensor.dtype} to {dtype}!")
             tensor = tensor.astype(dtype)
 
         # Check the tensor's data type:
-        equal_or_error(
-            dtype,
-            tensor.dtype,
-            "Data types don't match",
-            TensorTypeError,
-        )
+        equal_or_error(dtype, tensor.dtype, "Data types don't match", TensorTypeError)
 
         # And its shape:
 
@@ -206,6 +209,10 @@ class LocalModel:
         # the input tensor's shape will differ if it's a batch.
         manual_batch_size = 0
         shape, rank = tensor.shape, len(tensor.shape)
+
+        # Because of where this is called, this _must_ be true but mypy doesn't
+        # yet know this.
+        assert self.def_shape is not None and self.def_rank is not None
 
         # If we've got an extra dimension (and if the other dimensions match our
         # original shape), we'll try to load the input tensor as a batch:
@@ -228,7 +235,7 @@ class LocalModel:
             if self._resize(shape, self.def_shape):
                 # If manual batches:
                 manual_batch_size = shape[0]
-                tensor = np.reshape(tensor, [shape[0]] + self.def_shape)
+                tensor = np.reshape(tensor, (shape[0],) + self.def_shape)
 
         # If our model is expecting a batch of one, but the input tensor is
         # singular, wrap the input tensor to make it a batch of one:
@@ -246,7 +253,7 @@ class LocalModel:
 
         # Otherwise, we can't use the input tensor:
         else:
-            def_shape = list(self.def_shape)
+            def_shape = list(str(x) for x in self.def_shape)
             shapes = [def_shape, ["X"] + def_shape]
             if def_shape[0] == 1:
                 exp = (
@@ -258,14 +265,14 @@ class LocalModel:
                 exp = f"`{shapes[0]}` or `{shapes[1]}` (batch)"
 
             raise TensorTypeError(
-                f"Tensor Shape Mismatch; Expected {exp}, Got: " f"`{list(shape)}`"
+                f"Tensor Shape Mismatch; Expected {exp}, Got: `{list(shape)}`"
             )
 
         # Finally, if we're not doing manual batching, wrap the tensor in a list
         # so that we can pretend we're making a batch of size 1:
         if manual_batch_size == 0:
             dprint("Pseudo manual batch")
-            tensor = [tensor]
+            tensor = cast(Tensor, [tensor])
             manual_batch_size = 1
         else:
             dprint(f"Manual batch of size {manual_batch_size}")
@@ -278,7 +285,7 @@ class LocalModel:
         input_idx = self.interp.get_input_details()[0]["index"]
         output_idx = self.interp.get_output_details()[0]["index"]
 
-        output, exec_time = None, 0
+        output, exec_time = None, 0.0
 
         for i in range(batch_size):
             self.interp.set_tensor(input_idx, tensor[i])
@@ -293,9 +300,10 @@ class LocalModel:
             else:
                 output = np.append(output, output_part, axis=0)
 
-        metrics = Metrics().time_to_execute(exec_time * (10 ** 6))  # in microseconds
+        metrics = Metrics().time_to_execute(int(exec_time * (10 ** 6)))  # in microseconds
         # .trace("") # TODO!!
 
+        assert output is not None
         return output, metrics
 
     def predict(self, tensor: Optional[Tensor]) -> Tuple[Tensor, Metrics]:
@@ -323,7 +331,8 @@ class LocalModel:
 
 
 class ModelStore:
-    def __init__(self):
+    # TODO: why is this annotation required. https://github.com/python/mypy/pull/5677 says it isn't.
+    def __init__(self) -> None:
         self.models: List[LocalModel] = []
 
         # TODO: remove

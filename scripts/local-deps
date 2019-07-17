@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Checks for local dependencies needed for the project.
+
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+declare -A DEPS=( \
+    [jq]="going to https://stedolan.github.io/jq/download/" \
+    [pipenv]='`pip install pipenv`' \
+    [protoc]="going to https://github.com/protocolbuffers/protobuf/releases" \
+    [npm]="installing nvm: https://github.com/nvm-sh/nvm#installation-and-update" \
+)
+
+# Check for dependencies:
+check_local_deps() {
+    for dep in "${!DEPS[@]}"; do
+        check_local_dep "${dep}" "${DEPS["${dep}"]}"
+    done
+}
+
+check_local_deps && print "All local dependencies are present." $PURPLE
+
+# On success, mark that all the dependencies are present. We don't expect local
+# dependencies to change, so we're okay with letting `with` know that it
+# doesn't need to rerun this script.
+mark

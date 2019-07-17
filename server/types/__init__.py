@@ -18,16 +18,16 @@ try:
         if line is None:
             raise Exception(
                 f"Unable to determine build directory; is PROTOC_DST_DIR set "
-                "in {common_vars}?"
+                f"in {common_vars}?"
             )
         else:
             build_dir = join(
-                project_root, line[line.index("=") + 1 :].rstrip(), "python"
+                project_root, line[line.index("=") + 1 :].rstrip().strip('"'), "python"
             )
 except FileNotFoundError:
     raise Exception(
         f"Unable to determine build directory; is the build script still "
-        "in {common_vars}?"
+        f"in {common_vars}?"
     )
 
 dprint(build_dir)
@@ -37,7 +37,7 @@ if isdir(build_dir):
 else:
     raise Exception(
         f"The python protobuf build directory doesn't seem to "
-        "exist {build_dir}; try running `pipenv build`?"
+        f"exist {build_dir}; try running `pipenv run build`?"
     )
 
 

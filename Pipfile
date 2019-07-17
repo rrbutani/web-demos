@@ -12,7 +12,7 @@ tensorflowjs = "==1.0.1"
 "tf-nightly-2.0-preview" = "==2.0.0.dev20190715"
 "tensorflow-estimator-2.0-preview" = "==1.14.0.dev2019071500"
 numpy = "==1.15.1" # Locked by tensorflowjs
-flask-pbj = { git = "https://github.com/rrbutani/flask-pbj.git", ref = "0.2.1" }
+flask-pbj = { git = "https://github.com/rrbutani/flask-pbj.git", ref = "0.2.2" }
 protobuf = "~=3.9.0"
 
 [dev-packages]

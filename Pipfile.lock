@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c649124a2fb98c76d029d2b73091c116830a8952902bee5e4103f0b7e694820a"
+            "sha256": "48a6d0d6ea37ec5a3f0d4ebac1b46f7392caf702c9bc1b4bd92978b90b41e6c3"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -46,7 +46,7 @@
         },
         "flask-pbj": {
             "git": "https://github.com/rrbutani/flask-pbj.git",
-            "ref": "19697acb8a4a8453fbf81a8e9abb981ad0059e33"
+            "ref": "2e3898d7892f6cc72464bfe4fe69d446baf10747"
         },
         "gast": {
             "hashes": [

@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 from server.debug import dprint, if_debug
+from server.types import MODEL_DIR
 from server.types.metrics import Metrics
 
 dprint(f"TF Version: {tf.__version__}")
@@ -345,12 +346,13 @@ class ModelStore:
         self.models: List[LocalModel] = []
 
         # TODO: remove
+        j: Callable[[str], str] = lambda name: os.path.join(MODEL_DIR, name)
         # For now, let's load mnist-lstm in as model 0:
-        assert 0 == self._load_from_file("models/mnist-lstm.tflite")
+        assert 0 == self._load_from_file(j("mnist-lstm.tflite"))
         # And mobilenet_v1_1.0_224_float as model 1:
-        assert 1 == self._load_from_file("models/mobilenet_v1_1.0_224_float.tflite")
+        assert 1 == self._load_from_file(j("mobilenet_v1_1.0_224_float.tflite"))
         # And mobilenet_v1_1.0_224_quant as model 2:
-        assert 2 == self._load_from_file("models/mobilenet_v1_1.0_224_quant.tflite")
+        assert 2 == self._load_from_file(j("mobilenet_v1_1.0_224_quant.tflite"))
         dprint("loaded built-in models!!")
 
     def load(self, model: str) -> Handle:

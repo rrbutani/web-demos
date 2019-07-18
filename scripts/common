@@ -8,8 +8,9 @@ readonly EXAMPLES_DIR="examples"
 readonly MESSAGES_DIR="messages"
 readonly CLIENT_DIR="client"
 readonly PROTOC_DST_DIR="build"
-readonly ISORT_FLAGS=" -j$(nproc) -sg *node_modules*"
+readonly MODEL_DIR="models"
 
+readonly ISORT_FLAGS=" -j$(nproc) -sg *node_modules*"
 
 readonly NC='\e[0m'
 readonly RED='\e[1;31m'

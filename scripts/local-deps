@@ -10,6 +10,8 @@ declare -A DEPS=( \
     [protoc]="going to https://github.com/protocolbuffers/protobuf/releases" \
     [npm]="installing nvm: https://github.com/nvm-sh/nvm#installation-and-update" \
     [realpath]='`apt install realpath` or `brew install realpath`?' \
+    [curl]='`apt install curl` or `brew install curl`?' \
+    [tar]='`apt install tar` or `brew install tar`?' \
 )
 
 # Check for dependencies:

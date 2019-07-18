@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Grabs TFLite models that are 'built-in' to the server.
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# In order to grab models, we need our local dependencies (really just curl):
+resolve_deps local-deps
+
+declare -A MODELS=( \
+    [mnist-lstm]="https://github.com/frogermcs/MNIST-TFLite/blob/47e5bb2639c6c2960e3a400e4b91309698e279f0/notebooks/mnist_model.tflite?raw=true" \
+    [mobilenet_v1_1.0_224_float]="http://download.tensorflow.org/models/mobilenet_v1_2018_02_22/mobilenet_v1_1.0_224.tgz" \
+    [mobilenet_v1_1.0_224_quant]="http://download.tensorflow.org/models/mobilenet_v1_2018_08_02/mobilenet_v1_1.0_224_quant.tgz" \
+)
+
+# $1: location to put model in; $2: URL of model
+grab_model() {
+    if [[ ${2} =~ .tgz$ || ${2} =~ .tar.gz$ ]]; then
+        dprint "Handling '${2}' as a gzipped tar."
+        name_in_archive="$(basename $(basename "${url}" .tgz) .tar.gz)"
+        curl -#L "${2}" | tar xz "./${name_in_archive}.tflite" --to-stdout > "${1}"
+    elif [[ ${2} =~ .tflite ]]; then
+        dprint "Handling '${2}' as a TFLite file."
+        curl -#L "${2}" -o "${1}"
+    else
+        dprint "We don't know how to process '${2}'!"
+        return 2
+    fi
+}
+
+print "Fetching local models (into \`./${MODEL_DIR}\`):" $BOLD
+mkdir -p "${MODEL_DIR}"
+
+for m in "${!MODELS[@]}"; do
+    url="${MODELS["${m}"]}"
+    dprint "Grabbing '${m}' from \`${url}\`.."
+
+    grab_model "${MODEL_DIR}/${m}.tflite" "${url}"
+done
+
+print "Fetched all (${#MODELS[@]}) models successfully!" $PURPLE
+
+# On success, mark that we fetched all the models and shouldn't bother to again
+# unless the project is cleaned (i.e. the clean script is run). Really, if this
+# script changes or if the models folder is cleared we _should_ run this script
+# again, but those should be infrequent enough events that we can just run the
+# script manually in those cases.
+mark

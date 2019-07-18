@@ -7,6 +7,9 @@ Flask Server in [`server/`](server), examples in [`examples/`](examples). The se
 Currently requires:
   - jq
   - a modern-ish version of bash (4+)
+  - realpath
+  - curl (to fetch models)
+  - tar (to fetch models)
   - npm
   - [pipenv](https://github.com/pypa/pipenv) (older versions may have trouble)
   - libssl (pip)
@@ -25,7 +28,7 @@ We've got other targets too:
 
 If you're just looking to run the server and use the example, `pipenv run run` should be all you need.
 
-If you don't want to use `pipenv`, you can run the server with `python -m server` or just `./server/__main__.py`. But you'll need to make sure you've got the right python version/dependencies installed manually *and* you'll have to go build the example packages in order! They're listed [in the Pipfile](Pipfile).
+If you don't want to use `pipenv`, you can run the server with `python -m server` or just `./server/__main__.py`. But you'll need to make sure you've got the right python version/dependencies installed manually *and* you'll have to go build the client and then the example packages! The dependencies are listed [in the Pipfile](Pipfile#L10-L16).
 
 Currently:
  - [ ] TODO: license (apache 2.0 as well - MIT is more permissive so we can't use it) + blurb about it being the same as the things we used from external sources

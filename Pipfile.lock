@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f7577523732cf9bfcb28d83b3190fa6e0c2217906491ec600f9b552060e34cd5"
+            "sha256": "5186d0780001455ffa7a8621d99956b18553c81c8c92f42048e52e7e7d036155"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -46,7 +46,7 @@
         },
         "flask-pbj": {
             "git": "https://github.com/rrbutani/flask-pbj.git",
-            "ref": "2e3898d7892f6cc72464bfe4fe69d446baf10747"
+            "ref": "02a47a820d2eb3e4d89a739abb6cf3a7209fa43e"
         },
         "gast": {
             "hashes": [
@@ -319,10 +319,10 @@
         },
         "tb-nightly": {
             "hashes": [
-                "sha256:119fbf6cac8a3fc82799db445edaef857b3fe700001c147cee1fffe26a294cc0",
-                "sha256:24aac74fdff86d68a39906874a68ee5a23271ebe21c09138743621155657f07f"
+                "sha256:15b4eaaaeac12d25dc8bebc1513d70e0f4c4ef5a8da89a7f090c58bfb12d586f",
+                "sha256:ff2e610ca040ab196df255b03799a38410dfdf20ed9640421e9db5ea0536dd51"
             ],
-            "version": "==1.15.0a20190717"
+            "version": "==1.15.0a20190718"
         },
         "tensorflow-estimator-2.0-preview": {
             "hashes": [

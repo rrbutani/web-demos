@@ -48,8 +48,9 @@ build_messages_for_client() {
     return $ec
 }
 
-# In order to build, we need local dependencies and project dependencies:
-resolve_deps local-deps install
+# In order to build, we need local dependencies and project dependencies.
+# We also need dev-dependencies now because of the protoc mypy plugin.
+resolve_deps local-deps install install-dev
 
 # Build the proto files first (the client and the examples will need them):
 shopt -s globstar
@@ -65,7 +66,7 @@ if [ ! -z "${BUILD_THOROUGH}" ]; then
     run_command_in_examples "run build"
 else
     # If we're not being thorough, use the project folder as the dependency:
-    run_command_in_client_project "run build" "." ".built"
+    run_command_in_client_project "run build" "src" ".built"
     run_command_in_examples "run build" "." ".built"
 fi
 

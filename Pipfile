@@ -30,10 +30,10 @@ allow_prereleases = true
 [scripts]
 deps = "scripts/install"
 dev-deps = "scripts/install-dev"
-build = "scripts/with install-dev -- scripts/build"
+build = "scripts/build"
 clean = "scripts/clean"
-run = "scripts/with install build -- python -m server"
-lint = "scripts/with install-dev install build -- scripts/lint" # mypy, tslint
-format = "scripts/with install-dev -- scripts/format"           # black, tsfmt
-test = "scripts/with install-dev install build -- scripts/test" # pytest, jest
-check = "scripts/with install-dev -- scripts/check-formatting && scripts/lint"
+run = "scripts/with install build -- 'python -m server'"
+lint = "scripts/lint"  # mypy, tslint
+format = "scripts/fmt" # black, tsfmt
+test = "scripts/test"  # pytest, jest
+check = "scripts/with install-dev install build -- check-fmt lint"

@@ -40,3 +40,4 @@ Currently:
  - [ ] TODO: docker container that builds and then runs the entire thing (args for  PORT that go and expose the same port after)
  - [ ] TODO: comment protobuf file(s)
  - [ ] TODO: reorder targets in this readme and add the lint target
+ - [ ] TODO: Document the build system env vars (DEBUG_BUILD, FORCE_REBUILD)

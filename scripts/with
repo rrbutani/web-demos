@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Runs a command after installing it's dependencies.
+# Runs a set of commands after resolving their dependencies.
 
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
@@ -13,25 +13,55 @@ for arg in "${@}"; do
     ((i++))
 
     [[ "${arg}" == -- ]] && {
-        command="${@:$i}"
+        command=("${@:$i}")
         break;
     }
 
-    deps+=($"${arg}")
+    deps+=("${arg}")
 done
 
 # Resolve the dependencies:
-for dep_name in "${deps[@]}"; do
-    # If a dependency's marker file doesn't exist..
-    [ -f "$(marker_file "${dep_name}")" ] || {
-        # ..run its script:
-        echo -e '\e[1;34m'"Resolving ${dep_name}:"'\e[0m'
-        ("$(script_file "${dep_name}")") || {
-            err "Failed to resolve ${dep_name}!" $?
-        }
-        echo
+resolve_deps "${deps[@]}"
+
+dprint "deps: ${deps[@]}, commands: ${command[@]}"
+
+# Finally, run the commands!
+for cmd in "${command[@]}"; do
+    script_file="$(script_file "${cmd}")"
+
+    [ -f "${script_file}" ] && {
+        dprint "Running ${cmd} as a script (${script_file}).."
+
+        # If a matching script file exists, run it:
+        ("${script_file}") || err "Script \`${cmd}\` failed with $?." $?
+    } || {
+        dprint "Running ${cmd} as a command.."
+
+        # Otherwise, run the command:
+        $cmd || err "`${cmd}` failed with $?." $?
     }
 done
 
-# Finally, run the command!
-${command[@]}
+
+# function args {
+#     echo "got ${@}"
+
+#     while [[ "${1}" != -- ]]; do
+#         uno+=("${1}")
+#         shift 1 || return $?
+#     done
+
+#     shift 1 || return $?
+
+#     while [[ "${1}" != -- ]]; do
+#         dos+=("${1}")
+#         shift 1 || return $?
+#     done
+
+#     shift 1 || return $?
+
+#     tres=("${@}")
+#     echo "uno (${#uno[@]}): ${uno[@]}"
+#     echo "dos (${#dos[@]}): ${dos[@]}"
+#     echo "tres (${#tres[@]}): ${tres[@]}"
+# }

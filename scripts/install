@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Grabs dependencies; preps for a build.
-
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # Note: This target handles dependency tracking itself and doesn't drop marker

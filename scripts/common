@@ -8,6 +8,8 @@ readonly EXAMPLES_DIR="examples"
 readonly MESSAGES_DIR="messages"
 readonly CLIENT_DIR="client"
 readonly PROTOC_DST_DIR="build"
+readonly ISORT_FLAGS=" -j$(nproc) -sg *node_modules*"
+
 
 readonly NC='\e[0m'
 readonly RED='\e[1;31m'
@@ -85,7 +87,7 @@ find_or_run() {
 #         5 if $1 doesn't exist
 #         6 if FORCE_REBUILD is set
 check_if_newer() {
-    dprint "Comparing ${1} to ${2}"
+    dprint "Comparing ${1} to ${2} (in $(pwd))"
 
     [ -z "${FORCE_REBUILD+x}" ] || return 6
     [ -e "${1}" ] || {
@@ -181,7 +183,7 @@ server_client_pair() {
 
     print "Client: ${name[@]-running an operation}..." $BOLD
     for cmd in "${client[@]}"; do
-        run_command_in_client_project ${cmd} || ec=$?
+        run_command_in_client_project "${cmd}" || ec=$?
     done
 
     return ${ec}
@@ -265,4 +267,4 @@ test() {
     [[ "${@}" == $(roundtrip "${@}") ]]; return $?
 }
 
-readonly marker=".$(basename "${0}")"
+readonly marker=".__$(basename "${0}")"

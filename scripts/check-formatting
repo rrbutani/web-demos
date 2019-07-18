@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
-# Runs formatting and linting checks on the server and client (without making
-# changes)
+# Runs formatting checks on the server and client (without making changes).
 
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-server_client_pair "black --check --diff ." "run check-formatting" "Checking formatting"
+# In order to check formatting, we need regular and dev dependencies:
+resolve_deps install install-dev
+
+server_client_pair "isort -c ${ISORT_FLAGS}" "black --check --diff ." -- \
+    "run check-formatting" -- "Checking formatting"

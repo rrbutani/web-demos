@@ -23,9 +23,7 @@
   , "skipLibCheck": true
   }
 , "include":
-  [ "src/"
-  , "build/"
-  ]
+  [ "src/" ]
 , "exclude":
   [ "node_modules/" ]
 , "compileOnSave": true

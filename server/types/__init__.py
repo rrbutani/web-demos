@@ -3,17 +3,6 @@ import sys
 from os.path import abspath, dirname, isdir, join
 from typing import Callable
 
-from inference_pb2 import (
-    Error,
-    InferenceRequest,
-    InferenceResponse,
-    LoadModelRequest,
-    LoadModelResponse,
-    Metrics,
-    Model,
-    ModelHandle,
-    Tensor,
-)
 from server.debug import dprint
 
 up: Callable[[str, int], str] = lambda p, n: p if n == 0 else up(dirname(p), n - 1)
@@ -50,3 +39,16 @@ else:
         f"The python protobuf build directory doesn't seem to "
         f"exist {build_dir}; try running `pipenv run build`?"
     )
+
+
+from inference_pb2 import (  # isort:skip
+    Error,
+    InferenceRequest,
+    InferenceResponse,
+    LoadModelRequest,
+    LoadModelResponse,
+    Metrics,
+    Model,
+    ModelHandle,
+    Tensor,
+)

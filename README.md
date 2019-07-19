@@ -12,19 +12,25 @@ Currently requires:
   - tar (to fetch models)
   - npm
   - [pipenv](https://github.com/pypa/pipenv) (older versions may have trouble)
-  - libssl (pip)
-  - a modern-ish glibc/libstdc++ (tensorflow)
+  - libssl (for pip)
+  - a modern-ish glibc/libstdc++ (for tensorflow)
+  - a modern-ish version of git (for the clean script)
 
 Run with `pipenv run run`. It _should_ just work.
 
 We've got other targets too:
   - `pipenv run deps` grabs dependencies (for the server and the examples)
   - `pipenv run dev-deps` grabs dev dependencies (for the server)
+  - `pipenv run fetch` fetchs the local models (for the server)
   - `pipenv run build` rebuilds the examples and the protobuf files
   - `pipenv run clean` cleans out build files
   - `pipenv run run` gets deps and builds (if needed) and starts the server
-  - `pipenv run format` grabs deps (if needed) and runs [black](https://github.com/python/black)/[tsfmt](https://github.com/vvakame/typescript-formatter)+[tslint](https://github.com/palantir/tslint)
-  - `pipenv run test` builds and grabs deps (if needed) and runs [pytest](https://github.com/pytest-dev/pytest)/[jest](https://github.com/facebook/jest)
+  - `pipenv run format` grabs deps (if needed) and runs [`isort`](https://github.com/timothycrosley/isort)+[`black`](https://github.com/python/black)/[`tsfmt`](https://github.com/vvakame/typescript-formatter)+[tslint](https://github.com/palantir/tslint)
+  - `pipenv run lint` runs [`mypy`](https://github.com/python/mypy)/[`tslint`](https://github.com/palantir/tslint)
+  - `pipenv run test` builds and grabs deps (if needed) and runs [`pytest`](https://github.com/pytest-dev/pytest)/[`jest`](https://github.com/facebook/jest)
+  - `pipenv run check` checks formatting and runs the linters
+  - `pipenv run watch` rebuilds the components of the project as changes are made
+  - `pipenv run package` builds a python wheel with all the assets rolled in
 
 If you're just looking to run the server and use the example, `pipenv run run` should be all you need.
 

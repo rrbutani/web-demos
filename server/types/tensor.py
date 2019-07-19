@@ -29,23 +29,25 @@ type_map_pb2numpy: Dict[str, Type[np.generic]] = {
     "ints": np.int32,
     "bools": np.bool,
     "complex_nums": np.complex64,
-    "strings": np.byte,
+    "strings": np.unicode,
 }
 
 # [numpy kind (dtype.kind)] => Protobuf field name
 type_map_numpy2pb: Dict[str, Tuple[str, Type[Any]]] = {
     "f": ("floats", Tensor.FloatArray),
     "i": ("ints", Tensor.IntArray),
-    "?": ("bools", Tensor.BoolArray),
+    "b": ("bools", Tensor.BoolArray),
     "c": ("complex_nums", Tensor.ComplexArray),
     "S": ("strings", Tensor.StringArray),
     # We also have data types that we can't represent in the TFJS world that
     # we'll map as best as we can:
     # List of data type kinds: docs.scipy.org/doc/numpy/reference/arrays.dtypes.html
     "u": ("ints", Tensor.IntArray),  # uint8 -> int32
-    "b": ("ints", Tensor.IntArray),  # signed byte -> int32
     "B": ("ints", Tensor.IntArray),  # unsigned byte -> int32
     "U": ("strings", Tensor.StringArray),  # Unicode string -> string
+    "?": ("ints", Tensor.IntArray),  # unknown -> int32
+    # https://docs.scipy.org/doc/numpy/reference/generated/numpy.dtype.kind.html
+    # ^ disagrees about booleans; going with ^
     # Leaving 'm' (timedelta), 'M' (datetime), 'O' (Python objects), and 'V'
     # (raw data (void)) unmapped.
 }
@@ -122,7 +124,7 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
     """
     dtype = tensor.dtype
 
-    if not (dtype.isnative and dtype.isbuiltin):
+    if not dtype.isnative:  # relaxing dtype.isbuiltin for now
         raise ConversionError(f"Invalid data type ({dtype}) on tensor; cannot convert.")
 
     field, klass = type_map_numpy2pb[dtype.kind]

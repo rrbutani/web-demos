@@ -23,6 +23,7 @@ isort = { version = "~=4.3.21", extras = ["pyproject"] }
 mypy-protobuf = "~=1.12"
 tensorflow-stubs = { git = "https://github.com/rrbutani/tensorflow-stubs", ref = "a293b6022e9aa972c24a70f74784fcec24f8ce9e" }
 numpy-stubs = { git = "https://github.com/numpy/numpy-stubs", ref = "a57ec5671096cf59530dcda21a93c0d880cc759e" }
+setuptools = "~=41.0.1"
 
 [pipenv]
 allow_prereleases = true

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5186d0780001455ffa7a8621d99956b18553c81c8c92f42048e52e7e7d036155"
+            "sha256": "c0fcf187a8cd4072c8b6789ed839df8a10ede6bce1dd67e6e3f103db851726e4"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -319,10 +319,10 @@
         },
         "tb-nightly": {
             "hashes": [
-                "sha256:15b4eaaaeac12d25dc8bebc1513d70e0f4c4ef5a8da89a7f090c58bfb12d586f",
-                "sha256:ff2e610ca040ab196df255b03799a38410dfdf20ed9640421e9db5ea0536dd51"
+                "sha256:060c1ba5774b65076851477faecf3030a181aca8d3196b6f7aec3e4ab437a0fe",
+                "sha256:c1c683ba0dcbcc25437e6c3bb9025ba2b6819fc25db87fa0076a91a45456ea7f"
             ],
-            "version": "==1.15.0a20190718"
+            "version": "==1.15.0a20190719"
         },
         "tensorflow-estimator-2.0-preview": {
             "hashes": [

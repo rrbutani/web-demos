@@ -41,27 +41,3 @@ for cmd in "${command[@]}"; do
         $cmd || err "`${cmd}` failed with $?." $?
     }
 done
-
-
-# function args {
-#     echo "got ${@}"
-
-#     while [[ "${1}" != -- ]]; do
-#         uno+=("${1}")
-#         shift 1 || return $?
-#     done
-
-#     shift 1 || return $?
-
-#     while [[ "${1}" != -- ]]; do
-#         dos+=("${1}")
-#         shift 1 || return $?
-#     done
-
-#     shift 1 || return $?
-
-#     tres=("${@}")
-#     echo "uno (${#uno[@]}): ${uno[@]}"
-#     echo "dos (${#dos[@]}): ${dos[@]}"
-#     echo "tres (${#tres[@]}): ${tres[@]}"
-# }

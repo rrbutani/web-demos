@@ -7,4 +7,4 @@
 # In order to lint, we need regular and dev dependencies to have built:
 resolve_deps install install-dev build
 
-server_client_pair "mypy server" -- "run lint" -- "Linting"
+server_client_pair "mypy ${SERVER_DIR}" -- "run lint" -- "Linting"

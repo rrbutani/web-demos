@@ -2,13 +2,19 @@
 
 set -e
 
-readonly BUILD_DIR=build
+readonly NAME="web-demos"
+readonly VERSION="0.0.0"
+readonly AUTHOR="???" # TODO
+
+readonly BUILD_DIR="build"
 readonly SCRIPT_DIR="$(dirname "${0}")"
 readonly EXAMPLES_DIR="examples"
 readonly MESSAGES_DIR="messages"
 readonly CLIENT_DIR="client"
+readonly SERVER_DIR="server"
 readonly PROTOC_DST_DIR="build"
 readonly MODEL_DIR="models"
+readonly PACKAGE_DIR="dist"
 
 readonly ISORT_FLAGS=" -j$(nproc) -sg *node_modules*"
 
@@ -142,6 +148,13 @@ run_command_in_example() {
 run_command_in_examples() {
     for ex in "${EXAMPLES_DIR}"/*; do
         run_command_in_example "${ex}" "${@}"
+    done
+}
+
+# $1: npm command to run; $2?: dependency; $3?: marker file
+run_command_in_examples_async() {
+    for ex in "${EXAMPLES_DIR}"/*; do
+        run_command_in_example "${ex}" "${@}" &
     done
 }
 

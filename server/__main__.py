@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.7
 
+from os import environ as env
 from os import listdir
 from os.path import dirname, exists, isdir, isfile, join
 from string import capwords
@@ -32,8 +33,8 @@ from server.types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
 
-HOST = "0.0.0.0"  # TODO: source from env var
-PORT = 5000  # TODO: source from env var
+HOST: str = env["HOST"] if "HOST" in env else "0.0.0.0"
+PORT: int = int(env["PORT"]) if "PORT" in env else 5000
 EX_DIR = join(dirname(__file__), "..", "examples")
 TEMPLATE_DIR = join(dirname(__file__), "templates")
 

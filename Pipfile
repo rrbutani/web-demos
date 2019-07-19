@@ -38,3 +38,4 @@ format = "scripts/fmt" # black+isort, tsfmt+tslint
 lint = "scripts/lint"  # mypy, tslint
 test = "scripts/test"  # pytest, jest
 check = "scripts/with install-dev install build -- check-fmt lint"
+watch = "scripts/watch"

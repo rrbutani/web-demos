@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# Experimental script that puts the client, the examples, and the server in
+# watch mode (auto reloads changes).
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# In order to put everything in watch mode, we must have all the local
+# dependencies and have build at least once (so that the messages get built).
+# We should also fetch the models.
+# Note: messages will _not_ be auto-rebuilt.
+resolve_deps install build fetch
+
+# Also note that there is no dependency tracking happening here; if the watch
+# script is run we'll always put everything in watch mode -- even if no changes
+# have occurred since the last time the script was called.
+
+# Let's start up the client first:
+run_command_in_client_project "run watch" &
+
+# Next, the examples:
+run_command_in_examples_async "run watch"
+
+# Finally, the server:
+# (we put the server in 'watch' mode by enabling debug mode)
+DEBUG= run_command_in_server 'python -m server' &
+
+on_quit() { print "Exiting!" $BOLD; jobs -p | xargs kill; }
+trap on_quit INT
+
+URL="http://${HOST-127.0.0.1}:${POST-5000}/"
+
+# Wait till it's up:
+while true; do curl -s "${URL}" > /dev/null 2>&1 && break; sleep 1; done
+
+print "We're up!" $CYAN
+
+# Once it is, try to open the page:
+{ hash xdg-open && xdg-open "${URL}"; } ||
+{ hash open && open "${URL}"; } || :
+
+wait

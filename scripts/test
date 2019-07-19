@@ -4,4 +4,7 @@
 
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-server_client_pair "pytest" "run test" "Testing"
+# In order to test, we need regular and dev dependencies and to have built:
+resolve_deps install install-dev build
+
+server_client_pair "pytest ${TESTS_DIR}" -- "run test" -- "Testing"

@@ -7,4 +7,8 @@
 # In order to lint, we need regular and dev dependencies to have built:
 resolve_deps install install-dev build
 
+# Once there's a release of pytest that include this commit
+# (https://github.com/pytest-dev/pytest/pull/5593), we'll add `${TEST_DIRS}` to
+# the list of things mypy should lint below.
+# TODO: `"mypy ${SERVER_DIR} ${TESTS_DIR}"`
 server_client_pair "mypy ${SERVER_DIR}" -- "run lint" -- "Linting"

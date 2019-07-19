@@ -19,10 +19,10 @@ PbError.toString = function(): string {
   return print_error(this);
 };
 
-const DEBUG = true;     // TODO: env var
+const DEBUG_ENV_VAR: string = "debug_env_value_here";
 
 function dprint(p: string) {
-  if (DEBUG) {
+  if (DEBUG_ENV_VAR === "true") {
     // tslint:disable-next-line:no-console
     console.log(p);
   }

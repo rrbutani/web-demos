@@ -5,6 +5,7 @@ import resolve from 'rollup-plugin-node-resolve';
 import builtins from 'rollup-plugin-node-builtins';
 import commonJS from 'rollup-plugin-commonjs'
 import sourcemaps from 'rollup-plugin-sourcemaps';
+import replace from 'rollup-plugin-replace';
 
 export default
 { input: 'src/index.ts'
@@ -35,7 +36,8 @@ export default
   , '@tensorflow/tfjs'
   ]
 , plugins:
-  [ typescript({ typescript: require('typescript') })
+  [ replace({ debug_env_value_here: ("DEBUG" in process.env).toString() })
+  , typescript({ typescript: require('typescript') })
   , builtins()
   , resolve(
     { mainFields:
@@ -52,7 +54,7 @@ export default
       , ".ts"
       , ".tsx"
       ]
-    }),
+    })
   , commonJS(
     { include: /node_modules/
     , namedExports:

@@ -1,5 +1,5 @@
-import { tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
-import { chunk, flatMap, invert } from "lodash";
+import { complex as complex_constructor, tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
+import { chunk, invert, unzip } from "lodash";
 import { inference } from "../build/inference";
 
 import { exhaust } from "./util";
@@ -113,13 +113,17 @@ export function pb_to_tfjs_tensor(pb_tensor: PbTensor): TfJsTensor {
     case "strings":
       return tfjs_tensor_constructor(pb_tensor[pb_dtype]!.array!, shape, dtype);
 
-    case "complex_nums": // TODO: Check
-      const array = flatMap(pb_tensor[pb_dtype]!.array!,
-        (c: PbTensor.Complex): number[] =>
-          [c.real as number, c.imaginary as number]);
+    case "complex_nums":
+      const array = pb_tensor[pb_dtype]!.array!
+        .map((c: PbTensor.Complex): number[] =>
+            [c.real as number, c.imaginary as number]);
 
-      return tfjs_tensor_constructor(array, shape, dtype);
+      const [ reals, imags ] = unzip(array);
 
+      // TODO: this discards shape information!
+      return complex_constructor(reals, imags);
+
+    /* istanbul ignore next */
     default:
       return exhaust(pb_dtype);
   }
@@ -166,6 +170,7 @@ export async function tfjs_to_pb_tensor(tensor: TfJsTensor): Promise<PbTensor> {
       });
       break;
 
+    /* istanbul ignore next */
     default:
       exhaust(dtype);
   }

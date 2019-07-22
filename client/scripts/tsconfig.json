@@ -5,6 +5,4 @@
   , "module": "commonjs"
   , "esModuleInterop": true
   }
-, "files":
-  [ "build-messages.ts" ]
 }

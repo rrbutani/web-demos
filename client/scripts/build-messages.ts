@@ -4,7 +4,7 @@
  * Quick and simple script that builds the protobuf messages.
  */
 
-import { mkdirSync as mkdir, existsSync as exists } from 'fs';
+import { mkdirSync as mkdir, existsSync as exists, writeFileSync as write_file } from 'fs';
 import { dirname, basename, join } from 'path';
 import { argv } from 'process';
 
@@ -17,6 +17,18 @@ const config = pkg.config;
 const message_build = config.message_build_folder || "build";
 const message_types = config.message_types_folder || "build";
 
+const messages_babelrc_config =
+{ "env":
+  { "test":
+    { "presets":
+      [ [ "@babel/preset-env"
+        , { "modules": "commonjs" }
+        ]
+      ]
+    }
+  }
+};
+
 const throw_err = (err: Error, _: string) => { if (err) throw err; }
 const create = (file: string) => {
   const path = dirname(file);
@@ -24,11 +36,11 @@ const create = (file: string) => {
 }
 
 const messages: string[] =
-  argv.filter((arg: string) => arg.endsWith('.proto'));
+  argv.filter((arg: string) => arg.endsWith(".proto"));
 
 messages.forEach((m) => {
-  const message_js_file = join(message_build, basename(m, '.proto') + ".js");
-  const message_typings = join(message_types, basename(m, '.proto') + ".d.ts");
+  const message_js_file = join(message_build, basename(m, ".proto") + ".js");
+  const message_typings = join(message_types, basename(m, ".proto") + ".d.ts");
 
   create(message_js_file);
   create(message_typings);
@@ -56,4 +68,9 @@ messages.forEach((m) => {
     ]
   , throw_err
   )
-})
+});
+
+write_file(
+  join(message_build, ".babelrc"),
+  JSON.stringify(messages_babelrc_config)
+);

@@ -1,4 +1,4 @@
-import { complex, tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
+import { complex as complex_constructor, tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
 
 import { pb_to_tfjs_tensor as pb2js, tfjs_to_pb_tensor as js2pb } from '../src/tensor';
 import { exhaust } from '../src/util';
@@ -23,9 +23,12 @@ function random_int_with_bits(bits: number): number {
   return random_int_inclusive(- (2 ** (bits - 1)), (2 ** (bits - 1)) - 1);
 }
 
+/**
+ * Inclusive lower bound, exclusive upper bound.
+ */
 function range(max: number, min: number = 0): number[] {
   const lower: number = Math.floor(min);
-  const upper: number = Math.ceil(max) - 1;
+  const upper: number = Math.ceil(max);
 
   return Array.from(Array(upper - lower).keys()).map(i => i + lower)
 }
@@ -53,7 +56,7 @@ function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5, max_len:
       break;
 
     case "bool":
-      arr = range(total_len).map(_ => ri(0, 1)).map(b => b === 0 ? false : true);
+      arr = range(total_len).map(_ => !!ri(0, 1));
       break;
 
     // Complex tensors have a special constructor; they'll get fully
@@ -65,7 +68,11 @@ function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5, max_len:
     case "complex64":
       const reals = range(total_len).map(_ => rf(rb(32), rb(32)));
       const imags = range(total_len).map(_ => rf(rb(32), rb(32)));
-      return complex(reals, imags);
+
+      // TODO: Warning!! This discards shape information!
+      // It's unclear how to correctly construct a complex tensor that isn't
+      // flat, so until this feature is needed we'll leave this as is.
+      return complex_constructor(reals, imags);
 
     case "string":
       arr = range(total_len).map(_ =>
@@ -89,12 +96,16 @@ async function cycle(orig: TfJsTensor): Promise<TfJsTensor> {
   expect(nouveau.dtype).toEqual(orig.dtype);
   expect(await nouveau.data()).toEqual(await orig.data())
 
-  expect(nouveau).toEqual(orig);
+  // Just to make sure we're not cheating:
+  expect(nouveau.id).not.toBe(orig.id);
+
+  const { id, scopeId, ...all_but_ids } = orig;
+  expect(nouveau).toMatchObject(all_but_ids);
 
   return nouveau;
 }
 
-async function dtype_test(dtype: TfJsDataType) {
+async function single_test(dtype: TfJsDataType) {
   const uno = random_tensor(dtype);
 
   const dos = await cycle(uno);
@@ -103,14 +114,24 @@ async function dtype_test(dtype: TfJsDataType) {
   expect(await uno.data()).toEqual(await tres.data());
 }
 
+async function dtype_test(dtype: TfJsDataType, num_tests: number = 10) {
+  expect.assertions(11 * num_tests);
+
+  for (const _ of range(num_tests)) {
+    await single_test(dtype);
+  }
+}
+
 describe("Tensor Roundtrip Tests", () => {
-  test("floats", async _ => dtype_test("float32"));
+  jest.setTimeout(2 * 60 * 1000);
 
-  test("ints", async _ => dtype_test("int32"));
+  test("floats", async () => dtype_test("float32"));
 
-  test("bools", async _ => dtype_test("bool"));
+  test("ints", async () => dtype_test("int32"));
 
-  test("complex", async _ => dtype_test("complex64"));
+  test("bools", async () => dtype_test("bool"));
 
-  test("strings", async _ => dtype_test("string"));
+  test("complex", async () => dtype_test("complex64"));
+
+  test("strings", async () => dtype_test("string"));
 });

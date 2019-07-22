@@ -1,4 +1,8 @@
-import { complex as complex_constructor, tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
+import {
+  complex as complex_constructor,
+  tensor as tfjs_tensor_constructor,
+  Tensor as TfJsTensor,
+} from "@tensorflow/tfjs";
 import { chunk, invert, unzip } from "lodash";
 import { inference } from "../build/inference";
 
@@ -116,9 +120,9 @@ export function pb_to_tfjs_tensor(pb_tensor: PbTensor): TfJsTensor {
     case "complex_nums":
       const array = pb_tensor[pb_dtype]!.array!
         .map((c: PbTensor.Complex): number[] =>
-            [c.real as number, c.imaginary as number]);
+          [c.real as number, c.imaginary as number]);
 
-      const [ reals, imags ] = unzip(array);
+      const [reals, imags] = unzip(array);
 
       // TODO: this discards shape information!
       return complex_constructor(reals, imags);

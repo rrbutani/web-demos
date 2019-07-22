@@ -1,7 +1,11 @@
-import { complex as complex_constructor, tensor as tfjs_tensor_constructor, Tensor as TfJsTensor } from "@tensorflow/tfjs";
+import {
+  complex as complex_constructor,
+  tensor as tfjs_tensor_constructor,
+  Tensor as TfJsTensor,
+} from "@tensorflow/tfjs";
 
-import { pb_to_tfjs_tensor as pb2js, tfjs_to_pb_tensor as js2pb } from '../src/tensor';
-import { exhaust } from '../src/util';
+import { pb_to_tfjs_tensor as pb2js, tfjs_to_pb_tensor as js2pb } from "../src/tensor";
+import { exhaust } from "../src/util";
 
 const sample_tfjs = tfjs_tensor_constructor([0]);
 type TfJsDataType = (typeof sample_tfjs.dtype);
@@ -30,12 +34,12 @@ function range(max: number, min: number = 0): number[] {
   const lower: number = Math.floor(min);
   const upper: number = Math.ceil(max);
 
-  return Array.from(Array(upper - lower).keys()).map(i => i + lower)
+  return Array.from(Array(upper - lower).keys()).map((i) => i + lower);
 }
 
 function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5, max_len: number = 2 ** 5): TfJsTensor {
   const num_dimensions: number = random_int_inclusive(0, max_dimensions);
-  const shape: number[] = range(num_dimensions).map(_ => random_int_inclusive(1, max_len));
+  const shape: number[] = range(num_dimensions).map((_) => random_int_inclusive(1, max_len));
 
   const total_len: number = shape.reduce((acc, curr) => acc * curr, 1);
 
@@ -48,15 +52,15 @@ function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5, max_len:
 
   switch (dtype) {
     case "float32":
-      arr = range(total_len).map(_ => rf(rb(32), rb(32)));
+      arr = range(total_len).map((_) => rf(rb(32), rb(32)));
       break;
 
     case "int32":
-      arr = range(total_len).map(_ => rb(32));
+      arr = range(total_len).map((_) => rb(32));
       break;
 
     case "bool":
-      arr = range(total_len).map(_ => !!ri(0, 1));
+      arr = range(total_len).map((_) => !!ri(0, 1));
       break;
 
     // Complex tensors have a special constructor; they'll get fully
@@ -66,8 +70,8 @@ function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5, max_len:
     // the first place so that it can be type compatible with all the other
     // things that use tensor.dtype)
     case "complex64":
-      const reals = range(total_len).map(_ => rf(rb(32), rb(32)));
-      const imags = range(total_len).map(_ => rf(rb(32), rb(32)));
+      const reals = range(total_len).map((_) => rf(rb(32), rb(32)));
+      const imags = range(total_len).map((_) => rf(rb(32), rb(32)));
 
       // TODO: Warning!! This discards shape information!
       // It's unclear how to correctly construct a complex tensor that isn't
@@ -75,11 +79,11 @@ function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5, max_len:
       return complex_constructor(reals, imags);
 
     case "string":
-      arr = range(total_len).map(_ =>
+      arr = range(total_len).map((__) =>
         range(ri(0, RANDOM_STRING_MAX_LEN))
-          .map(_ => ri(0, 2 ** 8 - 1))
-          .map(i => String.fromCharCode(i))
-          .join(''));
+          .map((_) => ri(0, 2 ** 8 - 1))
+          .map((i) => String.fromCharCode(i))
+          .join(""));
       break;
 
     default:
@@ -94,7 +98,7 @@ async function cycle(orig: TfJsTensor): Promise<TfJsTensor> {
 
   expect(nouveau.shape).toEqual(orig.shape);
   expect(nouveau.dtype).toEqual(orig.dtype);
-  expect(await nouveau.data()).toEqual(await orig.data())
+  expect(await nouveau.data()).toEqual(await orig.data());
 
   // Just to make sure we're not cheating:
   expect(nouveau.id).not.toBe(orig.id);

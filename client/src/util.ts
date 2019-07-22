@@ -7,6 +7,7 @@ export function dprint(p: string) {
   }
 }
 
+/* istanbul ignore next */
 export function exhaust(_: never): never {
   // tslint:disable-next-line:no-console
   console.log("if you're seeing this something has gone very very wrong...");

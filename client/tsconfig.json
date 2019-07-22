@@ -23,7 +23,9 @@
   , "skipLibCheck": true
   }
 , "include":
-  [ "src/" ]
+  [ "src/"
+  , "tests/"
+  ]
 , "exclude":
   [ "node_modules/" ]
 , "compileOnSave": true

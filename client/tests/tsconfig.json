@@ -10,11 +10,4 @@
       ]
     }
   }
-, "include":
-  [ "src/"
-  , "tests"
-  , "node_modules"
-  ]
-, "exclude":
-  []
 }

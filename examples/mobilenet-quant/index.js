@@ -75,7 +75,7 @@ async function predict(imgElement) {
 
     // Make a prediction through mobilenet.
     const [ result, metrics ] =
-      await client.MobileNetQuantModel.predict_with_metrics(img);
+      await client.Model.MobileNetQuantModel.predict_with_metrics(img);
 
     time_to_execute = metrics.time_to_execute;
     startTime2 = performance.now();

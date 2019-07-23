@@ -82,7 +82,7 @@ async function predict(imgElement) {
 
     // Make a prediction through mobilenet.
     const [ result, metrics ] =
-      await client.MobileNetFloatModel.predict_with_metrics(normalized);
+      await client.Model.MobileNetFloatModel.predict_with_metrics(normalized);
 
     time_to_execute = metrics.time_to_execute;
     startTime2 = performance.now();

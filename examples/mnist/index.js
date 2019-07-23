@@ -230,7 +230,7 @@ async function showPredictions(model) {
   // from GPU memory after execution without having to call dispose().
   // The tf.tidy callback runs synchronously.
   {
-    let output = await client.MnistModel
+    let output = await client.Model.MnistModel
       .predict(examples.xs.reshape([testExamples, 1, 28, 28]));
 
     // tf.argMax() returns the indices of the maximum values in the tensor along

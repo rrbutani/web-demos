@@ -18,13 +18,17 @@ readonly MODEL_DIR="models"
 readonly PACKAGE_DIR="dist"
 readonly COVERAGE_DIR="${BUILD_DIR}/coverage"
 
+readonly SERVER_COV_HTML="${COVERAGE_DIR}/server_cov_html"
+readonly SERVER_COV_XML="${COVERAGE_DIR}/server_cov.xml"
+readonly SERVER_COV_ANNOTATE="${COVERAGE_DIR}/server_cov_annotate"
+
 readonly ISORT_FLAGS="-j$(nproc) -sg *node_modules*"
 readonly PYTEST_COV_FLAGS="--cov-append \
     --cov-branch \
     --cov-report term \
-    --cov-report html:${COVERAGE_DIR}/server_cov_html \
-    --cov-report xml:${COVERAGE_DIR}/server_cov.xml \
-    --cov-report annotate:${COVERAGE_DIR}/server_cov_annotate \
+    --cov-report html:${SERVER_COV_HTML} \
+    --cov-report xml:${SERVER_COV_XML} \
+    --cov-report annotate:${SERVER_COV_ANNOTATE} \
     --cov-report term \
 "
 

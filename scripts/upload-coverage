@@ -24,10 +24,12 @@ resolve_deps local-deps install-dev
 export COVERALLS_PARALLEL=true
 
 # As a backup, we're going to pretend that we're Sempaphore in this script.
-# Why Sempaphore? It's lowest on the list of CI services in
+# Why Semaphore? It's lowest on the list of CI services in
 # [`coveralls-python`](bit.ly/2JXPOoQ).
 export SEMAPHORE="🍍"
+export COVERALLS_SERVICE_JOB_ID="${COVERALLS_SERVICE_JOB_ID-"0"}"
 export SEMAPHORE_BUILD_NUMBER="${COVERALLS_SERVICE_JOB_ID}"
+export COVERALLS_SERVICE_NAME="${COVERALLS_SERVICE_NAME-"semaphore-ci"}"
 
 # We also need to have actually generated coverage information (i.e. run tests)
 # but we won't list the test target as a dependency since it's phony (always
@@ -36,6 +38,7 @@ export SEMAPHORE_BUILD_NUMBER="${COVERALLS_SERVICE_JOB_ID}"
 # Instead we'll make sure that coverage info is actually present.
 readonly msg="Please try running the tests first (\`pipenv run test\`)."
 readonly client_cov="${COVERAGE_DIR}/lcov.info"
+readonly client_relative_path="$(realpath --relative-to="${CLIENT_DIR}" .)"
 
 # For the server (py-cov):
 [ -f ".coverage" ] || err "No coverage information for the server! ${msg}" 1
@@ -44,15 +47,21 @@ readonly client_cov="${COVERAGE_DIR}/lcov.info"
 [ -f "${client_cov}" ] || err "No coverage information for the client! ${msg}" 2
 
 # If everything looks good, upload!
-server_client_pair "coveralls" -- \
-    "run coveralls .." -- \
+server_client_pair "coveralls --service=${COVERALLS_SERVICE_NAME}" -- \
+    "run coveralls ${client_relative_path}" -- \
     "Uploading coverage to coveralls" \
         < "${client_cov}"
 
 # Once we're done, let coveralls know:
 readonly COVERALLS_ENDPOINT="https://coveralls.io"
 curl -sk \
-    "${COVERALLS_ENDPOINT}/webhook?repo_token=$COVERALLS_REPO_TOKEN" \
-    -d "payload[build_num]=$COVERALLS_SERVICE_JOB_ID&payload[status]=done" \
+    "${COVERALLS_ENDPOINT}/webhook?repo_token=${COVERALLS_REPO_TOKEN}" \
+    -d "payload[build_num]=${ORIG_COVERALLS_SERVICE_JOB_ID}.1&payload[status]=done" \
   | jq -e '.done' \
  && print "Success!" "${CYAN}"
+
+# Since coveralls doesn't seem to handle merging well, we'll upload to codecov
+# too:
+bash <(curl -s "https://codecov.io/bash") \
+    -f "${client_cov}" \
+    -f "${SERVER_COV_XML}"

@@ -50,3 +50,5 @@ Currently:
  - [ ] TODO: comment protobuf file(s)
  - [ ] TODO: reorder targets in this readme and add the lint target
  - [ ] TODO: Document the build system env vars (DEBUG_BUILD, FORCE_REBUILD)
+ - [ ] TODO: Finish alt coveralls script to merge locally
+

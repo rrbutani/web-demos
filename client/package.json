@@ -42,6 +42,7 @@
   , "@types/lodash": "~4.14.136"
   , "@types/node": "~12.6.8"
   , "cross-env": "~5.2.0"
+  , "coveralls": "~3.0.5"
   }
 , "scripts":
   { "build-messages":
@@ -52,6 +53,7 @@
   , "format": "tsfmt -r && tslint -p . -t stylish --fix"
   , "test": "jest"
   , "check-formatting": "tsfmt --verify"
+  , "coveralls": "coveralls"
   }
 , "jest":
   { "verbose": true
@@ -59,6 +61,12 @@
   , "rootDir": "."
   , "collectCoverage": true
   , "coverageDirectory": "<rootDir>/build/coverage"
+  , "coverageReporters":
+    [ "json"
+    , "lcov"
+    , "text"
+    , "clover"
+    ]
   , "collectCoverageFrom":
     [ "<rootDir>/src/**/*.{ts,tsx}" ]
   , "transform":

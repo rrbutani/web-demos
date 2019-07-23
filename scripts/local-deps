@@ -2,8 +2,10 @@
 
 # Checks for local dependencies needed for the project.
 
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
+# shellcheck disable=SC2016
 declare -A DEPS=( \
     [jq]="going to https://stedolan.github.io/jq/download/" \
     [pipenv]='`pip install pipenv`' \
@@ -24,7 +26,7 @@ check_local_deps() {
     done
 }
 
-check_local_deps && print "All local dependencies are present." $PURPLE
+check_local_deps && print "All local dependencies are present."" $PURPLE"
 
 # On success, mark that all the dependencies are present. We don't expect local
 # dependencies to change, so we're okay with letting `with` know that it

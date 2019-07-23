@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 # Grabs dependencies; preps for a build.
+
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # Note: This target handles dependency tracking itself and doesn't drop marker
@@ -13,7 +15,7 @@ resolve_deps local-deps
 run_command_in_client_project install package.json "${marker}"
 run_command_in_examples install package.json "${marker}"
 
-pipenv_install() { pipenv install && print "Install Successful!" $PURPLE; }
+pipenv_install() { pipenv install && print "Install Successful!" "$PURPLE"; }
 
 # Next, pipenv:
 PIP_IGNORE_INSTALLED=1 run_command_in_server pipenv_install Pipfile "${marker}" ||

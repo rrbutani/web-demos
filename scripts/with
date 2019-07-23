@@ -2,6 +2,7 @@
 
 # Runs a set of commands after resolving their dependencies.
 
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 deps=()
@@ -23,21 +24,21 @@ done
 # Resolve the dependencies:
 resolve_deps "${deps[@]}"
 
-dprint "deps: ${deps[@]}, commands: ${command[@]}"
+dprint "deps: ${deps[*]}, commands: ${command[*]}"
 
 # Finally, run the commands!
 for cmd in "${command[@]}"; do
     script_file="$(script_file "${cmd}")"
 
-    [ -f "${script_file}" ] && {
+    if [ -f "${script_file}" ]; then
         dprint "Running ${cmd} as a script (${script_file}).."
 
         # If a matching script file exists, run it:
         ("${script_file}") || err "Script \`${cmd}\` failed with $?." $?
-    } || {
+    else
         dprint "Running ${cmd} as a command.."
 
         # Otherwise, run the command:
-        $cmd || err "`${cmd}` failed with $?." $?
-    }
+        $cmd || err "\`${cmd}\` failed with $?." $?
+    fi
 done

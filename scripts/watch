@@ -2,6 +2,8 @@
 
 # Experimental script that puts the client, the examples, and the server in
 # watch mode (auto reloads changes).
+
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # In order to put everything in watch mode, we must have all the local
@@ -22,9 +24,9 @@ run_command_in_examples_async "run watch"
 
 # Finally, the server:
 # (we put the server in 'watch' mode by enabling debug mode)
-DEBUG= run_command_in_server 'python -m server' &
+DEBUG="" run_command_in_server 'python -m server' &
 
-on_quit() { print "Exiting!" $BOLD; jobs -p | xargs kill; }
+on_quit() { print "Exiting!" "$BOLD"; jobs -p | xargs kill; }
 trap on_quit INT
 
 URL="http://${HOST-127.0.0.1}:${POST-5000}/"
@@ -32,7 +34,7 @@ URL="http://${HOST-127.0.0.1}:${POST-5000}/"
 # Wait till it's up:
 while true; do curl -s "${URL}" > /dev/null 2>&1 && break; sleep 1; done
 
-print "We're up!" $CYAN
+print "We're up!" "$CYAN"
 
 # Once it is, try to open the page:
 { hash xdg-open && xdg-open "${URL}"; } ||

@@ -2,6 +2,7 @@
 
 # Runs tests for the server and client.
 
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # In order to test, we need regular and dev dependencies and to have built:

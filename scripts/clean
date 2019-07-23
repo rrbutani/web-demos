@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
 # Cleans build files in the project.
+
+
+# shellcheck source=scripts/common
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
 # Set SCRUB_VAR to the directory you wish to scrub or to nothing
 # (`echo ${SCRUB_VAR}`=) to clean the project.
 
 SCRUB_VAR=SCRUB
-
-. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # Remove files we know to be removable:
 git clean -dX ${!SCRUB_VAR+"-f"} ${!SCRUB_VAR-"-i"}
@@ -15,4 +18,4 @@ git clean -dX ${!SCRUB_VAR+"-f"} ${!SCRUB_VAR-"-i"}
 pipenv clean
 
 # If we're scrubbing, delete the virtualenv too:
-[ ! -z "${!SCRUB_VAR+x}" ] && pipenv --rm
+[ -n "${!SCRUB_VAR+x}" ] && pipenv --rm

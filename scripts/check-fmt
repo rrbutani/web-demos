@@ -2,6 +2,7 @@
 
 # Runs formatting checks on the server and client (without making changes).
 
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # In order to check formatting, we need regular and dev dependencies:

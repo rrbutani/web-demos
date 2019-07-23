@@ -2,6 +2,7 @@
 
 # Quick and simple build script for the project.
 
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # Note: This target handles dependency tracking itself!
@@ -39,8 +40,9 @@ build_messages_for_client() {
     local ec=0
 
     for msg in "${@}"; do
+        # shellcheck disable=2034
         message="Building \`${msg}\` (for the client)..." \
-        full_msg_path="$(realpath ${msg})"
+        full_msg_path="$(realpath "${msg}")"
         run_command_in_client_project "run build-messages -- '${full_msg_path}'" "${full_msg_path}" ".${msg}" || ec=$?
     done
 
@@ -57,7 +59,7 @@ shopt -s globstar
 build_messages_for_server "${MESSAGES_DIR}"/**/*.proto
 build_messages_for_client "${MESSAGES_DIR}"/**/*.proto
 
-if [ ! -z "${BUILD_THOROUGH}" ]; then
+if [ -n "${BUILD_THOROUGH}" ]; then
     # Then the client (since rollup tracks it's own dependencies, always run):
     run_command_in_client_project "run build"
 
@@ -70,4 +72,4 @@ else
     run_command_in_examples "run build" "." ".built"
 fi
 
-print "\nBuild Successful!" $PURPLE
+print "\nBuild Successful!" "$PURPLE"

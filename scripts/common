@@ -46,19 +46,19 @@ print() {
 
 # $1: message; $2?: color
 dprint() {
-    [ -z ${DEBUG_BUILD+x} ] || print "${@}"
+    [ -z "${DEBUG_BUILD+x}" ] || print "${@}"
 }
 
 # $1: error message; $2: exit code
 err() {
-    print "${1}" $RED && exit "${2}"
+    print "${1}" "$RED" && exit "${2}"
 }
 
 # $1: binary name, $2: suggestion
 check_local_dep() {
     hash "${1}" 2>/dev/null ||
-        { print 'Missing `'"${1}"'`; please install it and try again.' $RED &&
-          print "(try ${2})" $BLUE &&
+        { print 'Missing `'"${1}"'`; please install it and try again.' "$RED" &&
+          print "(try ${2})" "$BLUE" &&
           exit 1
         }
 }
@@ -72,7 +72,8 @@ resolve_deps() {
         [ -f "$(marker_file "${dep_name}")" ] || {
             # ..run its script:
             echo
-            print "Resolving ${dep_name}:" $BLUE
+            print "Resolving ${dep_name}:" "$BLUE"
+            # shellcheck disable=SC2091
             ("$(script_file "${dep_name}")") || {
                 err "Failed to resolve ${dep_name}!" $?
             }
@@ -89,7 +90,7 @@ find_or_run() {
         # ..run the command..
         "${@:2}" && {
             # ..and if it succeeded, make the file.
-            mkdir -p "$(dirname ${1})"
+            mkdir -p "$(dirname "${1}")"
             touch "${1}"
         } || return 1
     }
@@ -119,11 +120,11 @@ conditionally_run() {
     # If the marker says we've run the command since the dependency was last
     # updated, do nothing.
     { check_if_newer "${1}" "${2}" &&
-        dprint "\`${1}\` hasn't changed." $BROWN
+        dprint "\`${1}\` hasn't changed." "$BROWN"
     } || {
         # Otherwise, run the command..
-        cmd="${@:3}"
-        print "\n${message:-"Running \`${cmd}\` in '$(basename $(pwd))'..."}" $BOLD
+        cmd="${*:3}"
+        print "\n${message:-"Running \`${cmd}\` in '$(basename "$(pwd)")'..."}" "$BOLD"
         "${@:3}" && {
             # ..and if it succeeded, update the marker file:
             mkdir -p "$(dirname "${2}")"
@@ -142,16 +143,14 @@ run_command_in_example() {
     } || return 0;
 
     # If it does and if we were given a marker file, run conditionally:
-    if [ ! -z "${4}" ]; then
+    if [ -n "${4}" ]; then
+        # shellcheck disable=SC2086
         (cd "${1}" && conditionally_run "${3}" "${BUILD_DIR}/${4}" npm ${2})
     else
         # Otherwise, run unconditionally:
+        # shellcheck disable=SC2086
         (cd "${1}" && conditionally_run "..." "." npm ${2})
     fi
-    # (cd "${1}" && conditionally_run "${3-_}" "${BUILD_DIR}/${4}")
-    # print "Running \`npm ${2}\` in ${1}..." $BOLD
-    # (cd "${1}" && npm ${2})
-    # return $?
 }
 
 # $1: npm command to run; $2?: dependency; $3?: marker file
@@ -175,6 +174,7 @@ run_command_in_client_project() {
 
 # $1: command to run; $2?: dependency; $3?: marker file
 run_command_in_server() {
+    # shellcheck disable=SC2086
     conditionally_run "${2-"..."}" "${BUILD_DIR}/${3-"."}" ${1}
 }
 
@@ -200,12 +200,12 @@ server_client_pair() {
 
     name=("${@}")
 
-    print "Server: ${name[@]-running an operation}..." $BOLD
+    print "Server: ${name[*]-running an operation}..." "$BOLD"
     for cmd in "${server[@]}"; do
         ${cmd} || ec=$?
     done
 
-    print "Client: ${name[@]-running an operation}..." $BOLD
+    print "Client: ${name[*]-running an operation}..." "$BOLD"
     for cmd in "${client[@]}"; do
         run_command_in_client_project "${cmd}" || ec=$?
     done
@@ -269,7 +269,8 @@ marker_file() {
 
 # $1: marker file or script path -> string
 target_name() {
-    echo "$(strip_leading_dot "$(basename "${1}")")"
+    # shellcheck disable=SC2091
+    "$(strip_leading_dot "$(basename "${1}")")"
 }
 
 # $1: target name or marker file -> file path
@@ -283,12 +284,13 @@ mark() {
 
 # $1: target name -> target name
 roundtrip() {
-    echo $(target_name $(marker_file $(script_file $(target_name $(marker_file "${@}")))))
+    # shellcheck disable=SC2091,SC2046
+    $(target_name $(marker_file $(script_file $(target_name $(marker_file "${@}")))))
 }
 
 # $1: target name
 test() {
-    [[ "${@}" == $(roundtrip "${@}") ]]; return $?
+    [[ "${*}" == $(roundtrip "${@}") ]]; return $?
 }
 
 readonly marker=".__$(basename "${0}")"

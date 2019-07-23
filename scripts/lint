@@ -2,6 +2,7 @@
 
 # Runs the server and client's respective linters.
 
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # In order to lint, we need regular and dev dependencies to have built:

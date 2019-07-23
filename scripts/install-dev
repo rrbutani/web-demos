@@ -2,6 +2,7 @@
 
 # Grabs dev dependencies. Just a `pipenv install --dev` wrapper at the moment.
 
+# shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
 # Note: This target handles dependency tracking itself!
@@ -10,7 +11,7 @@
 resolve_deps local-deps
 
 pipenv_dev_install() {
-    pipenv install --dev && print "Dev Install Successful!" $PURPLE;
+    pipenv install --dev && print "Dev Install Successful!" "$PURPLE";
 }
 
 # Next, pipenv:

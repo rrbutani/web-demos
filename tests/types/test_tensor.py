@@ -96,7 +96,7 @@ def roundtrip_single(dtype: DataType) -> None:
     assert (dos == tres).all()
 
 
-def roundtrips(dtype: DataType, num_tests: int = 5) -> None:
+def roundtrips(dtype: DataType, num_tests: int = 10) -> None:
     for _ in range(num_tests):
         roundtrip_single(dtype)
 

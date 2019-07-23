@@ -2,7 +2,6 @@
 
 # Cleans build files in the project.
 
-
 # shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 

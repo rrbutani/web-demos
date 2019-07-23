@@ -16,8 +16,17 @@ readonly TESTS_DIR="tests"
 readonly PROTOC_DST_DIR="build"
 readonly MODEL_DIR="models"
 readonly PACKAGE_DIR="dist"
+readonly COVERAGE_DIR="${BUILD_DIR}/coverage"
 
-readonly ISORT_FLAGS=" -j$(nproc) -sg *node_modules*"
+readonly ISORT_FLAGS="-j$(nproc) -sg *node_modules*"
+readonly PYTEST_COV_FLAGS="--cov-append \
+    --cov-branch \
+    --cov-report term \
+    --cov-report html:${COVERAGE_DIR}/server_cov_html \
+    --cov-report xml:${COVERAGE_DIR}/server_cov.xml \
+    --cov-report annotate:${COVERAGE_DIR}/server_cov_annotate \
+    --cov-report term \
+"
 
 readonly NC='\e[0m'
 readonly RED='\e[1;31m'

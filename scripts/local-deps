@@ -9,9 +9,12 @@ declare -A DEPS=( \
     [pipenv]='`pip install pipenv`' \
     [protoc]="going to https://github.com/protocolbuffers/protobuf/releases" \
     [npm]="installing nvm: https://github.com/nvm-sh/nvm#installation-and-update" \
-    [realpath]='`apt install realpath` or `brew install realpath`?' \
     [curl]='`apt install curl` or `brew install curl`?' \
     [tar]='`apt install tar` or `brew install tar`?' \
+    [realpath]='`apt install coreutils` or `brew install coreutils`?' \
+    [dirname]='`apt install coreutils` or `brew install coreutils`?' \
+    [basename]='`apt install coreutils` or `brew install coreutils`?' \
+    [git]='`apt install git` or `brew install git`?' \
 )
 
 # Check for dependencies:

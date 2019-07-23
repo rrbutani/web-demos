@@ -7,4 +7,7 @@
 # In order to test, we need regular and dev dependencies and to have built:
 resolve_deps install install-dev build
 
-server_client_pair "pytest ${TESTS_DIR}" -- "run test" -- "Testing"
+mkdir -p "${COVERAGE_DIR}"
+COV_DIR="$(realpath "${COVERAGE_DIR}")"
+
+server_client_pair "pytest --cov=${SERVER_DIR} ${PYTEST_COV_FLAGS} ${TESTS}" -- "run test -- --coverageDirectory ${COV_DIR}" -- "Testing"

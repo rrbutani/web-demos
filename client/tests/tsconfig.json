@@ -10,4 +10,10 @@
       ]
     }
   }
+, "include":
+  [ "."
+  , "../node_modules/"
+  ]
+, "exclude":
+  []
 }

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+# Uploads code coverage to coveralls. This script is really meant to be used
+# in CI (not locally).
+
+# shellcheck source=scripts/common
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# Whoever calls this script (CI, local user, etc.) should set the following
+# environment variables:
+#  - COVERALLS_SERVICE_NAME: i.e. "GitHub Actions" or "Travis CI"
+#  - COVERALLS_REPO_TOKEN: repo token from coveralls.io
+#  - COVERALLS_SERVICE_JOB_ID: [optional] id for this 'job'
+#  - COVERALLS_RUN_AT: [optional]
+#  - COVERALLS_PARALLEL: [optional]
+#
+# (List is from [here](github.com/nickmerwin/node-coveralls#usage))
+
+# In order to upload, we need to have our local dependencies and our dev
+# dependencies installed.
+resolve_deps local-deps install-dev
+
+# So that we merge coverage correctly:
+export COVERALLS_PARALLEL=true
+
+# As a backup, we're going to pretend that we're Sempaphore in this script.
+# Why Sempaphore? It's lowest on the list of CI services in
+# [`coveralls-python`](bit.ly/2JXPOoQ).
+export SEMAPHORE="🍍"
+export SEMAPHORE_BUILD_NUMBER="${COVERALLS_SERVICE_JOB_ID}"
+
+# We also need to have actually generated coverage information (i.e. run tests)
+# but we won't list the test target as a dependency since it's phony (always
+# runs) and we don't want to unnecessarily run tests again.
+
+# Instead we'll make sure that coverage info is actually present.
+readonly msg="Please try running the tests first (\`pipenv run test\`)."
+readonly client_cov="${COVERAGE_DIR}/lcov.info"
+
+# For the server (py-cov):
+[ -f ".coverage" ] || err "No coverage information for the server! ${msg}" 1
+
+# And for the client (jest/istanbul):
+[ -f "${client_cov}" ] || err "No coverage information for the client! ${msg}" 2
+
+# If everything looks good, upload!
+server_client_pair "coveralls" -- \
+    "run coveralls .." -- \
+    "Uploading coverage to coveralls" \
+        < "${client_cov}"
+
+# Once we're done, let coveralls know:
+readonly COVERALLS_ENDPOINT="https://coveralls.io"
+curl -sk \
+    "${COVERALLS_ENDPOINT}/webhook?repo_token=$COVERALLS_REPO_TOKEN" \
+    -d "payload[build_num]=$COVERALLS_SERVICE_JOB_ID&payload[status]=done" \
+  | jq -e '.done' \
+ && print "Success!" "${CYAN}"

@@ -71,6 +71,8 @@ venv.bak/
 # Pyre type checker
 .pyre/
 
+# Python `coverage` coverage file:
+.coverage
 
 ### Platform Specific ###
 # Linux
@@ -104,3 +106,4 @@ models/
 
 # Microbundler
 .rts2_cache*/
+

@@ -17,6 +17,9 @@ protobuf = "~=3.9.0"
 
 [dev-packages]
 pytest = "~=5.0.1"
+pytest-cov = "~=2.7.1"
+coverage = "~=4.5.3"
+coveralls = "~=1.8.1"
 black = "~=19.3b0"
 mypy = "~=0.720"
 isort = { version = "~=4.3.21", extras = ["pyproject"] }

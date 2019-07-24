@@ -74,6 +74,7 @@ copy() { dprint "Copying \`${1}\`."; _c "${@}"; }
 
 git clean -dfX "${SERVER_DIR}"
 copy "${SERVER_DIR}"            '###' # Server source code
+copy "${SERVER_DIR}/templates"  graft # Templates
 copy "${PROTOC_DST_DIR}/python" graft # Generated protobuf files for python
 copy "${MODEL_DIR}"             graft # Local models
 copy "${SCRIPT_DIR}/common"           # Needed by __init__.py in `types/`
@@ -233,8 +234,6 @@ print "Successfully built a wheel!" "${CYAN}"
 if [ -n "${CHECK_WHEEL+x}" ]; then
     print "\nVerifying that the wheel works..." "${BOLD}"
 
-    set -x
-
     mkdir -p dist/testing
     cd dist/testing || \
         err "If you're seeing this, something is very very broken.." 5
@@ -244,25 +243,35 @@ if [ -n "${CHECK_WHEEL+x}" ]; then
         err "Failed to install the generated wheel!" 6
 
     export HOST=localhost
-    export PORT=5000
+    export PORT=7000
 
     "venv/bin/${EXC_NAME}" &
 
     count=0
     wait_time=3
-    while ! curl -s "${HOST}:${PORT}"; do
+    while ! curl -sf "${HOST}:${PORT}" > /dev/null; do
         [ ${count} -eq 20 ] && \
             err "Server failed to start after $((count * wait_time)) seconds." 7
         ((count++))
+        echo "."
         sleep "${wait_time}"
     done
 
     kill %1 || true
     wait
     cd ../../
+    print "The wheel appears to work!" "$CYAN"
 fi
 
 if [ -n "${UPLOAD_WHEEL+x}" ]; then
-    # TODO
-    :
+    virtualenv venv-upload -p "python${PYTHON_VER##*=}"
+    venv/bin/pip install twine
+
+    twine \
+        -r "${WHEEL_UPLOAD_REPO}" \
+        -u "${WHEEL_UPLOAD_USERNAME}" \
+        -p "${WHEEL_UPLOAD_PASSWORD}" \
+        dist/*.whl
+
+    print "Upload successful!" "${CYAN}"
 fi

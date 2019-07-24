@@ -56,7 +56,7 @@ dprint() {
 
 # $1: error message; $2: exit code
 err() {
-    print "${1}" "$RED" && exit "${2}"
+    print "${1}" "$RED" && exit "${2-100}"
 }
 
 # $1: binary name, $2: suggestion

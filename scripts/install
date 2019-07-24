@@ -11,8 +11,13 @@
 # In order to install, we need our local dependencies to be installed:
 resolve_deps local-deps
 
-# Then install deps for all the examples:
+# Then install deps for all the client:
+cp "${CLIENT_DIR}/package.json" "${CLIENT_DIR}/${BUILD_DIR}/package.json"
 run_command_in_client_project install package.json "${marker}"
+mv "${CLIENT_DIR}/${BUILD_DIR}/package.json" "${CLIENT_DIR}/package.json" \
+    && touch "${CLIENT_DIR}/${BUILD_DIR}/${marker}"
+
+# And all the examples:
 run_command_in_examples install package.json "${marker}"
 
 pipenv_install() { pipenv install && print "Install Successful!" "$PURPLE"; }

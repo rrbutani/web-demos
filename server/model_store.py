@@ -12,7 +12,7 @@ from .types import MODEL_DIR
 from .types.metrics import Metrics
 
 dprint(f"TF Version: {tf.__version__}")
-tf.compat.v1.enable_eager_execution()
+# tf.compat.v1.enable_eager_execution()
 _: None = if_debug(
     lambda: tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.DEBUG)
 )

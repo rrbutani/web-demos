@@ -27,7 +27,9 @@ mypy-protobuf = "~=1.12"
 tensorflow-stubs = { git = "https://github.com/rrbutani/tensorflow-stubs", ref = "a293b6022e9aa972c24a70f74784fcec24f8ce9e" }
 numpy-stubs = { git = "https://github.com/numpy/numpy-stubs", ref = "a57ec5671096cf59530dcda21a93c0d880cc759e" }
 setuptools = "~=41.0.1"
+setuptools-metadata = "~=0.1.5"
 pbr = { git = "https://github.com/rrbutani/pbr", ref = "a10ebf1390a10d7ed6a617a99f35cc883ebfcad5" }
+wheel = "~=0.33.4"
 
 [pipenv]
 allow_prereleases = true
@@ -44,5 +46,6 @@ lint = "scripts/lint"  # mypy, tslint
 test = "scripts/test"  # pytest, jest
 check = "scripts/with install-dev install build -- check-fmt lint"
 watch = "scripts/watch"
+package = "scripts/package"
 upload-cov = "scripts/upload-coverage"
 check-scripts = "bash -c 'shellcheck scripts/*'"

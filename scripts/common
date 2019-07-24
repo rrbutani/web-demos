@@ -2,9 +2,10 @@
 
 set -e
 
-readonly NAME="web-demos"
+readonly PROJ_NAME="web_demos"
+readonly EXC_NAME="web_demos"
 readonly VERSION="0.0.0"
-readonly AUTHOR="???" # TODO
+readonly README="README.md"
 
 readonly BUILD_DIR="build"
 readonly SCRIPT_DIR="$(dirname "${0}")"
@@ -50,7 +51,7 @@ print() {
 
 # $1: message; $2?: color
 dprint() {
-    [ -z "${DEBUG_BUILD+x}" ] || print "${@}"
+    [ -z "${DEBUG_BUILD+x}" ] || print "${@}" >&2
 }
 
 # $1: error message; $2: exit code

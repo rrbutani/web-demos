@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d332f58f5ce9d02791e0eb0f6ce191569c9e975e59454eb7c93425785cefe208"
+            "sha256": "31fea13e193dab33b416d467aa01d4c6ee9ec253c64d500c94b09f75e8c53be3"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -319,10 +319,10 @@
         },
         "tb-nightly": {
             "hashes": [
-                "sha256:1838a940b77c888bcb71451bfe523bd52847d5687ff32b6cd683521cff398e50",
-                "sha256:cd4b92c0e1d756db75d186231db018b04fb72105fae96705a19507a7b7cb46e7"
+                "sha256:051ac8ca615267469479e68ba6b022e98a7adc688012aaaeb195b1c6e0ffcbbd",
+                "sha256:34d79ba2d47e4093bff7b291ec7b46f2bd431c462cc9fc12297f4aaf886fa5a0"
             ],
-            "version": "==1.15.0a20190722"
+            "version": "==1.15.0a20190724"
         },
         "tensorflow-estimator-2.0-preview": {
             "hashes": [
@@ -563,6 +563,10 @@
             ],
             "version": "==19.0"
         },
+        "pbr": {
+            "git": "https://github.com/rrbutani/pbr",
+            "ref": "a10ebf1390a10d7ed6a617a99f35cc883ebfcad5"
+        },
         "pluggy": {
             "hashes": [
                 "sha256:0825a152ac059776623854c1543d65a4ad408eb3d33ee114dff91e57ec6ae6fc",
@@ -603,10 +607,10 @@
         },
         "pyparsing": {
             "hashes": [
-                "sha256:530d8bf8cc93a34019d08142593cf4d78a05c890da8cf87ffa3120af53772238",
-                "sha256:f78e99616b6f1a4745c0580e170251ef1bbafc0d0513e270c4bd281bf29d2800"
+                "sha256:09b60ec311af02f93c66ab2cb65e3ca92c5cb5de5445894982ce9f0928b116f5",
+                "sha256:38181feb3a1278f464b7e1d0d647760f7ab08d93f654f886ff528946450adbab"
             ],
-            "version": "==2.4.1"
+            "version": "==2.4.2a1"
         },
         "pytest": {
             "hashes": [
@@ -630,6 +634,14 @@
                 "sha256:9cf5292fcd0f598c671cfc1e0d7d1a7f13bb8085e9a590f48c010551dc6c4b31"
             ],
             "version": "==2.22.0"
+        },
+        "setuptools-metadata": {
+            "hashes": [
+                "sha256:acc0e33ba6d38ef782e4aaf229cc2f4a793959c6eb11284ec3481697f335a437",
+                "sha256:d8e41e492fc77aa28a6718885e9ae46b697619cdf8e58009ea7920855a9ab66c"
+            ],
+            "index": "pypi",
+            "version": "==0.1.5"
         },
         "six": {
             "hashes": [
@@ -690,6 +702,14 @@
                 "sha256:f4ebe71925af7b40a864553f761ed559b43544f8f71746c2d756c7fe788ade7c"
             ],
             "version": "==0.1.7"
+        },
+        "wheel": {
+            "hashes": [
+                "sha256:5e79117472686ac0c4aef5bad5172ea73a1c2d1646b808c35926bd26bdfb0c08",
+                "sha256:62fcfa03d45b5b722539ccbc07b190e4bfff4bb9e3a4d470dd9f6a0981002565"
+            ],
+            "markers": "python_version >= '3'",
+            "version": "==0.33.4"
         },
         "zipp": {
             "hashes": [

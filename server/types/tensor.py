@@ -17,7 +17,7 @@ from typing import (
 import numpy as np
 from google.protobuf.message import Message
 
-from server.types import Tensor
+from ..types import Tensor
 
 # TFLite Tensors are really just numpy arrays.
 

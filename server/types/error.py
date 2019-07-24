@@ -1,8 +1,8 @@
 import re
 import traceback
 
-from server.debug import dprint, if_debug
-from server.types import Error
+from ..debug import dprint, if_debug
+from ..types import Error
 
 
 # TODO: Switch usages of this to actually pass in Exceptions

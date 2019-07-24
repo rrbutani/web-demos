@@ -7,9 +7,9 @@ from typing import Optional, Tuple, TypeVar, Union, cast
 import numpy as np
 import tensorflow as tf
 
-from server.debug import dprint, if_debug
-from server.types import MODEL_DIR
-from server.types.metrics import Metrics
+from .debug import dprint, if_debug
+from .types import MODEL_DIR
+from .types.metrics import Metrics
 
 dprint(f"TF Version: {tf.__version__}")
 tf.compat.v1.enable_eager_execution()

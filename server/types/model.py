@@ -1,8 +1,8 @@
 from typing import Tuple, cast
 
 # Blurring the lines here a bit
-from server.model_store import Handle as LocalHandle
-from server.types import Model, ModelHandle
+from ..model_store import Handle as LocalHandle
+from ..types import Model, ModelHandle
 
 
 # TODO!!!

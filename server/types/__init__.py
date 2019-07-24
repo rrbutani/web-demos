@@ -3,7 +3,7 @@ import sys
 from os.path import abspath, dirname, isdir, join
 from typing import Callable
 
-from server.debug import dprint
+from ..debug import dprint
 
 up: Callable[[str, int], str] = lambda p, n: p if n == 0 else up(dirname(p), n - 1)
 

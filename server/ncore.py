@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar
 
 import tensorflow as tf
 
-from server.debug import dprint
+from .debug import dprint
 
 NCORE_PATH: str = "/dev/ncore_pci"
 

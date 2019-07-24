@@ -1,8 +1,9 @@
 # Web Demos
-
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 
-Flask Server in [`server/`](server), examples in [`examples/`](examples). The server's client-side counterpart lives in [`examples/client/`](examples/client). A work in progress.
+TensorFlow.js + TFLite Web Demos. A work in progress.
+
+Flask Server in [`server/`](server), examples in [`examples/`](examples). The server's client-side counterpart lives in [`examples/client/`](examples/client).
 
 Currently requires:
   - jq
@@ -31,20 +32,23 @@ We've got other targets too:
   - `pipenv run check` checks formatting and runs the linters
   - `pipenv run watch` rebuilds the components of the project as changes are made
   - `pipenv run package` builds a python wheel with all the assets rolled in
+  - `pipenv run upload-cov` [TODO]
+  - `pipenv run check-scripts` [TODO]
 
 If you're just looking to run the server and use the example, `pipenv run run` should be all you need.
 
 If you don't want to use `pipenv`, you can run the server with `python -m server` or just `./server/__main__.py`. But you'll need to make sure you've got the right python version/dependencies installed manually *and* you'll have to go build the client and then the example packages! The dependencies are listed [in the Pipfile](Pipfile#L10-L16).
 
 Currently:
- - [ ] TODO: license (apache 2.0 as well - MIT is more permissive so we can't use it) + blurb about it being the same as the things we used from external sources
+ - [x] TODO: license (apache 2.0 as well)
+     * [ ] blurb about it being the same as the things we used from external sources
  - [x] TODO: format all
  - [x] TODO: rename
  - [ ] TODO: write README
  - [ ] TODO: credits
  - [x] TODO: use exceptions instead of explicit err return types
  - [x] TODO: debug env var for the server
- - [ ] TODO: debug env var for the client
+ - [x] TODO: debug env var for the client
  - [ ] TODO: add badges for black, license (apache), etc.
  - [ ] TODO: docker container that builds and then runs the entire thing (args for  PORT that go and expose the same port after)
  - [ ] TODO: comment protobuf file(s)

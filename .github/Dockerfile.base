@@ -1,0 +1,23 @@
+# Base Dockerfile; suitable for use as a base for all the intermediate stages
+# of the project's main Dockerfile. This should have all the local dependencies
+# needed by the project.
+#
+# Modified: July 24th, 2019
+
+ARG NODE_VERSION=dubnium
+ARG PYTHON_VER=3.7.4
+ARG BASE_TYPE=alpine # Changing this will probably break everything
+
+FROM ${NODE_VERSION}-${BASE_TYPE}
+
+RUN : \
+ && apk --no-cache add \
+        python3 py3-virtualenv \
+        openssl \
+        bash \
+        jq \
+        protobuf \
+        curl tar coreutils git grep \
+ && pip install pipenv
+
+WORKDIR /opt/project

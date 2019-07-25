@@ -53,7 +53,7 @@ instance/
 .python-version
 
 # Pipenv
-Pipfile.lock
+# Pipfile.lock
 
 # mypy
 .mypy_cache/

@@ -4,20 +4,42 @@
 #
 # Modified: July 24th, 2019
 
-ARG NODE_VERSION=dubnium
-ARG PYTHON_VER=3.7.4
-ARG BASE_TYPE=alpine # Changing this will probably break everything
+# Changing this will probably break everything
+ARG BASE_TYPE=alpine
+ARG BASE_VER=3.10
 
-FROM ${NODE_VERSION}-${BASE_TYPE}
+ARG NODE_VERSION=10.16.0
+ARG PYTHON_VERSION=3.7.4
+#ARG PYTHON_VERSION_APK=3.7.3
 
+ARG CORES=8
+
+# FROM ${BASE_TYPE}:${BASE_VER}
+FROM python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER}
+ARG NODE_VERSION
+ARG PYTHON_VERSION
+
+ARG CORES
+        #python3=="${PYTHON_VERSION}-r0" \
+        #python3-dev=="${PYTHON_VERSION_APK}-r0" \
 RUN : \
  && apk --no-cache add \
-        python3 py3-virtualenv \
+        py3-virtualenv \
+        nodejs=="${NODE_VERSION}-r0" \
+        npm=="${NODE_VERSION}-r0" \
         openssl \
         bash \
         jq \
         protobuf \
         curl tar coreutils git grep \
- && pip install pipenv
+        gcc g++ \
+        util-linux \
+ && pip3 install pipenv
+
+RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
+
+ENV LANG="en_US.UTF-8"
+ENV MAKEFLAGS="-j${CORES}"
+ENV NPY_NUM_BUILD_JOBS="${CORES}"
 
 WORKDIR /opt/project

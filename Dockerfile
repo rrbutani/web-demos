@@ -10,13 +10,21 @@
 #                                                                                               -> Debug Dist Container -> Upload Debug Container
 # Modified: July 24th, 2019
 
+# Changing this will probably break everything
+ARG BASE_TYPE=alpine
+
 ARG NODE_VERSION=dubnium
 ARG PYTHON_VER=3.7.4
-ARG BASE_TYPE=alpine # Changing this will probably break everything
-ARG BASE_BUILD_IMAGE=${NODE_VERSION}-${BASE_TYPE}
+
+# Warning: nodejs alpine build currently are based on Alpine 3.9 which
+# is still on python 3.6.
+ARG BASE_BUILD_IMAGE=node:${NODE_VERSION}-${BASE_TYPE}
 
 ARG WORKDIR="/opt/project"
+
+# These should all match the values in `scripts/common`.
 ARG PACKAGE_DIR="dist"
+ARG BUILD_DIR="build"
 ARG EXC_NAME="web-demos"
 
 ARG PORT="5000"
@@ -24,42 +32,79 @@ ARG HOST="0.0.0.0"
 
 FROM ${BASE_BUILD_IMAGE} as build
 ARG WORKDIR
+ARG BUILD_DIR
+
+# Grabbing the dependencies seems to be the most time consuming part of the
+# build (they appear to be built from source unnecessarily), so we'll just
+# copy over the Pipfile (lists the dependencies) at first, so that the docker
+# layer cache can do it's job and make things a little less painful.
+#
+# Note: because the Pipfile isn't _just_ dependencies, this isn't perfect but
+# nor is the Pipfile (okay, pipenv gets it _almost_ perfect. scripts and
+# whitespace don't factor into the lock hash at all, but somehow things like
+# TOML maps do; though:
+#   toml = "~=0.10.0"
+# and:
+#   toml = { version = "~=0.10.0" }
+# are really identical, they produce different lock hashes. I'm betting pipenv
+# hashes the object that the toml parser produces for the package/source
+# sections. but still. pretty good). We'll rebuild on whitespace changes and
+# script changes and pretty much anything that happens to these two files.
+#
+# Pipfile.lock is less volatile so we _could_ only pull that file in, tell
+# pipenv to install from the lock file (no Pipfile; `--ignore-pipfile`), but
+# then we lose our `--deploy` check (makes sure the Pipfile.lock is in sync
+# with the Pipfile). Since there doesn't seem to be a way to check that the
+# two are in sync without actually going and installing again, this seems like
+# an okay compromise. (Also it'd be weird to install the deps and then fail
+# _after_ that on the Pipfile/Pipfile.lock being out of sync. Fail fast!)
+COPY Pipfile Pipfile.lock "${WORKDIR}/"
+WORKDIR "${WORKDIR}"
+
+# Local .venv so that the virtualenv gets copied to the other build stages.
+# `pipenv install --deploy` will ensure the lock file is up to date.
+# The last three lines are a _hack_ that exploits the marker files the current
+# build system drops to make sure that we do not run `pipenv install` or
+# `pipenv install --dev` again.
+RUN : \
+ && mkdir .venv \
+ && pipenv install --dev --deploy \
+ && mkdir -p "${WORKDIR}/${BUILD_DIR}/" \
+ && touch "${WORKDIR}/${BUILD_DIR}/.__install" \
+ && touch "${WORKDIR}/${BUILD_DIR}/.__install-dev"
 
 COPY . "${WORKDIR}"
-WORKDIR "${WORKDIR}"
+
+RUN pipenv check || true # For the logs
 
 RUN pipenv run deps
 RUN pipenv run build
 
-
-FROM ${BASE_BUILD_IMAGE} as check
+FROM build as check
 ARG WORKDIR
 
-COPY --from=build "${WORKDIR}" "${WORKDIR}"
 WORKDIR "${WORKDIR}"
 
 RUN pipenv run check
 
 
-FROM ${BASE_BUILD_IMAGE} as test
+FROM check as test
 ARG WORKDIR
 
-COPY --from=check "${WORKDIR}" "${WORKDIR}"
 WORKDIR "${WORKDIR}"
 
 RUN pipenv run test
 
 
-FROM ${BASE_BUILD_IMAGE} as package
+FROM check as package
 ARG WORKDIR
 
-COPY --from=test "${WORKDIR}" "${WORKDIR}"
 WORKDIR "${WORKDIR}"
 
 RUN pipenv run package
 
 
-FROM ${PYTHON_VER}-${BASE_TYPE} as dist
+FROM python:${PYTHON_VER}-${BASE_TYPE} as dist
 ARG HOST
 ARG PORT
 ARG PACKAGE_DIR

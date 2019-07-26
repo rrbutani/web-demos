@@ -24,7 +24,7 @@ run_command_in_examples_async "run watch"
 
 # Finally, the server:
 # (we put the server in 'watch' mode by enabling debug mode)
-DEBUG="" run_command_in_server 'python -m server' &
+DEBUG="true" run_command_in_server 'python -m server' &
 
 on_quit() { print "Exiting!" "$BOLD"; jobs -p | xargs kill; }
 trap on_quit INT

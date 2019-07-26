@@ -2,7 +2,7 @@ import os
 import sys
 from typing import Any, Callable, Optional, TypeVar
 
-_DEBUG = "DEBUG" in os.environ
+_DEBUG = "DEBUG" in os.environ and os.environ["DEBUG"].lower() == "true"
 
 
 def dprint(*args: Any, **kwargs: Any) -> None:

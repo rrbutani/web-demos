@@ -179,6 +179,7 @@ run_command_in_client_project() {
 
 # $1: command to run; $2?: dependency; $3?: marker file
 run_command_in_server() {
+    pipenv run python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
     # shellcheck disable=SC2086
     conditionally_run "${2-"..."}" "${BUILD_DIR}/${3-"."}" ${1}
 }

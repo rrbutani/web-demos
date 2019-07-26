@@ -112,5 +112,6 @@ def run_inference() -> InferenceResponse:
 
 
 def main() -> None:
+    global model_store
     model_store = ModelStore()
     app.run(host=HOST, port=PORT, debug=_DEBUG)

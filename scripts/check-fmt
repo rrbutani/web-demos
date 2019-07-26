@@ -8,5 +8,5 @@
 # In order to check formatting, we need regular and dev dependencies:
 resolve_deps install install-dev
 
-server_client_pair "isort -c ${ISORT_FLAGS}" "black --check --diff ." -- \
+server_client_pair "isort -c -df ${ISORT_FLAGS}" "black --check --diff ." -- \
     "run check-formatting" -- "Checking formatting"

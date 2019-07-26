@@ -36,7 +36,7 @@ app = Flask(
     static_url_path="/examples/",
     template_folder=TEMPLATE_DIR,
 )
-model_store = ModelStore()
+model_store: ModelStore
 
 # Not ideal, but good enough:
 Response = Any
@@ -112,4 +112,5 @@ def run_inference() -> InferenceResponse:
 
 
 def main() -> None:
+    model_store = ModelStore()
     app.run(host=HOST, port=PORT, debug=_DEBUG)

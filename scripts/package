@@ -6,11 +6,25 @@
 # shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
+# $1: Got; $2: expected; $3: Corresponding env var name
+set_opt() {
+    [[ ${1,,} =~ ^${2}$ ]] && export "${3}"=true
+
+    [[ ${!3,,} =~ ^true$ ]] || unset "${3}"
+}
+
+# $1: name of env var
+is_set() {
+    [[ ${!1,,} =~ ^true$ ]]
+}
+
 # Set debug if we're being told this is a debug release.
-[[ ${1,,} =~ ^debug$ ]] && export DEBUG=true
+set_opt "${1}" debug DEBUG
 
 # If we're doing a clean build:
-[[ ${2,,} =~ ^anew$ ]] && {
+set_opt "${2}" anew FORCE_REBUILD
+
+is_set FORCE_REBUILD && {
     SCRUB="" resolve_deps clean
 }
 
@@ -28,26 +42,22 @@ resolve_deps local-deps install-dev build fetch
 # 3rd argument as below.
 
 # If we're skipping checks:
-# shellcheck disable=SC2015
-[[ ${3,,} =~ ^skip-checks$ ]] && {
-    export SKIP_CHECKS=true
-} || {
+set_opt "${3}" skip-checks SKIP_CHECKS
+
+is_set SKIP_CHECKS || {
     # Otherwise:
     resolve_deps check-fmt lint test
 }
 
 # Check if we're checking the wheel we generate:
-[[ ${4,,} =~ ^check-wheel$ ]] && {
-    export CHECK_WHEEL=true
-}
+set_opt "${4}" check-wheel CHECK_WHEEL
 
 # Check if we're going to ultimately upload the wheel:
-[[ ${5,,} =~ ^upload$ ]] && {
-    export UPLOAD_WHEEL=true
-}
+set_opt "${5}" upload-wheel UPLOAD_WHEEL
+
 
 # If we're still here, we're good to go!
-print_opt() { print "  * $(printf "%-13s" "${1}:") ${!2+${GREEN}Enabled:: }${BLUE}${!2-${RED}Disabled}" "$YELLOW"; }
+print_opt() { print "  * $(printf "%-13s" "${1}:") ${!2+${GREEN}Enabled:: }${BLUE}${!2-${RED}Disabled ${!2+(}${!2}${!2+)}}" "$YELLOW"; }
 print "We're ready to build!\n" "$BOLD"
 print "Here are the options we got:" "$YELLOW"
 print_opt "Debugging" DEBUG
@@ -86,7 +96,7 @@ touch "${TARGET_DIR}/__init__.py" # We're a module now
 echo "from . import ${SERVER_DIR}" >> "${TARGET_DIR}/__init__.py"
 
 # Copy over the source maps if we're in debug mode:
-[ -z ${DEBUG+x} ] || {
+[ -n "${DEBUG}" ] && {
     # shellcheck disable=SC2140
     for f in {"${CLIENT_DIR}/dist","${EXAMPLES_DIR}/"*"/dist"}/*.map; do
         copy "${f}"
@@ -114,7 +124,7 @@ PYTHON_VER=">=$(grep "python_version" < Pipfile \
     | tr -d '"' \
     | tr -d ' ')"
 
-is_set() { var=${!1+True}; echo "${var:-False}"; }
+opt_set() { is_set "$1" && echo True || echo False; }
 
 # $1: entity
 entity() {
@@ -198,9 +208,10 @@ cat <<-EOF > "setup.py"
 
 	    setup_requires=["setuptools-metadata", "pbr"],
 	    custom_metadata={
-	        'x_debug_enabled': $(is_set DEBUG),
-	        'x_clean_build': $(is_set FORCE_REBUILD),
-	        'x_checked': not $(is_set SKIP_CHECKS),
+	        'x_debug_enabled': $(opt_set DEBUG),
+	        'x_clean_build': $(opt_set FORCE_REBUILD),
+	        'x_checked': not $(opt_set SKIP_CHECKS),
+	        'x_wheel_checked': $(opt_set CHECK_WHEEL),
 	        'x_host': "$(uname -a)",
 	    },
 
@@ -231,7 +242,7 @@ EOF
 pipenv run python setup.py bdist_wheel
 print "Successfully built a wheel!" "${CYAN}"
 
-if [ -n "${CHECK_WHEEL+x}" ]; then
+if is_set CHECK_WHEEL; then
     print "\nVerifying that the wheel works..." "${BOLD}"
 
     mkdir -p dist/testing
@@ -242,8 +253,11 @@ if [ -n "${CHECK_WHEEL+x}" ]; then
     venv/bin/pip install ../*.whl || \
         err "Failed to install the generated wheel!" 6
 
+    # Kill the server if it's already running in this session:
+    pgrep "${EXC_NAME}" | cut -d ' ' -f1 | xargs kill >/dev/null 2>&1 || true
+
     export HOST=localhost
-    export PORT=7000
+    export PORT=${PORT-7000}
 
     "venv/bin/${EXC_NAME}" &
 
@@ -252,18 +266,18 @@ if [ -n "${CHECK_WHEEL+x}" ]; then
     while ! curl -sf "${HOST}:${PORT}" > /dev/null; do
         [ ${count} -eq 20 ] && \
             err "Server failed to start after $((count * wait_time)) seconds." 7
-        ((count++))
-        echo "."
+        ((count+=1)) # += instead of ++ so we don't leak an exit code
+        echo -n "."
         sleep "${wait_time}"
     done
 
     kill %1 || true
     wait
     cd ../../
-    print "The wheel appears to work!" "$CYAN"
+    print "\nThe wheel appears to work!" "$CYAN"
 fi
 
-if [ -n "${UPLOAD_WHEEL+x}" ]; then
+if is_set UPLOAD_WHEEL; then
     virtualenv venv-upload -p "python${PYTHON_VER##*=}"
     venv/bin/pip install twine
 

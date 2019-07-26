@@ -5,36 +5,55 @@
 # Modified: July 24th, 2019
 
 # Changing this will probably break everything
-ARG BASE_TYPE=alpine
-ARG BASE_VER=3.10
+ARG BASE_TYPE=slim-buster
+ARG BASE_VER=
 
-ARG NODE_VERSION=10.16.0
+ARG NODE_VERSION=10.15.2
+ARG NPM_VERSION=6.10.2
 ARG PYTHON_VERSION=3.7.4
-#ARG PYTHON_VERSION_APK=3.7.3
+ARG PROTOC_VERSION=3.6.1
+ARG SHELLCHECK_VERSION=0.5.0
 
 ARG CORES=8
 
-# FROM ${BASE_TYPE}:${BASE_VER}
 FROM python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER}
 ARG NODE_VERSION
+ARG NPM_VERSION
 ARG PYTHON_VERSION
 
 ARG CORES
-        #python3=="${PYTHON_VERSION}-r0" \
-        #python3-dev=="${PYTHON_VERSION_APK}-r0" \
+
 RUN : \
- && apk --no-cache add \
-        py3-virtualenv \
-        nodejs=="${NODE_VERSION}-r0" \
-        npm=="${NODE_VERSION}-r0" \
+ && apt-get update -y \
+    -qq 2>/dev/null \
+ && apt-get upgrade -y \
+    -qq 2>/dev/null \
+ && apt-get install -y \
+        python3-virtualenv \
+        nodejs="${NODE_VERSION}*" \
+        npm \
         openssl \
         bash \
         jq \
-        protobuf \
+        protobuf-compiler="${PROTOC_VERSION}*" \
         curl tar coreutils git grep \
         gcc g++ \
         util-linux \
- && pip3 install pipenv
+        shellcheck="${SHELLCHECK_VERSION}*" \
+    -qq 2>/dev/null \
+ && apt-get clean -y \
+    -qq 2>/dev/null \
+ && apt-get autoremove -y \
+    -qq 2>/dev/null \
+ && rm -rf \
+        /var/tmp/* \
+        /var/lib/apt/lists/*
+
+RUN pip3 install pipenv
+
+RUN npm install -g "npm@${NPM_VERSION}"
+
+# RUN npm install -g "node@${NODE_VERSION}"
 
 RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
 

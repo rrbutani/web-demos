@@ -319,10 +319,10 @@
         },
         "tb-nightly": {
             "hashes": [
-                "sha256:051ac8ca615267469479e68ba6b022e98a7adc688012aaaeb195b1c6e0ffcbbd",
-                "sha256:34d79ba2d47e4093bff7b291ec7b46f2bd431c462cc9fc12297f4aaf886fa5a0"
+                "sha256:63951b6d7cdd7c7d0891f1706cec74f59164084e37a649c9d2e7ae7c90c7c60a",
+                "sha256:f035092d03c24a7f866f6de045f5f4ee372389870aad9f4fc455af9b051cc843"
             ],
-            "version": "==1.15.0a20190724"
+            "version": "==1.15.0a20190725"
         },
         "tensorflow-estimator-2.0-preview": {
             "hashes": [

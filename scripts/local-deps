@@ -16,6 +16,7 @@ declare -A DEPS=( \
     [realpath]='`apt install coreutils` or `brew install coreutils`?' \
     [dirname]='`apt install coreutils` or `brew install coreutils`?' \
     [basename]='`apt install coreutils` or `brew install coreutils`?' \
+    [nproc]='`apt install nproc` or `brew install nproc`?' \
     [git]='`apt install git` or `brew install git`?' \
     [grep]='`apt install grep` or `brew install grep`?' \
 )

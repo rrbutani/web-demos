@@ -11,14 +11,10 @@
 # Modified: July 24th, 2019
 
 # Changing this will probably break everything
-ARG BASE_TYPE=alpine
-
-ARG NODE_VERSION=dubnium
+ARG BASE_TYPE=slim-buster
 ARG PYTHON_VER=3.7.4
 
-# Warning: nodejs alpine build currently are based on Alpine 3.9 which
-# is still on python 3.6.
-ARG BASE_BUILD_IMAGE=node:${NODE_VERSION}-${BASE_TYPE}
+ARG BASE_BUILD_IMAGE=python:${PYTHON_VERSION}-${BASE_TYPE}
 
 ARG WORKDIR="/opt/project"
 
@@ -30,7 +26,14 @@ ARG EXC_NAME="web-demos"
 ARG PORT="5000"
 ARG HOST="0.0.0.0"
 
+ARG DEBUG
+ARG FORCE_REBUILD=false
+ARG SKIP_CHECKS=true
+ARG CHECK_WHEEL=true
+ARG UPLOAD_WHEEL=false
+
 FROM ${BASE_BUILD_IMAGE} as build
+ARG DEBUG
 ARG WORKDIR
 ARG BUILD_DIR
 
@@ -70,6 +73,7 @@ RUN : \
  && mkdir .venv \
  && pipenv install --dev --deploy \
  && mkdir -p "${WORKDIR}/${BUILD_DIR}/" \
+ && : "These two weird looking files come from ${marker} in scripts/common." \
  && touch "${WORKDIR}/${BUILD_DIR}/.__install" \
  && touch "${WORKDIR}/${BUILD_DIR}/.__install-dev"
 
@@ -81,6 +85,7 @@ RUN pipenv run deps
 RUN pipenv run build
 
 FROM build as check
+ARG DEBUG
 ARG WORKDIR
 
 WORKDIR "${WORKDIR}"
@@ -89,6 +94,7 @@ RUN pipenv run check
 
 
 FROM check as test
+ARG DEBUG
 ARG WORKDIR
 
 WORKDIR "${WORKDIR}"
@@ -97,6 +103,11 @@ RUN pipenv run test
 
 
 FROM check as package
+ARG DEBUG
+ARG FORCE_REBUILD
+ARG SKIP_CHECKS
+ARG CHECK_WHEEL
+ARG UPLOAD_WHEEL
 ARG WORKDIR
 
 WORKDIR "${WORKDIR}"
@@ -105,6 +116,8 @@ RUN pipenv run package
 
 
 FROM python:${PYTHON_VER}-${BASE_TYPE} as dist
+ARG DEBUG
+ARG WORKDIR
 ARG HOST
 ARG PORT
 ARG PACKAGE_DIR
@@ -113,11 +126,34 @@ ARG EXC_NAME
 COPY --from=package "${WORKDIR}/${PACKAGE_DIR}/dist/" "/opt/wheels"
 
 RUN : \
+&& apt-get update -y \
+    -qq 2>/dev/null \
+ && apt-get upgrade -y \
+    -qq 2>/dev/null \
+ && apt-get install -y \
+        git \
+    -qq 2>/dev/null \
  && pip3 install /opt/wheels/*.whl \
- && rm -rf /opt/wheels
+ && rm -rf /opt/wheels \
+ && apt-get clean -y \
+    -qq 2>/dev/null \
+ && apt-get remove -y \
+        git \
+    -qq 2>/dev/null \
+ && apt-get autoremove -y \
+    -qq 2>/dev/null \
+ && rm -rf \
+        /var/tmp/* \
+        /var/lib/apt/lists/*
+
+RUN : \
+ && echo "#!/usr/bin/env bash\n\necho; exec ${EXC_NAME} ${@}" > /bin/entrypoint \
+ && chmod +x /bin/entrypoint
 
 ENV HOST=${HOST}
 ENV PORT=${PORT}
-EXPOSE ${PORT}/tcp # TODO
 
-ENTRYPOINT [ "${EXC_NAME}" ]
+EXPOSE ${PORT}/tcp
+
+ENTRYPOINT "/bin/entrypoint"
+CMD []

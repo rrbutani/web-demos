@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# Builds containers for the project.
+
+# shellcheck source=scripts/common
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# To build the containers, we only really need docker:
+check_local_dep docker \
+    "running the script here: https://github.com/docker/docker-install"
+
+readonly BASE_IMAGE_NAME=${BASE_IMAGE_NAME-"wd-base"}
+cp .gitignore .dockerignore
+
+# Build the base image without any context (it doesn't copy files)
+docker build \
+    --build-arg CORES="$(nproc)" \
+    -t "${BASE_IMAGE_NAME}" \
+    - < ".github/Dockerfile.base"
+
+readonly DOCKER_FLAGS=" \
+    --build-arg PACKAGE_DIR=${PACKAGE_DIR} \
+    --build-arg BUILD_DIR=${BUILD_DIR} \
+    --build-arg EXC_NAME=${EXC_NAME} \
+    --build-arg VERSION=${VERSION} \
+    --build-arg HOST=${HOST-0.0.0.0} \
+    --build-arg POST=${POST-5000} \
+"
+
+# $1: stage name
+build_stage() { docker build "${DOCKER_FLAGS}" --target "${1}" -t "${EXC_NAME}-${1}"; }
+
+build_stage build
+build_stage check
+build_stage test
+build_stage package
+build_stage dist
+
+docker tag "${EXC_NAME}-dist" "${EXC_NAME}-dist:latest"
+docker tag "${EXC_NAME}-dist" "${EXC_NAME}-dist:${VERSION}"
+
+docker run -it "${EXC_NAME}-test" \
+    -e "CODECOV_TOKEN=${CODECOV_TOKEN}" \
+    -e "COVERALLS_SERVICE_NAME=${COVERALLS_SERVICE_NAME}" \
+    -e "COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN}" \
+    -e "COVERALLS_SERVICE_JOB_ID=${COVERALLS_SERVICE_JOB_ID}" \
+    -e "COVERALLS_RUN_AT=${COVERALLS_RUN_AT}" \
+    -e "COVERALLS_PARALLEL=${COVERALLS_PARALLEL}" \
+    bash -c "pipenv run upload-cov"
+
+docker run -it "${EXC_NAME}-build" \
+    bash -c "pipenv run check-scripts"
+
+# TODO: container for uploading to PyPI + calling it here with
+# ${EXC_NAME}-package as a build arg
+
+print "All done!" "${CYAN}"

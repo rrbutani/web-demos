@@ -19,6 +19,7 @@ declare -A DEPS=( \
     [nproc]='`apt install nproc` or `brew install nproc`?' \
     [git]='`apt install git` or `brew install git`?' \
     [grep]='`apt install grep` or `brew install grep`?' \
+    [pgrep]='`apt install procps` or `brew install procps`?' \
 )
 
 # Check for dependencies:

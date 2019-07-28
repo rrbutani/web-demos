@@ -18,17 +18,23 @@ docker build \
     -t "${BASE_IMAGE_NAME}" \
     - < ".github/Dockerfile.base"
 
+readonly COMMIT_SHA=$(git rev-parse HEAD || echo "unknown")
+
 readonly DOCKER_FLAGS=" \
+    --build-arg BASE_BUILD_IMAGE=${BASE_IMAGE_NAME} \
     --build-arg PACKAGE_DIR=${PACKAGE_DIR} \
     --build-arg BUILD_DIR=${BUILD_DIR} \
     --build-arg EXC_NAME=${EXC_NAME} \
     --build-arg VERSION=${VERSION} \
     --build-arg HOST=${HOST-0.0.0.0} \
-    --build-arg POST=${POST-5000} \
+    --build-arg PORT=${PORT-5000} \
+    --build-arg VERSION=${VERSION-0.0.0} \
+    --build-arg COMMIT_SHA=${COMMIT_SHA-unknown} \
 "
 
 # $1: stage name
-build_stage() { docker build "${DOCKER_FLAGS}" --target "${1}" -t "${EXC_NAME}-${1}"; }
+# shellcheck disable=SC2086
+build_stage() { docker build ${DOCKER_FLAGS} --target "${1}" -t "${EXC_NAME}-${1}" .; }
 
 build_stage build
 build_stage check
@@ -39,13 +45,14 @@ build_stage dist
 docker tag "${EXC_NAME}-dist" "${EXC_NAME}-dist:latest"
 docker tag "${EXC_NAME}-dist" "${EXC_NAME}-dist:${VERSION}"
 
-docker run -it "${EXC_NAME}-test" \
-    -e "CODECOV_TOKEN=${CODECOV_TOKEN}" \
-    -e "COVERALLS_SERVICE_NAME=${COVERALLS_SERVICE_NAME}" \
-    -e "COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN}" \
-    -e "COVERALLS_SERVICE_JOB_ID=${COVERALLS_SERVICE_JOB_ID}" \
+docker run \
+    -e "CODECOV_TOKEN=${CODECOV_TOKEN-0}" \
+    -e "COVERALLS_SERVICE_NAME=${COVERALLS_SERVICE_NAME-0}" \
+    -e "COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN-0}" \
+    -e "COVERALLS_SERVICE_JOB_ID=${COVERALLS_SERVICE_JOB_ID-0}" \
     -e "COVERALLS_RUN_AT=${COVERALLS_RUN_AT}" \
-    -e "COVERALLS_PARALLEL=${COVERALLS_PARALLEL}" \
+    -e "COVERALLS_PARALLEL=${COVERALLS_PARALLEL-0}" \
+    -it "${EXC_NAME}-test" \
     bash -c "pipenv run upload-cov"
 
 docker run -it "${EXC_NAME}-build" \

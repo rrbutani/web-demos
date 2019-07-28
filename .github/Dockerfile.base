@@ -40,6 +40,7 @@ RUN : \
         gcc g++ \
         util-linux \
         shellcheck="${SHELLCHECK_VERSION}*" \
+        procps \
     -qq 2>/dev/null \
  && apt-get clean -y \
     -qq 2>/dev/null \
@@ -52,8 +53,6 @@ RUN : \
 RUN pip3 install pipenv
 
 RUN npm install -g "npm@${NPM_VERSION}"
-
-# RUN npm install -g "node@${NODE_VERSION}"
 
 RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
 

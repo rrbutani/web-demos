@@ -32,6 +32,9 @@ ARG SKIP_CHECKS=true
 ARG CHECK_WHEEL=true
 ARG UPLOAD_WHEEL=false
 
+ARG VERSION=0.0.0
+ARG COMMIT_SHA=unknown
+
 FROM ${BASE_BUILD_IMAGE} as build
 ARG DEBUG
 ARG WORKDIR
@@ -123,7 +126,22 @@ ARG PORT
 ARG PACKAGE_DIR
 ARG EXC_NAME
 
+ARG BASE_BUILD_IMAGE
+ARG VERSION
+ARG COMMIT_SHA
+
 COPY --from=package "${WORKDIR}/${PACKAGE_DIR}/dist/" "/opt/wheels"
+
+LABEL version=${VERSION}
+LABEL props.base-image=${BASE_BUILD_IMAGE}
+LABEL props.executable_name=${EXC_NAME}
+LABEL props.port=${PORT}
+LABEL props.host=${HOST}
+LABEL props.debug=${DEBUG}
+LABEL build.commit_sha=${COMMIT_SHA}
+LABEL build.force_rebuild=${FORCE_REBUILD}
+LABEL build.skip_checks=${SKIP_CHECKS}
+LABEL build.checked_wheel=${CHECK_WHEEL}
 
 RUN : \
 && apt-get update -y \

@@ -43,42 +43,42 @@ action "Log into Docker Hub" {
 }
 
 action "Build the base image" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   args = "build -t web-demos-base -f .github/Dockerfile.base .github"
 }
 
 action "Build Stage" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Build the base image"]
   args = "build --target build -t web-demos-build -f Dockerfile ."
 }
 
 action "Check Stage" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Build Stage"]
   args = "build --target check -t web-demos-check -f Dockerfile ."
 }
 
 action "Check Scripts" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Build Stage"]
   args = "run -t web-demos-build bash -c 'pipenv run check-scripts'"
 }
 
 action "Test Stage" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Check Stage"]
   args = "build --target test -t web-demos-test -f Dockerfile ."
 }
 
 action "Package Stage" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
   args = "build --target package -t web-demos-package -f Dockerfile ."
 }
 
 action "Upload Coverage" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
   args = "run -t web-demos-test bash -c 'pipenv run upload-cov'"
   # TODO: use git actions env vars in the script
@@ -104,7 +104,7 @@ action "Upload Coverage" {
 # }
 
 action "Build Regular Dist Container" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Package Stage"]
   args = "build --target dist -t web-demos-dist -f Dockerfile ."
 }
@@ -122,7 +122,7 @@ action "Tag Regular Dist Container With Version" {
 }
 
 action "Upload Regular Dist Container" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = [
     "Log into Docker Hub",
     "Tag Regular Dist Container",
@@ -132,7 +132,7 @@ action "Upload Regular Dist Container" {
 }
 
 action "Debug Package Stage" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Package Stage"]
   args = "build --build-arg DEBUG=true --build-arg FORCE_REBUILD=true --build-arg SKIP_CHECKS=true --build-arg CHECK_WHEEL=true --target package -t web-demos-package-debug -f Dockerfile ."
 }
@@ -146,7 +146,7 @@ action "Debug Package Stage" {
 # }
 
 action "Build Debug Dist Container" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Debug Package Stage"]
   args = "build --target dist -t web-demos-dist-debug -f Dockerfile ."
 }
@@ -164,7 +164,7 @@ action "Tag Debug Dist Container With Version" {
 }
 
 action "Upload Debug Dist Container" {
-  uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
+  uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = [
     "Log into Docker Hub",
     "Tag Debug Dist Container",

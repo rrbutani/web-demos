@@ -1,39 +1,40 @@
 workflow "Check, test, and build the web-demos" {
   on = "push"
-  resolves =
-  [ "Build the base image"
-  , "Build Stage"
-  , "Check Stage"
-  , "Check Scripts"
-  , "Test Stage"
-  , "Package Stage"
-  , "Upload Coverage"
-  , "Build Regular Dist Container"
-  , "Debug Package Stage"
-  , "Build Debug Dist Container"
-  , "Upload Debug Dist Container"
+  resolves = [
+    "Build the base image",
+    "Build Stage",
+    "Check Stage",
+    "Check Scripts",
+    "Test Stage",
+    "Package Stage",
+    "Upload Coverage",
+    "Build Regular Dist Container",
+    "Debug Package Stage",
+    "Build Debug Dist Container",
+    "Upload Debug Dist Container",
   ]
 }
 
 workflow "Does a release!" {
   on = "release"
-  resolves =
-  [
-  # , "Build the base image"
-  # , "Build Stage"
-  # , "Check Stage"
-  # , "Check Scripts"
-  # , "Test Stage"
-  # , "Package Stage"
-  # , "Upload Coverage"
-  # , "Build Regular Dist Container"
-  # , "Debug Package Stage"
-  # , "Build Debug Dist Container"
-  , "Upload Regular Dist Container"
-  , "Upload Debug Dist Container"
+  resolves = [
+    # , "Build the base image"
+    # , "Build Stage"
+    # , "Check Stage"
+    # , "Check Scripts"
+    # , "Test Stage"
+    # , "Package Stage"
+    # , "Upload Coverage"
+    # , "Build Regular Dist Container"
+    # , "Debug Package Stage"
+    # , "Build Debug Dist Container"
+    "Upload Regular Dist Container",
+
+    "Upload Debug Dist Container",
+  ]
+
   # , "Upload Regular Wheel"
   # , "Upload Debug Wheel"
-  ]
 }
 
 action "Log into Docker Hub" {
@@ -80,15 +81,18 @@ action "Upload Coverage" {
   uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
   args = "run -t web-demos-test bash -c 'pipenv run upload-cov'"
-  secrets =
-  [ "CODECOV_TOKEN"
-  , "COVERALLS_REPO_TOKEN"
-  , "COVERALLS_SERVICE_JOB_ID" # TODO: use git actions env vars in the script
-  # , "COVERALLS_RUN_AT"
+  # TODO: use git actions env vars in the script
+  secrets = [
+    "CODECOV_TOKEN",
+    "COVERALLS_SERVICE_JOB_ID",
+    "COVERALLS_REPO_TOKEN",
   ]
-  env =
-  { "COVERALLS_PARALLEL" = "True"
-  , "COVERALLS_SERVICE_NAME" = "GitHub Actions"
+
+  # , "COVERALLS_RUN_AT"
+
+  env = {
+    "COVERALLS_PARALLEL" = "True"
+    "COVERALLS_SERVICE_NAME" = "GitHub Actions"
   }
 }
 
@@ -120,10 +124,10 @@ action "Tag Regular Dist Container With Version" {
 
 action "Upload Regular Dist Container" {
   uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
-  needs =
-  [ "Log into Docker Hub"
-  , "Tag Regular Dist Container"
-  , "Tag Regular Dist Container With Version"
+  needs = [
+    "Log into Docker Hub",
+    "Tag Regular Dist Container",
+    "Tag Regular Dist Container With Version",
   ]
   args = "push rrbutani/web-demos"
 }
@@ -162,10 +166,10 @@ action "Tag Debug Dist Container With Version" {
 
 action "Upload Debug Dist Container" {
   uses = "actions/actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
-  needs =
-  [ "Log into Docker Hub"
-  , "Tag Debug Dist Container"
-  , "Tag Debug Dist Container With Version"
+  needs = [
+    "Log into Docker Hub",
+    "Tag Debug Dist Container",
+    "Tag Debug Dist Container With Version",
   ]
   args = "push rrbutani/web-demos-debug"
 }

@@ -84,7 +84,6 @@ action "Upload Coverage" {
   # TODO: use git actions env vars in the script
   secrets = [
     "CODECOV_TOKEN",
-    "COVERALLS_SERVICE_JOB_ID",
     "COVERALLS_REPO_TOKEN",
   ]
 

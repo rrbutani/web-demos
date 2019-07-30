@@ -29,7 +29,6 @@ workflow "Does a release!" {
     # , "Debug Package Stage"
     # , "Build Debug Dist Container"
     "Upload Regular Dist Container",
-
     "Upload Debug Dist Container",
   ]
 

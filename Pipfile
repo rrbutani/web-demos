@@ -35,18 +35,18 @@ wheel = "~=0.33.4"
 allow_prereleases = true
 
 [scripts]
-deps = "scripts/install"
-dev-deps = "scripts/install-dev"
-fetch = "scripts/fetch"
-build = "scripts/build"
-clean = "scripts/clean"
-run = "scripts/with install build fetch -- 'python -m server'"
-format = "scripts/fmt" # black+isort, tsfmt+tslint
-lint = "scripts/lint"  # mypy, tslint
-test = "scripts/test"  # pytest, jest
-check = "scripts/with install-dev install build -- check-fmt lint"
-watch = "scripts/watch"
-package = "scripts/package"
-upload-cov = "scripts/upload-coverage"
+deps = "./scripts/install"
+dev-deps = "./scripts/install-dev"
+fetch = "./scripts/fetch"
+build = "./scripts/build"
+clean = "./scripts/clean"
+run = "./scripts/with install build fetch -- 'python -m server'"
+format = "./scripts/fmt" # black+isort, tsfmt+tslint
+lint = "./scripts/lint"  # mypy, tslint
+test = "./scripts/test"  # pytest, jest
+check = "./scripts/with install-dev install build -- check-fmt lint"
+watch = "./scripts/watch"
+package = "./scripts/package"
+upload-cov = "./scripts/upload-coverage"
 check-scripts = "bash -c 'shellcheck scripts/*'"
-build-containers = "scripts/ship"
+build-containers = "./scripts/ship"

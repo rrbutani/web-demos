@@ -62,7 +62,7 @@ action "Check Stage" {
 action "Check Scripts" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Build Stage"]
-  args = "run -t web-demos-build bash -c 'pipenv run check-scripts'"
+  args = "run -t web-demos-build pipenv run check-scripts"
 }
 
 action "Test Stage" {
@@ -80,7 +80,7 @@ action "Package Stage" {
 action "Upload Coverage" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
-  args = "run -t web-demos-test bash -c 'pipenv run upload-cov'"
+  args = "run -t web-demos-test pipenv run upload-cov"
   # TODO: use git actions env vars in the script
   secrets = [
     "CODECOV_TOKEN",

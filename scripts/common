@@ -59,6 +59,18 @@ err() {
     print "${1}" "$RED" && exit "${2-100}"
 }
 
+# $1: Got; $2: expected; $3: Corresponding env var name
+set_opt() {
+    [[ ${1,,} =~ ^${2}$ ]] && export "${3}"=true
+
+    [[ ${!3,,} =~ ^true$ ]] || unset "${3}"
+}
+
+# $1: name of env var
+is_set() {
+    [[ ${!1,,} =~ ^true$ ]]
+}
+
 # $1: binary name, $2: suggestion
 check_local_dep() {
     hash "${1}" 2>/dev/null ||
@@ -112,7 +124,7 @@ find_or_run() {
 check_if_newer() {
     dprint "Comparing ${1} to ${2} (in $(pwd))"
 
-    [ -z "${FORCE_REBUILD+x}" ] || return 6
+    is_set FORCE_REBUILD && return 6
     [ -e "${1}" ] || {
         dprint "\`${1}\` doesn't exist, building unconditionally.."; return 5; }
     [ -e "${2}" ] || return 2
@@ -179,7 +191,7 @@ run_command_in_client_project() {
 
 # $1: command to run; $2?: dependency; $3?: marker file
 run_command_in_server() {
-    pipenv run python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
+    python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
     # shellcheck disable=SC2086
     conditionally_run "${2-"..."}" "${BUILD_DIR}/${3-"."}" ${1}
 }

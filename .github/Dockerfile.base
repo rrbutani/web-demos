@@ -12,7 +12,7 @@ ARG NODE_VERSION=10.15.2
 ARG NPM_VERSION=6.10.2
 ARG PYTHON_VERSION=3.7.4
 ARG PROTOC_VERSION=3.6.1
-ARG SHELLCHECK_VERSION=0.5.0
+ARG SHELLCHECK_VERSION="v0.6.0"
 
 ARG CORES=8
 
@@ -26,8 +26,8 @@ FROM python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER}
 ARG NODE_VERSION
 ARG NPM_VERSION
 ARG PYTHON_VERSION
-
-ARG CORES
+ARG PROTOC_VERSION
+ARG SHELLCHECK_VERSION
 
 RUN : \
  && apt-get update -y \
@@ -45,8 +45,17 @@ RUN : \
         curl tar coreutils git grep \
         gcc g++ \
         util-linux \
-        shellcheck="${SHELLCHECK_VERSION}*" \
         procps \
+        xz-utils \
+    -qq 2>/dev/null \
+ && curl -sL \
+        "https://storage.googleapis.com/shellcheck/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+    | tar -xJv "shellcheck-${SHELLCHECK_VERSION}/shellcheck" \
+ && mv "shellcheck-${SHELLCHECK_VERSION}/shellcheck" /usr/bin \
+ && rm -rf "shellcheck-${SHELLCHECK_VERSION}" \
+ && chmod +x "/usr/bin/shellcheck" \
+ && apt-get remove -y \
+        xz-utils \
     -qq 2>/dev/null \
  && apt-get clean -y \
     -qq 2>/dev/null \
@@ -61,6 +70,8 @@ RUN pip3 install pipenv
 RUN npm install -g "npm@${NPM_VERSION}"
 
 RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
+
+ARG CORES
 
 ENV LANG="en_US.UTF-8"
 ENV MAKEFLAGS="-j${CORES}"

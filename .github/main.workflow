@@ -15,26 +15,26 @@ workflow "Check, test, and build the web-demos" {
   ]
 }
 
-workflow "Does a release!" {
-  on = "release"
-  resolves = [
-    # , "Build the base image"
-    # , "Build Stage"
-    # , "Check Stage"
-    # , "Check Scripts"
-    # , "Test Stage"
-    # , "Package Stage"
-    # , "Upload Coverage"
-    # , "Build Regular Dist Container"
-    # , "Debug Package Stage"
-    # , "Build Debug Dist Container"
-    "Upload Regular Dist Container",
-    "Upload Debug Dist Container",
-  ]
+# workflow "Does a release!" {
+#   on = "push"
+#   resolves = [
+#     # , "Build the base image"
+#     # , "Build Stage"
+#     # , "Check Stage"
+#     # , "Check Scripts"
+#     # , "Test Stage"
+#     # , "Package Stage"
+#     # , "Upload Coverage"
+#     # , "Build Regular Dist Container"
+#     # , "Debug Package Stage"
+#     # , "Build Debug Dist Container"
+#     "Upload Regular Dist Container",
+#     "Upload Debug Dist Container",
+#   ]
 
-  # , "Upload Regular Wheel"
-  # , "Upload Debug Wheel"
-}
+#   # , "Upload Regular Wheel"
+#   # , "Upload Debug Wheel"
+# }
 
 action "Log into Docker Hub" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
@@ -79,7 +79,7 @@ action "Package Stage" {
 action "Upload Coverage" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
-  args = "run -t web-demos-test pipenv run upload-cov"
+  args = "run -t web-demos-test echo ${COVERALLS_PARALLEL} ${CODECOV_TOKEN} pipenv run upload-cov"
   # TODO: use git actions env vars in the script
   secrets = [
     "CODECOV_TOKEN",

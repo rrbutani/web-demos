@@ -11,7 +11,7 @@ ARG BASE_VER=
 ARG NODE_VERSION=10.15.2
 ARG NPM_VERSION=6.10.2
 ARG PYTHON_VERSION=3.7.4
-ARG PROTOC_VERSION=3.6.1
+ARG PROTOC_VERSION=3.9.0
 ARG SHELLCHECK_VERSION="v0.6.0"
 
 ARG CORES=8
@@ -21,6 +21,8 @@ ARG FORCE_REBUILD=false
 ARG SKIP_CHECKS=false
 ARG CHECK_WHEEL=false
 ARG UPLOAD_WHEEL=false
+
+ARG WORKDIR="/opt/project"
 
 FROM python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER}
 ARG NODE_VERSION
@@ -37,17 +39,27 @@ RUN : \
  && apt-get install -y \
         python3-virtualenv \
         nodejs="${NODE_VERSION}*" \
+        coreutils \
         npm \
         openssl \
         bash \
         jq \
-        protobuf-compiler="${PROTOC_VERSION}*" \
         curl tar coreutils git grep \
         gcc g++ \
         util-linux \
         procps \
         xz-utils \
+        unzip \
     -qq 2>/dev/null \
+ && OS="$(bash -c 'o=$(uname -s); echo ${o,,};')" \
+ && ARCH="$(uname -m)" \
+ && curl -sL \
+        "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-${OS}-${ARCH}.zip" \
+    > protoc.zip \
+ && unzip protoc.zip \
+        -d /usr/ \
+        -x readme.txt \
+ && rm protoc.zip \
  && curl -sL \
         "https://storage.googleapis.com/shellcheck/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
     | tar -xJv "shellcheck-${SHELLCHECK_VERSION}/shellcheck" \
@@ -55,7 +67,7 @@ RUN : \
  && rm -rf "shellcheck-${SHELLCHECK_VERSION}" \
  && chmod +x "/usr/bin/shellcheck" \
  && apt-get remove -y \
-        xz-utils \
+        xz-utils unzip \
     -qq 2>/dev/null \
  && apt-get clean -y \
     -qq 2>/dev/null \
@@ -70,6 +82,12 @@ RUN pip3 install pipenv
 RUN npm install -g "npm@${NPM_VERSION}"
 
 RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
+
+RUN : \
+ && echo -e "#!/usr/bin/env bash\n" > /bin/run_in_project \
+ && echo 'cd ${WORKDIR}' >> /bin/run_in_project \
+ && echo '${@}' >> /bin/run_in_project \
+ && chmod +x /bin/run_in_project
 
 ARG CORES
 
@@ -89,4 +107,6 @@ ENV SKIP_CHECKS="${SKIP_CHECKS}"
 ENV CHECK_WHEEL="${CHECK_WHEEL}"
 ENV UPLOAD_WHEEL="${UPLOAD_WHEEL}"
 
-WORKDIR /opt/project
+ARG WORKDIR
+ENV WORKDIR="${WORKDIR}"
+WORKDIR "${WORKDIR}"

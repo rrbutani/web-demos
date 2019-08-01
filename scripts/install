@@ -12,16 +12,21 @@
 resolve_deps local-deps
 
 # Then install deps for all the client:
-cp "${CLIENT_DIR}/package.json" "${CLIENT_DIR}/package.json.bak"
-run_command_in_client_project install package.json "${marker}"
-mv "${CLIENT_DIR}/package.json.bak" "${CLIENT_DIR}/package.json"
+# Somehow, package.json keeps getting accessed after npm install completes, so
+# we'll do change detection manually here instead of relying on timestamps.
+readonly \
+client_install_marker=\
+"${marker}_client_$(md5sum "${CLIENT_DIR}/package.json" | cut -d ' ' -f 1)"
 
-{ # somehow package.json gets accessed after npm install completes, so:
-    sync \
-    && : "A load bearing NOP" \
-    && sleep 2 \
-    && touch "${CLIENT_DIR}/${BUILD_DIR}/${marker}"
-} &
+if [ ! -f "${client_install_marker}" ]; then
+    # If we've got real changes (and only then!), reinstall deps for the client:
+    dprint "The client's package.json appears to have changed; reinstalling..."
+    cp "${CLIENT_DIR}/package.json" "${CLIENT_DIR}/package.json.bak"
+    run_command_in_client_project install package.json
+    mv "${CLIENT_DIR}/package.json.bak" "${CLIENT_DIR}/package.json"
+
+    touch "${client_install_marker}"
+fi
 
 # And all the examples:
 run_command_in_examples install package.json "${marker}"

@@ -84,10 +84,10 @@ RUN npm install -g "npm@${NPM_VERSION}"
 RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
 
 RUN : \
- && echo -e "#!/usr/bin/env bash\n" > /bin/run_in_project \
- && echo 'cd ${WORKDIR}' >> /bin/run_in_project \
- && echo '${@}' >> /bin/run_in_project \
- && chmod +x /bin/run_in_project
+ && echo -e "#!/usr/bin/env bash\n" > /bin/in-proj \
+ && echo 'cd ${WORKDIR}' >> /bin/in-proj \
+ && echo '${@}' >> /bin/in-proj \
+ && chmod +x /bin/in-proj
 
 ARG CORES
 

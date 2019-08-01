@@ -8,7 +8,9 @@
 #                -> Check Scripts                  -> Upload Cov    -> Package + Test (anew, debug) -> Upload Debug Package
 #                                                                                              \
 #                                                                                               -> Debug Dist Container -> Upload Debug Container
-# Modified: July 24th, 2019
+# Modified: July 31st, 2019
+
+#################################  Build Args  #################################
 
 # Changing this will probably break everything
 ARG BASE_TYPE=slim-buster
@@ -34,6 +36,8 @@ ARG UPLOAD_WHEEL=false
 
 ARG VERSION=0.0.0
 ARG COMMIT_SHA=unknown
+
+#################################  Build Stage  ################################
 
 FROM ${BASE_BUILD_IMAGE} as build
 ARG DEBUG
@@ -80,12 +84,22 @@ RUN : \
  && touch "${WORKDIR}/${BUILD_DIR}/.__install" \
  && touch "${WORKDIR}/${BUILD_DIR}/.__install-dev"
 
-COPY . "${WORKDIR}"
-
+COPY scripts/common scripts/with scripts/
 RUN pipenv check || true # For the logs
 
+COPY scripts/install scripts/install-dev scripts/local-deps scripts/
+COPY client/package*.json client/
+COPY examples/ examples/
 RUN pipenv run deps
+
+COPY scripts/build scripts/build
+COPY messages messages
+COPY client/scripts client/scripts
+COPY client/rollup.config.js client/tsconfig.json client/
+COPY client/src client/src
 RUN pipenv run build
+
+#################################  Check Stage  ################################
 
 FROM build as check
 ARG DEBUG
@@ -93,8 +107,17 @@ ARG WORKDIR
 
 WORKDIR "${WORKDIR}"
 
+# This is copied even though it isn't used in case some future CI thing wants to
+# reformat code
+COPY scripts/fmt scripts/
+
+COPY scripts/check-fmt scripts/lint scripts/
+COPY pyproject.toml setup.cfg ./
+COPY server server
+COPY client/tslint.json client/tsfmt.json client/
 RUN pipenv run check
 
+#################################  Test Stage  #################################
 
 FROM check as test
 ARG DEBUG
@@ -102,8 +125,12 @@ ARG WORKDIR
 
 WORKDIR "${WORKDIR}"
 
+COPY scripts/test scripts/upload-coverage scripts/
+COPY tests tests
+COPY client/tests client/tests
 RUN pipenv run test
 
+################################  Package Stage  ###############################
 
 FROM check as package
 ARG DEBUG
@@ -115,8 +142,12 @@ ARG WORKDIR
 
 WORKDIR "${WORKDIR}"
 
+COPY scripts/clean scripts/fetch scripts/package scripts/
+COPY README* LICENSE ./
+COPY .gitignore .gitignore
 RUN pipenv run package
 
+#################################  Dist Stage  #################################
 
 FROM python:${PYTHON_VER}-${BASE_TYPE} as dist
 ARG DEBUG

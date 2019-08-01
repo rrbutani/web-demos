@@ -115,10 +115,20 @@ pipenv lock -r > "${PACKAGE_DIR}/${REQ_FILE}"
 # Next, make setup.py:
 
 DESC="$(head -4  < "${README}" | tail -1)"
-URL="$(git config --get remote.origin.url)"
-URL="${URL##git@}"
-AUTHOR="$(git --no-pager show -s --format='%an' HEAD~1)"
-EMAIL="$(git --no-pager show -s --format='%ae' HEAD~1)"
+
+if [ -d ".git" ]; then
+    URL="$(git config --get remote.origin.url)"
+    URL="${URL##git@}"
+
+    AUTHOR="$(git --no-pager show -s --format='%an' HEAD~1)"
+    EMAIL="$(git --no-pager show -s --format='%ae' HEAD~1)"
+elif [ -n "${GITHUB_ACTION}" ]; then
+    URL="$(jq .repository.html_url < "${GITHUB_EVENT_PATH}")"
+
+    AUTHOR="$(jq .repository.owner.name < "${GITHUB_EVENT_PATH}")"
+    EMAIL="$(jq .repository.owner.email < "${GITHUB_EVENT_PATH}")"
+fi
+
 PYTHON_VER=">=$(grep "python_version" < Pipfile \
     | cut -d'=' -f2 \
     | tr -d '"' \

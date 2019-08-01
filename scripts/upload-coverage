@@ -8,7 +8,7 @@
 
 # Whoever calls this script (CI, local user, etc.) should set the following
 # environment variables:
-#  - COVERALLS_SERVICE_NAME: i.e. "GitHub Actions" or "Travis CI"
+#  - COVERALLS_SERVICE_NAME: i.e. "GitHub Actions" or "Travis CI", etc.
 #  - COVERALLS_REPO_TOKEN: repo token from coveralls.io
 #  - COVERALLS_SERVICE_JOB_ID: [optional] id for this 'job'
 #  - COVERALLS_RUN_AT: [optional]
@@ -27,9 +27,42 @@ export COVERALLS_PARALLEL=true
 # Why Semaphore? It's lowest on the list of CI services in
 # [`coveralls-python`](bit.ly/2JXPOoQ).
 export SEMAPHORE="🍍"
-export COVERALLS_SERVICE_JOB_ID="${COVERALLS_SERVICE_JOB_ID-"0"}"
-export SEMAPHORE_BUILD_NUMBER="${COVERALLS_SERVICE_JOB_ID}"
 export COVERALLS_SERVICE_NAME="${COVERALLS_SERVICE_NAME-"semaphore-ci"}"
+
+# In case we're on GitHub Actions:
+# shellcheck disable=SC2015
+[ -n "${GITHUB_ACTION}" ] && {
+    readonly E="${GITHUB_EVENT_PATH}"
+    cat "${E}"
+    readonly CODECOV_NAME="-n ${COVERALLS_SERVICE_NAME}"
+
+    if [[ ${GITHUB_REF} =~ refs/heads/. ]]; then
+        readonly CODECOV_REF="-B ${GITHUB_REF##*/}"
+        readonly GIT_BRANCH="${GITHUB_REF##*/}"
+    elif [[ ${GITHUB_REF} =~ refs/tags/. ]]; then
+        readonly CODECOV_REF="-T ${GITHUB_REF##*/}"
+    fi
+
+    if [[ ${GITHUB_EVENT_NAME} == pull_request ]]; then
+        readonly \
+            CODECOV_PR="-P $(jq '.pull_request.number' < "${E}")"
+    elif [[ ${GITHUB_EVENT_NAME} == push ]]; then
+        readonly \
+            GIT_AUTHOR_NAME="$(jq '.commits[0].author.name' < "${E}")" \
+            GIT_AUTHOR_EMAIL="$(jq '.commits[0].author.email' < "${E}")" \
+            GIT_COMMITTER_NAME="$(jq '.pusher.name' < "${E}")" \
+            GIT_COMMITTER_EMAIL="$(jq '.pusher.email' < "${E}")" \
+            GIT_MESSAGE="$(jq '.commits[0].message' < "${E}")"
+    fi
+
+    readonly CODECOV_EXTRA="\
+    ${CODECOV_NAME} \
+    ${CODECOV_REF} \
+    ${CODECOV_PR} \
+    -C ${GITHUB_SHA} \
+"
+    readonly GIT_ID="${GITHUB_SHA}"
+} || :
 
 # We also need to have actually generated coverage information (i.e. run tests)
 # but we won't list the test target as a dependency since it's phony (always
@@ -47,21 +80,37 @@ readonly client_relative_path="$(realpath --relative-to="${CLIENT_DIR}" .)"
 [ -f "${client_cov}" ] || err "No coverage information for the client! ${msg}" 2
 
 # If everything looks good, upload!
-server_client_pair "coveralls --service=${COVERALLS_SERVICE_NAME}" -- \
+{ server_client_pair "coveralls --service=${COVERALLS_SERVICE_NAME}" -- \
     "run coveralls ${client_relative_path}" -- \
     "Uploading coverage to coveralls" \
         < "${client_cov}"
+} |& tee log.txt
+
+JOB_NUM="$(grep "^Job #" < log.txt \
+    | head -1 \
+    | cut -d '#' -f2- \
+    | cut -d '.' -f1 \
+)"
+JOB_NUM="${JOB_NUM##\#}"
+
+rm log.txt || :
 
 # Once we're done, let coveralls know:
 readonly COVERALLS_ENDPOINT="https://coveralls.io"
 curl -sk \
     "${COVERALLS_ENDPOINT}/webhook?repo_token=${COVERALLS_REPO_TOKEN}" \
-    -d "payload[build_num]=${ORIG_COVERALLS_SERVICE_JOB_ID}.1&payload[status]=done" \
+    -d "payload[build_num]=${JOB_NUM}&payload[status]=done" \
   | jq -e '.done' \
  && print "Success!" "${CYAN}"
 
 # Since coveralls doesn't seem to handle merging well, we'll upload to codecov
 # too:
+
+# shellcheck disable=SC2086
 bash <(curl -s "https://codecov.io/bash") \
     -f "${client_cov}" \
-    -f "${SERVER_COV_XML}"
+    -f "${SERVER_COV_XML}" \
+    -b "${JOB_NUM}" \
+    ${CODECOV_EXTRA}
+
+exit $?

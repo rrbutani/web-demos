@@ -6,18 +6,6 @@
 # shellcheck source=scripts/common
 . "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
 
-# $1: Got; $2: expected; $3: Corresponding env var name
-set_opt() {
-    [[ ${1,,} =~ ^${2}$ ]] && export "${3}"=true
-
-    [[ ${!3,,} =~ ^true$ ]] || unset "${3}"
-}
-
-# $1: name of env var
-is_set() {
-    [[ ${!1,,} =~ ^true$ ]]
-}
-
 # Set debug if we're being told this is a debug release.
 set_opt "${1}" debug DEBUG
 
@@ -249,7 +237,7 @@ cat <<-EOF > "setup.py"
 	)
 EOF
 
-pipenv run python setup.py bdist_wheel
+python setup.py bdist_wheel sdist
 print "Successfully built a wheel!" "${CYAN}"
 
 if is_set CHECK_WHEEL; then

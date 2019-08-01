@@ -107,8 +107,14 @@ models/
 # Microbundler
 .rts2_cache*/
 
+
 ### Docker ###
 
 # the ship script generates this and since it's just a duplicate of this file
 # for now, there isn't much sense in having it live in the repo
 .dockerignore
+
+
+### Misc ###
+.env
+*.save

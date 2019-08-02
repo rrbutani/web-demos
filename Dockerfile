@@ -135,7 +135,8 @@ RUN pipenv run test
 FROM check as package
 ARG DEBUG
 ARG FORCE_REBUILD
-ARG SKIP_CHECKS
+# The tests are not present; rerun the stages instead:
+ARG SKIP_CHECKS=true
 ARG CHECK_WHEEL
 ARG UPLOAD_WHEEL
 ARG WORKDIR
@@ -143,15 +144,16 @@ ARG WORKDIR
 WORKDIR "${WORKDIR}"
 
 COPY scripts/clean scripts/fetch scripts/package scripts/
-COPY README* LICENSE ./
-COPY .gitignore .gitignore
+COPY README* LICENSE .gitignore ./
+RUN pipenv run fetch
 RUN pipenv run package
 
 #################################  Dist Stage  #################################
 
 FROM python:${PYTHON_VER}-${BASE_TYPE} as dist
-ARG DEBUG
 ARG WORKDIR
+
+ARG DEBUG
 ARG HOST
 ARG PORT
 ARG PACKAGE_DIR
@@ -161,7 +163,11 @@ ARG BASE_BUILD_IMAGE
 ARG VERSION
 ARG COMMIT_SHA
 
-COPY --from=package "${WORKDIR}/${PACKAGE_DIR}/dist/" "/opt/wheels"
+ARG FORCE_REBUILD
+ARG SKIP_CHECKS
+ARG CHECK_WHEEL
+
+COPY --from=package "${WORKDIR}/${PACKAGE_DIR}/dist/*.whl" "/opt/wheels/"
 
 LABEL version=${VERSION}
 LABEL props.base-image=${BASE_BUILD_IMAGE}
@@ -175,7 +181,7 @@ LABEL build.skip_checks=${SKIP_CHECKS}
 LABEL build.checked_wheel=${CHECK_WHEEL}
 
 RUN : \
-&& apt-get update -y \
+ && apt-get update -y \
     -qq 2>/dev/null \
  && apt-get upgrade -y \
     -qq 2>/dev/null \
@@ -199,6 +205,7 @@ RUN : \
  && echo "#!/usr/bin/env bash\n\necho; exec ${EXC_NAME} ${@}" > /bin/entrypoint \
  && chmod +x /bin/entrypoint
 
+ENV DEBUG=${DEBUG}
 ENV HOST=${HOST}
 ENV PORT=${PORT}
 

@@ -251,7 +251,7 @@ RUN pipenv run package
 
 #################################  Dist Stage  #################################
 
-FROM python:${PYTHON_VER}-${BASE_TYPE} as dist
+FROM python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER} as dist
 ARG WORKDIR
 
 ARG DEBUG

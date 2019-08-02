@@ -70,7 +70,19 @@ touch "${MANIFEST_FILE}"
 _c() { t="${3-"${TARGET_DIR}"}/$1"; d="$(dirname "${t}")"; mkdir -p "$d"; cp -R "$1" "$d"; echo "${2:-include} $(realpath --relative-to="${PACKAGE_DIR}" "${t}")" >> "${MANIFEST_FILE}"; }
 copy() { dprint "Copying \`${1}\`."; _c "${@}"; }
 
+# Handle environments where .git isn't present:
+if [ ! -d ".git" ]; then
+    readonly NO_LOCAL_GIT_DIR=true
+    print "No local .git folder, so:"
+    git init
+fi
+
 git clean -dfX "${SERVER_DIR}"
+
+if [ -n "${NO_LOCAL_GIT_DIR}" ]; then
+    rm -rf .git
+fi
+
 copy "${SERVER_DIR}"            '###' # Server source code
 copy "${SERVER_DIR}/templates"  graft # Templates
 copy "${PROTOC_DST_DIR}/python" graft # Generated protobuf files for python

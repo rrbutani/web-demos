@@ -9,19 +9,12 @@
 check_local_dep docker \
     "running the script here: https://github.com/docker/docker-install"
 
-readonly BASE_IMAGE_NAME=${BASE_IMAGE_NAME-"wd-base"}
 cp .gitignore .dockerignore
-
-# Build the base image without any context (it doesn't copy files)
-docker build \
-    --build-arg CORES="$(nproc)" \
-    -t "${BASE_IMAGE_NAME}" \
-    - < ".github/Dockerfile.base"
 
 readonly COMMIT_SHA=$(git rev-parse HEAD || echo "unknown")
 
-readonly DOCKER_FLAGS=" \
-    --build-arg BASE_BUILD_IMAGE=${BASE_IMAGE_NAME} \
+readonly DOCKER_FLAGS="${DOCKER_FLAGS} \
+    --build-arg CORES=$(nproc)
     --build-arg PACKAGE_DIR=${PACKAGE_DIR} \
     --build-arg BUILD_DIR=${BUILD_DIR} \
     --build-arg EXC_NAME=${EXC_NAME} \
@@ -36,6 +29,7 @@ readonly DOCKER_FLAGS=" \
 # shellcheck disable=SC2086
 build_stage() { docker build ${DOCKER_FLAGS} --target "${1}" -t "${EXC_NAME}-${1}" .; }
 
+build_stage base
 build_stage build
 build_stage check
 build_stage test
@@ -45,18 +39,22 @@ build_stage dist
 docker tag "${EXC_NAME}-dist" "${EXC_NAME}-dist:latest"
 docker tag "${EXC_NAME}-dist" "${EXC_NAME}-dist:${VERSION}"
 
-docker run \
-    -e "CODECOV_TOKEN=${CODECOV_TOKEN-0}" \
-    -e "COVERALLS_SERVICE_NAME=${COVERALLS_SERVICE_NAME-0}" \
-    -e "COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN-0}" \
-    -e "COVERALLS_SERVICE_JOB_ID=${COVERALLS_SERVICE_JOB_ID-0}" \
-    -e "COVERALLS_RUN_AT=${COVERALLS_RUN_AT}" \
-    -e "COVERALLS_PARALLEL=${COVERALLS_PARALLEL-0}" \
-    -it "${EXC_NAME}-test" \
-    bash -c "pipenv run upload-cov"
+if is_set UPLOAD_COV; then
+    docker run \
+        -e "CODECOV_TOKEN=${CODECOV_TOKEN-0}" \
+        -e "COVERALLS_SERVICE_NAME=${COVERALLS_SERVICE_NAME-0}" \
+        -e "COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN-0}" \
+        -e "COVERALLS_SERVICE_JOB_ID=${COVERALLS_SERVICE_JOB_ID-0}" \
+        -e "COVERALLS_RUN_AT=${COVERALLS_RUN_AT}" \
+        -e "COVERALLS_PARALLEL=${COVERALLS_PARALLEL-0}" \
+        -it "${EXC_NAME}-test" \
+        pipenv run upload-cov
+fi
 
-docker run -it "${EXC_NAME}-build" \
-    bash -c "pipenv run check-scripts"
+if is_set CHECK_SCRIPTS; then
+    docker run -it "${EXC_NAME}-build" \
+        pipenv run check-scripts
+fi
 
 # TODO: container for uploading to PyPI + calling it here with
 # ${EXC_NAME}-package as a build arg

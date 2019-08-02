@@ -8,15 +8,27 @@
 #                -> Check Scripts                  -> Upload Cov    -> Package + Test (anew, debug) -> Upload Debug Package
 #                                                                                              \
 #                                                                                               -> Debug Dist Container -> Upload Debug Container
-# Modified: July 31st, 2019
+# Modified: August 2nd, 2019
 
 #################################  Build Args  #################################
 
 # Changing this will probably break everything
 ARG BASE_TYPE=slim-buster
-ARG PYTHON_VER=3.7.4
+ARG BASE_VER=
 
-ARG BASE_BUILD_IMAGE=python:${PYTHON_VERSION}-${BASE_TYPE}
+ARG PYTHON_VERSION=3.7.4
+ARG NODE_VERSION=10.15.2
+ARG NPM_VERSION=6.10.2
+ARG PROTOC_VERSION=3.9.0
+ARG SHELLCHECK_VERSION="v0.6.0"
+
+ARG CORES=8
+
+ARG DEBUG=false
+ARG FORCE_REBUILD=false
+ARG SKIP_CHECKS=true
+ARG CHECK_WHEEL=true
+ARG UPLOAD_WHEEL=false
 
 ARG WORKDIR="/opt/project"
 
@@ -24,22 +36,111 @@ ARG WORKDIR="/opt/project"
 ARG PACKAGE_DIR="dist"
 ARG BUILD_DIR="build"
 ARG EXC_NAME="web-demos"
-
 ARG PORT="5000"
 ARG HOST="0.0.0.0"
-
-ARG DEBUG
-ARG FORCE_REBUILD=false
-ARG SKIP_CHECKS=true
-ARG CHECK_WHEEL=true
-ARG UPLOAD_WHEEL=false
 
 ARG VERSION=0.0.0
 ARG COMMIT_SHA=unknown
 
+ARG BASE_BUILD_IMAGE=python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER}
+
+#################################  Base Image  #################################
+
+# Base Image; suitable for use as a base for all the intermediate stages of the
+# project. This should have all the local dependencies needed by the project.
+#
+# Modified: August 1st, 2019
+
+FROM ${BASE_BUILD_IMAGE} as base
+ARG NODE_VERSION
+ARG NPM_VERSION
+ARG PYTHON_VERSION
+ARG PROTOC_VERSION
+ARG SHELLCHECK_VERSION
+
+RUN : \
+ && apt-get update -y \
+    -qq 2>/dev/null \
+ && apt-get upgrade -y \
+    -qq 2>/dev/null \
+ && apt-get install -y \
+        python3-virtualenv \
+        nodejs="${NODE_VERSION}*" \
+        coreutils \
+        npm \
+        openssl \
+        bash \
+        jq \
+        curl tar coreutils git grep \
+        gcc g++ \
+        util-linux \
+        procps \
+        xz-utils \
+        unzip \
+    -qq 2>/dev/null \
+ && OS="$(bash -c 'o=$(uname -s); echo ${o,,};')" \
+ && ARCH="$(uname -m)" \
+ && curl -sL \
+        "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-${OS}-${ARCH}.zip" \
+    > protoc.zip \
+ && unzip protoc.zip \
+        -d /usr/ \
+        -x readme.txt \
+ && rm protoc.zip \
+ && curl -sL \
+        "https://storage.googleapis.com/shellcheck/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+    | tar -xJv "shellcheck-${SHELLCHECK_VERSION}/shellcheck" \
+ && mv "shellcheck-${SHELLCHECK_VERSION}/shellcheck" /usr/bin \
+ && rm -rf "shellcheck-${SHELLCHECK_VERSION}" \
+ && chmod +x "/usr/bin/shellcheck" \
+ && apt-get remove -y \
+        xz-utils unzip \
+    -qq 2>/dev/null \
+ && apt-get clean -y \
+    -qq 2>/dev/null \
+ && apt-get autoremove -y \
+    -qq 2>/dev/null \
+ && rm -rf \
+        /var/tmp/* \
+        /var/lib/apt/lists/*
+
+RUN pip3 install pipenv
+
+RUN npm install -g "npm@${NPM_VERSION}"
+
+RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
+
+RUN : \
+ && echo -e "#!/usr/bin/env bash\n" > /bin/in-proj \
+ && echo 'cd ${WORKDIR}' >> /bin/in-proj \
+ && echo '${@}' >> /bin/in-proj \
+ && chmod +x /bin/in-proj
+
+ARG CORES
+
+ENV LANG="en_US.UTF-8"
+ENV MAKEFLAGS="-j${CORES}"
+ENV NPY_NUM_BUILD_JOBS="${CORES}"
+
+ARG DEBUG
+ARG FORCE_REBUILD
+ARG SKIP_CHECKS
+ARG CHECK_WHEEL
+ARG UPLOAD_WHEEL
+
+ENV DEBUG="${DEBUG}"
+ENV FORCE_REBUILD="${FORCE_REBUILD}"
+ENV SKIP_CHECKS="${SKIP_CHECKS}"
+ENV CHECK_WHEEL="${CHECK_WHEEL}"
+ENV UPLOAD_WHEEL="${UPLOAD_WHEEL}"
+
+ARG WORKDIR
+ENV WORKDIR="${WORKDIR}"
+WORKDIR "${WORKDIR}"
+
 #################################  Build Stage  ################################
 
-FROM ${BASE_BUILD_IMAGE} as build
+FROM base as build
 ARG DEBUG
 ARG WORKDIR
 ARG BUILD_DIR

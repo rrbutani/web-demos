@@ -82,13 +82,30 @@ action "Upload Coverage" {
   uses = "docker://web-demos:test"
   needs = ["Test Stage"]
   args = "in-proj pipenv run upload-cov"
-  secrets = [
-    "CODECOV_TOKEN",
-    "COVERALLS_REPO_TOKEN",
-  ]
   env = {
     "COVERALLS_SERVICE_NAME" = "github-actions"
   }
+  secrets = ["COVERALLS_REPO_TOKEN", "CODECOV_TOKEN"]
+
+  # workflow "Does a release!" {
+  #   on = "push"
+  #   resolves = [
+  #     # , "Build the base image"
+  #     # , "Build Stage"
+  #     # , "Check Stage"
+  #     # , "Check Scripts"
+  #     # , "Test Stage"
+  #     # , "Package Stage"
+  #     # , "Upload Coverage"
+  #     # , "Build Regular Dist Container"
+  #     # , "Debug Package Stage"
+  #     # , "Build Debug Dist Container"
+  #     "Upload Regular Dist Container",
+  #     "Upload Debug Dist Container",
+  #   # , "Upload Regular Wheel"
+  #   # , "Upload Debug Wheel"
+  #   ]
+  # }
 }
 
 # # action "Upload Regular Wheel" {

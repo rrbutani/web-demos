@@ -104,7 +104,7 @@ echo "from . import ${SERVER_DIR}" >> "${TARGET_DIR}/__init__.py"
 }
 
 # Dist files from the examples:
-for f in "${EXAMPLES_DIR}/"*"/dist/"*.{css,js,html,jpg,ico,png}; do
+for f in "${EXAMPLES_DIR}/"*"/dist/"*.{css,js,html,jpg}; do
     copy "${f}"
 done
 

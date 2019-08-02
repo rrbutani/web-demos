@@ -43,19 +43,19 @@ action "Log into Docker Hub" {
 
 action "Build the base image" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
-  args = "build --target base -t web-demos:base -f .github/Dockerfile.base .github"
+  args = "build --target base -t web-demos:base .github"
 }
 
 action "Build Stage" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Build the base image"]
-  args = "build --target build -t web-demos:build -f Dockerfile ."
+  args = "build --target build -t web-demos:build ."
 }
 
 action "Check Stage" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Build Stage"]
-  args = "build --target check -t web-demos:check -f Dockerfile ."
+  args = "build --target check -t web-demos:check ."
 }
 
 action "Check Scripts" {
@@ -67,13 +67,13 @@ action "Check Scripts" {
 action "Test Stage" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Check Stage"]
-  args = "build --target test -t web-demos:test -f Dockerfile ."
+  args = "build --target test -t web-demos:test ."
 }
 
 action "Package Stage" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
-  args = "build --target package -t web-demos:package -f Dockerfile ."
+  args = "build --target package -t web-demos:package ."
 }
 
 action "Upload Coverage" {
@@ -100,7 +100,7 @@ action "Upload Coverage" {
 action "Build Regular Dist Container" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Package Stage"]
-  args = "build --build-arg COMMIT_SHA=${GITHUB_SHA} --target dist -t web-demos:dist -f Dockerfile ."
+  args = "build --build-arg COMMIT_SHA=${GITHUB_SHA} --target dist -t web-demos:dist ."
 }
 
 action "Tag Regular Dist Container" {
@@ -128,14 +128,14 @@ action "Upload Regular Dist Container" {
 action "Build the base debug image" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
-  args = "build --build-arg DEBUG=true -t web-demos:base-debug -f .github/Dockerfile.base .github"
+  args = "build --build-arg DEBUG=true -t web-demos:base-debug .github"
 
 }
 
 action "Debug Package Stage" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Build the base debug image"]
-  args = "build --build-arg DEBUG=true --target package -t web-demos:package-debug -f Dockerfile ."
+  args = "build --build-arg DEBUG=true --target package -t web-demos:package-debug ."
 }
 
 # # action "Upload Debug Wheel" {
@@ -149,7 +149,7 @@ action "Debug Package Stage" {
 action "Build Debug Dist Container" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Debug Package Stage"]
-  args = "build --build-arg DEBUG=true --build-arg COMMIT_SHA=${GITHUB_SHA} --target dist -t web-demos:dist-debug -f Dockerfile ."
+  args = "build --build-arg DEBUG=true --build-arg COMMIT_SHA=${GITHUB_SHA} --target dist -t web-demos:dist-debug ."
 }
 
 action "Tag Debug Dist Container" {

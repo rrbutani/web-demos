@@ -7,9 +7,11 @@ workflow "Check, test, and build the web-demos" {
     "Check Scripts",
     "Test Stage",
     "Upload Coverage",
+
     # "Package Stage",
     # "Build Regular Dist Container",
     "Upload Regular Dist Container",
+
     # "Debug Package Stage",
     # "Build Debug Dist Container",
     "Upload Debug Dist Container",
@@ -129,7 +131,6 @@ action "Build the base debug image" {
   uses = "actions/docker/cli@86ff551d26008267bb89ac11198ba7f1d807b699"
   needs = ["Test Stage"]
   args = "build --build-arg DEBUG=true -t web-demos:base-debug -f Dockerfile ."
-
 }
 
 action "Debug Package Stage" {

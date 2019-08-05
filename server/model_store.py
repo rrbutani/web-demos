@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 from .debug import dprint, if_debug
+from .ncore import NCORE_PRESENT, Delegate, get_ncore_delegate_instance, if_ncore
 from .types import MODEL_DIR
 from .types.metrics import Metrics
 
@@ -25,6 +26,10 @@ Handle = int
 
 
 class ModelRegisterError(Exception):
+    ...
+
+
+class ModelStoreFullError(Exception):
     ...
 
 
@@ -115,12 +120,18 @@ class LocalModel:
         if self.interp is None:
             # ..do so:
             try:
+                delegate = if_ncore(get_ncore_delegate_instance)
+
                 # From a string, if we've got it:
                 if self.model is not None:
-                    self.interp = Interpreter(model_content=self.model)
+                    self.interp = Interpreter(
+                        model_content=self.model, experimental_delegates=delegate
+                    )
                 # If not, try a file if we've got one:
                 elif self.path is not None:
-                    self.interp = Interpreter(model_path=self.path)
+                    self.interp = Interpreter(
+                        model_path=self.path, experimental_delegates=delegate
+                    )
                 # Failing that, bail:
                 else:
                     raise ModelLoadError(
@@ -355,21 +366,70 @@ class ModelStore:
         assert 2 == self._load_from_file(j("mobilenet_v1_1.0_224_quant.tflite"))
         dprint("loaded built-in models!!")
 
+    # If we had literal types (const generics) this would be Union[None, False, Handle]
+    Check = Union[None, bool, Handle]
+
+    def _check_model_store(
+        self, model: Optional[str] = None, path: Optional[str] = None
+    ) -> Check:
+        """
+        Takes the model string/path that we're trying to make a new model with.
+        Returns:
+          - None if no new models can be constructed.
+          - False if the model does not already exist
+          - a Handle corresponding to the model if it already exists
+        """
+        if NCORE_PRESENT and len(self.models) >= 1:
+            # NCore's driver/loadable caching can currently handle 1 model at a time.
+            assert len(self.models) == 1
+            return None
+
+        for idx, m in enumerate(self.models):
+            if m.model == model and m.path == path:
+                # If there's a match, return its handle:
+                return idx
+
+        # Otherwise, tell the callee to make their own model:
+        return False
+
+    def _load_or_use_cached(
+        self, check: Check, load_func: Callable[[], LocalModel], model: str
+    ) -> Handle:
+        """
+        :raises ModelStoreFullError: When the model store is unable to load mode models.
+        """
+        if check is None:
+            raise ModelStoreFullError(
+                "We're unable to load more models, so we're dropping the load model"
+                f" request for `{model}`."
+            )
+        elif check is False:
+            self.models.append(load_func())
+
+            return len(self.models) - 1
+        else:
+            dprint(f"Using cache for model `{model}`")
+            return check
+
     def load(self, model: str) -> Handle:
         """
         :raises ModelRegisterError: When given an obviously incorrect model.
+        :raises ModelStoreFullError: When the model store is unable to load more models.
         """
-        self.models.append(LocalModel(model=model))
-
-        return len(self.models) - 1
+        return self._load_or_use_cached(
+            self._check_model_store(model=model),
+            lambda: LocalModel(model=model),
+            f"<from string with hash '{hash(model)}'>",
+        )
 
     def _load_from_file(self, path: str) -> Handle:
         """
         :raises ModelRegisterError: When given an obviously incorrect model.
+        :raises ModelStoreFullError: When the model store is unable to load more models.
         """
-        self.models.append(LocalModel(path=path))
-
-        return len(self.models) - 1
+        return self._load_or_use_cached(
+            self._check_model_store(path=path), lambda: LocalModel(path=path), path
+        )
 
     def get(self, handle: Handle) -> LocalModel:
         """

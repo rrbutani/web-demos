@@ -12,6 +12,10 @@ NCORE_PATH: str = "/dev/ncore_pci"
 _NCORE: Optional[bool] = None
 _DELEGATE_LIB_PATH: Optional[str] = None
 
+# This should be `tf.lite.Delegate`, but it's currently not made public so
+# we'll have to settle for this:
+Delegate = Any
+
 
 class InvalidDelegateLibrary(Exception):
     ...
@@ -57,12 +61,12 @@ def check_for_ncore() -> Tuple[bool, Optional[str]]:
 if _NCORE is None:
     _NCORE, _DELEGATE_LIB_PATH = check_for_ncore()
 
-present: bool = _NCORE
+NCORE_PRESENT: bool = _NCORE
 
 T = TypeVar("T")
 
 
-def if_ncore(func: Callable[[], None]) -> Optional[T]:
+def if_ncore(func: Callable[[], T]) -> Optional[T]:
     if _NCORE:
         return func()
     else:
@@ -73,9 +77,7 @@ def delegate_lib_path() -> Optional[str]:
     return _DELEGATE_LIB_PATH
 
 
-def get_ncore_delegate_instance(
-    options: Any = None
-) -> Optional[List[tf.lite.Delegate]]:
+def get_ncore_delegate_instance(options: Any = None) -> Optional[List[Delegate]]:
     if _NCORE and _DELEGATE_LIB_PATH is not None:
         try:
             dprint("Making a new NCore delegate!")
@@ -90,7 +92,7 @@ def get_ncore_delegate_instance(
         return None
 
 
-if_ncore(
+_: None = if_ncore(
     lambda: print(
         "\n****************************** Running on NCore!! ******************************\n"
     )

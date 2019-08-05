@@ -62,6 +62,24 @@ message Error {
     enum Kind {
         // TODO!!
         OTHER = 0;
+
+        INVALID_TENSOR_MESSAGE = 1;
+        MISSHAPEN_TENSOR = 2;
+        TENSOR_CONVERSION_ERROR = 3;
+        TENSOR_TYPE_ERROR = 4;
+        UNKNOWN_TENSOR_ERROR = 10;
+
+        INVALID_HANDLE_ERROR = 11;
+        MODEL_REGISTER_ERROR = 12;
+        MODEL_STORE_FULL_ERROR = 13;
+        MODEL_ACQUIRE_ERROR = 14;   // TODO!
+        MODEL_CONVERSION_ERROR = 15; // TODO!
+        MODEL_LOAD_ERROR = 16;
+        UNKNOWN_MODEL_ERROR = 20;
+
+        NCORE_NOT_PRESENT = 21;
+        INVALID_DELEGATE_LIBRARY = 22;
+        UNKNOWN_NCORE_ERROR = 23;
     }
 
     Kind kind = 1;

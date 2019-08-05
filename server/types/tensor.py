@@ -53,7 +53,7 @@ type_map_numpy2pb: Dict[str, Tuple[str, Type[Any]]] = {
 }
 
 
-class ConversionError(Exception):
+class TensorConversionError(Exception):
     ...
 
 
@@ -119,13 +119,15 @@ def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
 
 def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
     """
-    :raises ConversionError: On tensors that cannot be serialized.
+    :raises TensorConversionError: On tensors that cannot be serialized.
     :raises MisshapenTensor: On tensors with inconsistent shapes.
     """
     dtype = tensor.dtype
 
     if not dtype.isnative:  # relaxing dtype.isbuiltin for now
-        raise ConversionError(f"Invalid data type ({dtype}) on tensor; cannot convert.")
+        raise TensorConversionError(
+            f"Invalid data type ({dtype}) on tensor; cannot convert."
+        )
 
     field, klass = type_map_numpy2pb[dtype.kind]
 
@@ -136,7 +138,7 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
     array = klass(array=array)
 
     if array is None:
-        raise ConversionError(
+        raise TensorConversionError(
             f"Failed to create a protobuf array; tried to use `({klass})`"
         )
 

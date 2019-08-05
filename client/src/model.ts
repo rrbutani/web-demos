@@ -74,7 +74,8 @@ export class Model {
 
       return [pb_to_tfjs_tensor(response.tensor), metrics];
     } else if (response.response === "error" && response.error instanceof PbError) {
-      throw Error(`Got an error: '${print_error(response.error)}'`);
+      dprint(`Got an error: '${print_error(response.error)}'`);
+      throw response.error;
     } else {
       throw Error(`Invalid Response; expected tensor or error, got '${response.response}'`);
     }

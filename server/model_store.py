@@ -355,6 +355,7 @@ class ModelStore:
     # TODO: why is this annotation required. https://github.com/python/mypy/pull/5677 says it isn't.
     def __init__(self) -> None:
         self.models: List[LocalModel] = []
+        self.model_table: Dict[Tuple[Optional[str], Optional[str]], Handle] = {}
 
         # TODO: remove
         j: Callable[[str], str] = lambda name: os.path.join(MODEL_DIR, name)
@@ -384,10 +385,10 @@ class ModelStore:
             assert len(self.models) == 1
             return None
 
-        for idx, m in enumerate(self.models):
-            if m.model == model and m.path == path:
-                # If there's a match, return its handle:
-                return idx
+        # If we've already loaded this model, return its handle:
+        model_ident: Tuple[Optional[str], Optional[str]] = (model, path)
+        if model_ident in self.model_table:
+            return self.model_table[model_ident]
 
         # Otherwise, tell the callee to make their own model:
         return False
@@ -404,9 +405,14 @@ class ModelStore:
                 f" request for `{model}`."
             )
         elif check is False:
-            self.models.append(load_func())
+            m: LocalModel = load_func()
+            self.models.append(m)
+            idx: Handle = len(self.models) - 1
 
-            return len(self.models) - 1
+            # Add to the model table:
+            model_table[(m.model, m.path)] = idx
+
+            return idx
         else:
             dprint(f"Using cache for model `{model}`")
             return check

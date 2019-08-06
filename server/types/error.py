@@ -1,6 +1,6 @@
 import re
 import traceback
-from typing import Dict, Type
+from typing import Any, Dict, Type
 
 from ..debug import dprint, if_debug
 from ..model_store import (
@@ -15,8 +15,12 @@ from ..types import Error
 from ..types.tensor import InvalidTensorMessage, MisshapenTensor, TensorConversionError
 
 # Needs to be kept in sync with the error codes from inference.proto:
+# Ideally we'd use `Error.Kind` here instead of `Any` (mypy is happy with this
+# fwiw) but we can't without getting runtime errors because `Error.Kind` isn't
+# a normal enum since protobufs enums are specified using meta-programming
+# magic.
 # fmt: off
-error_code_map: Dict[Type[Exception], Error.Kind] = {
+error_code_map: Dict[Type[Exception], Any] = {
     TensorConversionError:  Error.Kind.TENSOR_CONVERSION_ERROR,
     InvalidTensorMessage:   Error.Kind.INVALID_TENSOR_MESSAGE,
     MisshapenTensor:        Error.Kind.MISSHAPEN_TENSOR,

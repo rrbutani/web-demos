@@ -55,12 +55,71 @@ message Tensor {
 }
 
 message Model {
-    // TODO!!
+    enum Type {
+        TFLITE_FLAT_BUFFER = 0; // No conversion needed.
+                                // (Provided as a single .tflite file)
+
+        TF_SAVED_MODEL = 1;     // [TODO] => [TFLiteConverter] -> TFLiteFlatBuffer
+                                // (Provided as a .zip)
+                                // `TFLiteConverter.from_saved_model()`
+
+        KERAS_HDF5 = 2;         // [TODO] => [TFLiteConverter] -> TFLiteFlatBuffer
+                                // (Provided as a single .h5 file)
+                                // `TFLiteConverter.from_keras_model_file()`
+
+        KERAS_SAVED_MODEL = 3;  // [TODO] => [TFJSConverter] -> TFJSLayersModel => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
+                                // Comes from `tf.contrib.saved_model.save_keras_model()`; (Provided as a .zip)
+                                // `TFJSConverter:keras_saved_model -> tfjs_layers_model` + `TFJSConverter:tfjs_layers -> keras` + `TFLiteConverter.from_keras_model_file()`
+                                // NOTE: Unclear if TFLiteConverter can convert
+                                // this straight to TFLiteFlatBuffer. I
+                                // _suspect_ that KerasSavedModel and SavedModel
+                                // are really the same thing. (the tfjs
+                                // converter docs suggest that KerasSavedModels
+                                // are easily convertible to TFLiteFlatBuffers)
+
+        KERAS_OTHER = 4;        // [TODO] => [TFJSConverter] -> TFJSLayersModel => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
+                                // Format unknown, assuming single file.
+                                // `TFJSConverter:keras -> tfjs_layers_model` + `TFJSConverter:tfjs_layers -> keras` + `TFLiteConverter.from_keras_model_file()`
+                                // NOTE: Unclear how this differs from HDF5
+                                // Keras models. The path for conversion is
+                                // different than HDF5 Keras models (TFJS
+                                // converter is involved) because of this; the
+                                // only place that suggests there's some other
+                                // kind of Keras model than HDF5 Keras models
+                                // and Saved Models Keras Models is the TFJS
+                                // converter docs. Keras/Tensorflow Keras docs
+                                // make reference to a checkpoint format that's
+                                // the default; perhaps that's what this is.
+
+        TFJS_LAYERS = 5;        // => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
+                                // JSON file.
+                                // `TFJSConverter:tfjs_layers -> keras` + `TFLiteConverter.from_keras_model_file()`
+
+        /* ------------------------------------------------------------------ */
+        TFJS_GRAPH = 6;         // TODO: add support
+                                // NOTE: Doesn't appear to be possible to
+                                // easily convert a TFJSGraphModel to anything
+                                // else (we can, however, convert things _to_
+                                // TFJSGraphModels).
+
+        TF_HUB = 7;             // TODO: add support
+                                // NOTE: May not be possible since
+                                // TFJSGraphModel is involved
+
+        GRAPH_DEFS = 8;         // [TODO] => [TFLiteConverter] => KerasSavedModel
+                                // Format unknown.
+                                // `TFLiteConverter.from_session()`
+
+        // If KerasSavedModel == SavedModel, we can get rid of the
+        // keras_saved_model entry (merged with saved_model) and also change
+        // the tfjs_layers_model -> TFLiteFlatBuffer path to use
+        // keras_saved_model as an intermediary (unclear what if anything the
+        // latter buys us).
+    }
 }
 
 message Error {
     enum Kind {
-        // TODO!!
         OTHER = 0;
 
         INVALID_TENSOR_MESSAGE = 1;
@@ -87,8 +146,8 @@ message Error {
 }
 
 message Metrics {
-    int64 time_to_execute = 1; // in ms (TODO!)
-    string trace = 2;
+    int64 time_to_execute = 1; // in μs
+    string trace_url = 2;
 }
 
 message ModelHandle {
@@ -122,6 +181,6 @@ message InferenceResponse {
         Error error = 2;
     }
 
-    // TODO: not sure if this should be dijoint from error
+    // TODO: not sure if this should be disjoint from error
     Metrics metrics = 3;
 }

@@ -2,7 +2,7 @@ import os
 import time
 from typing import Any, Callable, Iterable, List
 from typing import NoReturn as Never
-from typing import Optional, Tuple, TypeVar, Union, cast
+from typing import Optional, Tuple, TypeVar, Union, cast, Dict
 
 import numpy as np
 import tensorflow as tf
@@ -10,6 +10,7 @@ import tensorflow as tf
 from .debug import dprint, if_debug
 from .ncore import NCORE_PRESENT, Delegate, get_ncore_delegate_instance, if_ncore
 from .types import MODEL_DIR
+from .types.model import LocalHandle as Handle
 from .types.metrics import Metrics
 
 dprint(f"TF Version: {tf.__version__}")
@@ -22,8 +23,6 @@ Interpreter = tf.lite.Interpreter
 
 Error = str
 Tensor = np.ndarray
-Handle = int
-
 
 class ModelRegisterError(Exception):
     ...
@@ -410,7 +409,7 @@ class ModelStore:
             idx: Handle = len(self.models) - 1
 
             # Add to the model table:
-            model_table[(m.model, m.path)] = idx
+            self.model_table[(m.model, m.path)] = idx
 
             return idx
         else:

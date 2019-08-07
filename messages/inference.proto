@@ -116,6 +116,20 @@ message Model {
         // keras_saved_model as an intermediary (unclear what if anything the
         // latter buys us).
     }
+
+    message FromURL {
+        string url = 1;
+    }
+
+    message FromBytes {
+        bytes data = 1;
+    }
+
+    oneof source {
+        FromURL url = 1;
+        // Can't name this `bytes` or the type stubs plugin for protoc generates typings that make mypy choke
+        FromBytes data = 2;
+    }
 }
 
 message Error {

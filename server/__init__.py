@@ -77,7 +77,7 @@ def serve_build_file(example_name: str, path: str) -> Response:
     return send_from_directory(EX_DIR, p)
 
 
-@app.route("/api/model", methods=["POST"])
+@app.route("/api/load_model", methods=["POST"])
 @api(json, protobuf(receives=LoadModelRequest, sends=LoadModelResponse, to_dict=False))
 def load_model() -> LoadModelResponse:
     # TODO!

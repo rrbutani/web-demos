@@ -94,7 +94,8 @@ type Inverted<T extends Record<PropertyKey, PropertyKey>> = {
   [V in ValueUnion<T>["value"]]: Extract<ValueUnion<T>, { value: V }>["key"]
 } & {};
 
-function invert_map<T extends Record<PropertyKey, PropertyKey>>(obj: T): Inverted<T> {
+function invert_map<T extends Record<PropertyKey, PropertyKey>>(obj: T):
+  Inverted<T> {
   // @ts-ignore
   return invert(obj);
 }

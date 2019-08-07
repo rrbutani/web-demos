@@ -4,7 +4,11 @@
  * Quick and simple script that builds the protobuf messages.
  */
 
-import { existsSync as exists, mkdirSync as mkdir, writeFileSync as write_file } from "fs";
+import {
+  existsSync as exists,
+  mkdirSync as mkdir,
+  writeFileSync as write_file,
+} from "fs";
 import { basename, dirname, join } from "path";
 import { argv } from "process";
 

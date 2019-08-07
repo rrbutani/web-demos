@@ -3,8 +3,11 @@ import {
   tensor as tfjs_tensor_constructor,
   Tensor as TfJsTensor,
 } from "@tensorflow/tfjs";
+import {
+  pb_to_tfjs_tensor as pb2js,
+  tfjs_to_pb_tensor as js2pb,
+} from "../src/tensor";
 
-import { pb_to_tfjs_tensor as pb2js, tfjs_to_pb_tensor as js2pb } from "../src/tensor";
 import { exhaust } from "../src/util";
 
 const sample_tfjs = tfjs_tensor_constructor([0]);
@@ -37,9 +40,11 @@ function range(max: number, min: number = 0): number[] {
   return Array.from(Array(upper - lower).keys()).map((i) => i + lower);
 }
 
-function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5, max_len: number = 2 ** 5): TfJsTensor {
+function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5,
+                       max_len: number = 2 ** 5): TfJsTensor {
   const num_dimensions: number = random_int_inclusive(0, max_dimensions);
-  const shape: number[] = range(num_dimensions).map((_) => random_int_inclusive(1, max_len));
+  const shape: number[] = range(num_dimensions)
+    .map((_) => random_int_inclusive(1, max_len));
 
   const total_len: number = shape.reduce((acc, curr) => acc * curr, 1);
 

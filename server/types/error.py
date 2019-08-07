@@ -15,13 +15,23 @@ from ..types import Error
 from ..types.model import ModelAcquireError, ModelConversionError
 from ..types.tensor import InvalidTensorMessage, MisshapenTensor, TensorConversionError
 
+
+ErrorKind = Error.Kind
+
 # Needs to be kept in sync with the error codes from inference.proto:
 # Ideally we'd use `Error.Kind` here instead of `Any` (mypy is happy with this
 # fwiw) but we can't without getting runtime errors because `Error.Kind` isn't
 # a normal enum since protobufs enums are specified using meta-programming
 # magic.
+#
+# Update: The compromise we've struck is reassigning the type alias ErrorKind
+# to Any at runtime (and telling mypy to explicitly ignore this). This way, we
+# get to have our cake and eat it too: mypy will type error on invariants that
+# don't belong to the Error.Kind enum and we don't runtime error.
+if True: ErrorKind: Type[Any] = Any # type: ignore
+
 # fmt: off
-error_code_map: Dict[Type[Exception], Any] = {
+error_code_map: Dict[Type[Exception], ErrorKind] = {
     TensorConversionError:  Error.Kind.TENSOR_CONVERSION_ERROR,
     InvalidTensorMessage:   Error.Kind.INVALID_TENSOR_MESSAGE,
     MisshapenTensor:        Error.Kind.MISSHAPEN_TENSOR,

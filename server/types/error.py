@@ -12,6 +12,7 @@ from ..model_store import (
 )
 from ..ncore import InvalidDelegateLibrary, NCoreNotPresent
 from ..types import Error
+from ..types.model import ModelAcquireError, ModelConversionError
 from ..types.tensor import InvalidTensorMessage, MisshapenTensor, TensorConversionError
 
 # Needs to be kept in sync with the error codes from inference.proto:
@@ -29,6 +30,8 @@ error_code_map: Dict[Type[Exception], Any] = {
     ModelLoadError:         Error.Kind.MODEL_LOAD_ERROR,
     InvalidHandleError:     Error.Kind.INVALID_HANDLE_ERROR,
     TensorTypeError:        Error.Kind.TENSOR_TYPE_ERROR,
+    ModelAcquireError:      Error.Kind.MODEL_ACQUIRE_ERROR,
+    ModelConversionError:   Error.Kind.MODEL_CONVERSION_ERROR,
     InvalidDelegateLibrary: Error.Kind.INVALID_DELEGATE_LIBRARY,
     NCoreNotPresent:        Error.Kind.NCORE_NOT_PRESENT,
 }

@@ -4,6 +4,11 @@ from typing import Tuple, cast
 from ..model_store import Handle as LocalHandle
 from ..types import Model, ModelHandle
 
+class ModelAcquireError(Exception):
+    ...
+
+class ModelConversionError(Exception):
+    ...
 
 # TODO!!!
 def convert_model(model: Model) -> str:

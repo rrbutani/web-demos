@@ -40,9 +40,11 @@ function range(max: number, min: number = 0): number[] {
   return Array.from(Array(upper - lower).keys()).map((i) => i + lower);
 }
 
-function random_tensor(dtype: TfJsDataType, max_dimensions: number = 5,
-                       max_len: number = 2 ** 5): TfJsTensor {
-  const num_dimensions: number = random_int_inclusive(0, max_dimensions);
+type num = number;
+
+function random_tensor(
+  dtype: TfJsDataType, max_dims: num = 5, max_len: num = 2 ** 5): TfJsTensor {
+  const num_dimensions: number = random_int_inclusive(0, max_dims);
   const shape: number[] = range(num_dimensions)
     .map((_) => random_int_inclusive(1, max_len));
 

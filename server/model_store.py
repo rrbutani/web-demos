@@ -1,8 +1,8 @@
 import os
 import time
-from typing import Any, Callable, Iterable, List
+from typing import Any, Callable, Dict, Iterable, List
 from typing import NoReturn as Never
-from typing import Optional, Tuple, TypeVar, Union, cast, Dict
+from typing import Optional, Tuple, TypeVar, Union, cast
 
 import numpy as np
 import tensorflow as tf
@@ -10,8 +10,8 @@ import tensorflow as tf
 from .debug import dprint, if_debug
 from .ncore import NCORE_PRESENT, Delegate, get_ncore_delegate_instance, if_ncore
 from .types import MODEL_DIR
-from .types.model import LocalHandle as Handle
 from .types.metrics import Metrics
+from .types.model import LocalHandle as Handle
 
 dprint(f"TF Version: {tf.__version__}")
 # tf.compat.v1.enable_eager_execution()
@@ -23,6 +23,7 @@ Interpreter = tf.lite.Interpreter
 
 Error = str
 Tensor = np.ndarray
+
 
 class ModelRegisterError(Exception):
     ...

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Optional
+from typing import Optional, Union
 
 from ..types import Metrics as MetricsMessage
 

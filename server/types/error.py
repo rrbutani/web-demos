@@ -15,7 +15,6 @@ from ..types import Error
 from ..types.model import ModelAcquireError, ModelConversionError
 from ..types.tensor import InvalidTensorMessage, MisshapenTensor, TensorConversionError
 
-
 ErrorKind = Error.Kind
 
 # Needs to be kept in sync with the error codes from inference.proto:
@@ -28,7 +27,8 @@ ErrorKind = Error.Kind
 # to Any at runtime (and telling mypy to explicitly ignore this). This way, we
 # get to have our cake and eat it too: mypy will type error on invariants that
 # don't belong to the Error.Kind enum and we don't runtime error.
-if True: ErrorKind: Type[Any] = Any # type: ignore
+if True:
+    ErrorKind: Type[Any] = Any  # type: ignore
 
 # fmt: off
 error_code_map: Dict[Type[Exception], ErrorKind] = {

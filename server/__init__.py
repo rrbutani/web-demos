@@ -84,7 +84,7 @@ def load_model() -> LoadModelResponse:
     pb_model: Model = request.received_message.model
 
     try:
-        model: str = convert_model(pb_model)
+        model: str = str(convert_model(pb_model))
         handle = model_store.load(model)
 
         return LoadModelResponse(handle=into_handle(handle))

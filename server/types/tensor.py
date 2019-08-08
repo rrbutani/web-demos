@@ -1,18 +1,6 @@
 from functools import reduce
 from operator import mul
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sized,
-    Tuple,
-    Type,
-    TypeVar,
-    cast,
-)
+from typing import Any, Dict, Iterable, List, Optional, Sized, Tuple, Type, TypeVar
 
 import numpy as np
 from google.protobuf.message import Message
@@ -76,9 +64,9 @@ def _get_oneof_pair(
     """
     try:
         ty = m.WhichOneof(field)
+        f = getattr(m, ty)  # Throws a type error if ty is None
     except TypeError:
-        raise InvalidTensorMessage(f"Missing oneof field `{field}` on message (${m}).")
-    f = getattr(m, ty)
+        raise InvalidTensorMessage(f"Missing oneof field `{field}` on message ({m}).")
 
     if attr is not None:
         f = getattr(f, attr)
@@ -159,8 +147,3 @@ def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
 # b) numpy -> Py-Proto:
 # c) TFJS -> Js-Proto:
 # d) Js-Proto -> TFJS:
-
-# Plan: (TODO)
-
-#  3) Add a roundtrip test for serialization/deserialization of TFLite (numpy) Tensors.
-#  8) Add tests for ^

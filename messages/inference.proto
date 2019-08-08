@@ -90,6 +90,9 @@ message Model {
                                 // converter docs. Keras/Tensorflow Keras docs
                                 // make reference to a checkpoint format that's
                                 // the default; perhaps that's what this is.
+                                // On the other hand, the tensorflowjs
+                                // converter calls a kerasHDF5 function for this
+                                // format...
 
         TFJS_LAYERS = 5;        // => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
                                 // JSON file.
@@ -127,9 +130,12 @@ message Model {
 
     oneof source {
         FromURL url = 1;
-        // Can't name this `bytes` or the type stubs plugin for protoc generates typings that make mypy choke
+        // Can't name this `bytes` or the type stubs plugin for protoc generates
+        // typings that make mypy choke
         FromBytes data = 2;
     }
+
+    Type type = 3;
 }
 
 message Error {
@@ -146,13 +152,14 @@ message Error {
         MODEL_REGISTER_ERROR = 12;
         MODEL_STORE_FULL_ERROR = 13;
         MODEL_ACQUIRE_ERROR = 14;
-        MODEL_CONVERSION_ERROR = 15;
-        MODEL_LOAD_ERROR = 16;
+        MODEL_DATA_ERROR = 15;
+        MODEL_CONVERSION_ERROR = 16;
+        MODEL_LOAD_ERROR = 17;
         UNKNOWN_MODEL_ERROR = 20;
 
         NCORE_NOT_PRESENT = 21;
         INVALID_DELEGATE_LIBRARY = 22;
-        UNKNOWN_NCORE_ERROR = 23;
+        UNKNOWN_NCORE_ERROR = 30;
     }
 
     Kind kind = 1;
@@ -171,7 +178,7 @@ message ModelHandle {
 // LoadModelRequest = Model
 // LoadModelResponse = oneof { ModelHandle, Error }
 // InferenceRequest = { ModelHandle, Tensor }
-// InferenceResponse = oneof { Tensor, Error }
+// InferenceResponse = { oneof { Tensor, Error }, Metrics }
 
 message LoadModelRequest {
     Model model = 1;
@@ -195,6 +202,5 @@ message InferenceResponse {
         Error error = 2;
     }
 
-    // TODO: not sure if this should be disjoint from error
     Metrics metrics = 3;
 }

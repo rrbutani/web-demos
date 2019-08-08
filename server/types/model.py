@@ -1,71 +1,66 @@
-from typing import Any, Dict, Callable, Optional, NoReturn as Never
+import urllib
+import zipfile
 from os import environ
 from os.path import dirname, join
+from shutil import copyfile, rmtree
 from tempfile import mkdtemp
-import urllib
+from typing import Any, Callable, Dict
+from typing import NoReturn as Never
+from typing import Optional, Type, Union, cast
+from urllib.error import URLError
 from urllib.request import urlretrieve as download
-import zipfile
-from shutil import rmtree, copyfile
-
-from ..types import Model, ModelHandle
-from ..types.Model.Type import *
-
-from tensorflowjs.converters.converter import (
-    dispatch_keras_saved_model_to_tensorflowjs_conversion,
-    dispatch_tensorflowjs_to_keras_h5_conversion,
-    dispatch_keras_h5_to_tensorflowjs_conversion,
-)
 
 from tensorflow.compat.v1.lite import TFLiteConverter
+from tensorflowjs.converters.converter import (  # type: ignore
+    dispatch_keras_h5_to_tensorflowjs_conversion,
+    dispatch_keras_saved_model_to_tensorflowjs_conversion,
+    dispatch_tensorflowjs_to_keras_h5_conversion,
+)
 
+from ..types import Model, ModelHandle
+
+MT = Model.Type
 LocalHandle = int
 
-DELETE_MODELS_AFTER_CONVERSION: bool = environ.get("DELETE_MODELS_AFTER_CONVERSION", "false").lower() == "true"
+DELETE_MODELS_AFTER_CONVERSION: bool = environ.get(
+    "DELETE_MODELS_AFTER_CONVERSION", "false"
+).lower() == "true"
+
 
 class ModelAcquireError(Exception):
     ...
 
+
 class ModelDataError(Exception):
     ...
+
 
 class ModelConversionError(Exception):
     ...
 
+
 ModelType = Model.Type
-ConversionFunc = Callable[[str, str], str]
+ConversionFunc = Callable[[str, str], bytes]
 
 # Same deal with the Enum types here as in `error.py`; protobuf enums are not
 # actually python enums, so we're going to have to use a trick:
-if True: ModelType: Type[Any] = Any  # type: ignore
+if True:
+    ModelType: Type[Any] = Any  # type: ignore
 
 # fmt: off
 model_type_to_path: Dict[ModelType, str] = {
-    TFLITE_FLAT_BUFFER: "tflite_model.tflite",
-    TF_SAVED_MODEL:     "tf_saved_model/",
-    KERAS_HDF5:         "keras_model.h5",
-    KERAS_SAVED_MODEL:  "keras_saved_model/",
-    KERAS_OTHER:        "keras_model_other.h5",
-    TFJS_LAYERS:        "tfjs_layers_model.json",
-    TFJS_GRAPH:         "tfjs_graph_model/",
-    TF_HUB:             "tf_hub_model.tfhub", # placeholder
-    GRAPH_DEFS:         "graph_defs.gdefs", # placeholder
+    MT.TFLITE_FLAT_BUFFER: "tflite_model.tflite",
+    MT.TF_SAVED_MODEL:     "tf_saved_model/",
+    MT.KERAS_HDF5:         "keras_model.h5",
+    MT.KERAS_SAVED_MODEL:  "keras_saved_model/",
+    MT.KERAS_OTHER:        "keras_model_other.h5",
+    MT.TFJS_LAYERS:        "tfjs_layers_model.json",
+    MT.TFJS_GRAPH:         "tfjs_graph_model/",
+    MT.TF_HUB:             "tf_hub_model.tfhub", # placeholder
+    MT.GRAPH_DEFS:         "graph_defs.gdefs", # placeholder
 }
 # fmt: on
 
-# fmt: off
-# [Input Format] => (dir, file) -> TFLite model as a string
-model_conversion_steps: Dict[ModelType, ConversionFunc] = {
-    TFLITE_FLAT_BUFFER: lambda _, f: open(f, "rb").read(),
-    TF_SAVED_MODEL:     tf_saved_model_to_tflite,
-    KERAS_HDF5:         keras_hdf5_to_tflite,
-    KERAS_SAVED_MODEL:  keras_saved_model_to_tfjs_layers,
-    KERAS_OTHER:        keras_other_to_tfjs_layers,
-    TFJS_LAYERS:        tfjs_layers_to_keras_hdf5,
-    TFJS_GRAPH:         lambda _, _: _unimplemented(TFJS_GRAPH),
-    TF_HUB:             lambda _, _: _unimplemented(TF_HUB),
-    GRAPH_DEFS:         lambda _, _: _unimplemented(GRAPH_DEFS),
-}
-# fmt: on
 
 def get_path_for_model_type(model_type: ModelType, directory: str) -> str:
     """
@@ -75,22 +70,30 @@ def get_path_for_model_type(model_type: ModelType, directory: str) -> str:
     model = model_type_to_path.get(model_type)
 
     if model is None:
-        raise ModelConversionError(f"Unsupported model type (`{n(model_type)}`): File path for this type isn't known!")
+        raise ModelConversionError(
+            f"Unsupported model type (`{n(model_type)}`): File path for this type "
+            f"isn't known!"
+        )
 
     return model
 
 
-p: Callable[[ModelPath], str] = get_path_for_model_type
-n: Callable[[ModelType], str] = name_model_type = lambda type: Model.Type.Name(type)
+p: Callable[[ModelType, str], str] = get_path_for_model_type
+name_model_type: Callable[[ModelType], str] = lambda ty: Model.Type.Name(ty)
+n = name_model_type
+
 
 def _unimplemented(model_type: ModelType) -> Never:
     """
     :raises ModelConversionError: Always. Signifies that conversion for the
                                   specified model has yet to be implemented.
     """
-    raise ModelConversionError(f"Sorry! Converting `{n(model_type)}` models isn't supported yet.")
+    raise ModelConversionError(
+        f"Sorry! Converting `{n(model_type)}` models isn't supported yet."
+    )
 
-def conversion_step(model_type: ModelType, directory: str) -> str:
+
+def conversion_step(model_type: ModelType, directory: str) -> bytes:
     """
     :raises ModelConversionError: When given a model that we don't know how to
                                   convert or when errors occur during model
@@ -100,17 +103,23 @@ def conversion_step(model_type: ModelType, directory: str) -> str:
     model: str = get_path_for_model_type(model_type, directory)
 
     if func is None:
-        raise ModelConversionError(f"Unsupported model type (`{n(model_type)}`): No conversion function available!")
+        raise ModelConversionError(
+            f"Unsupported model type (`{n(model_type)}`): No conversion function "
+            f"available!"
+        )
 
     try:
         return func(directory, model)
     except ModelConversionError as e:
-        raise e # Pass this along unaltered
+        raise e  # Pass this along unaltered
     except Exception as e:
-        raise ModelConversionError(f"Hit an error converting a `{n(model_type)}` model: {e}")
+        raise ModelConversionError(
+            f"Hit an error converting a `{n(model_type)}` model: {e}"
+        )
 
-def tf_saved_model_to_tflite(directory: str, input_dir: str) -> str:
-    target = TFLITE_FLAT_BUFFER
+
+def tf_saved_model_to_tflite(directory: str, input_dir: str) -> bytes:
+    target = MT.TFLITE_FLAT_BUFFER
     output = p(target, directory)
 
     tflite = TFLiteConverter.from_saved_model(input_dir).convert()
@@ -120,8 +129,9 @@ def tf_saved_model_to_tflite(directory: str, input_dir: str) -> str:
 
     return conversion_step(target, directory)
 
-def keras_hdf5_to_tflite(directory: str, input_file: str) -> str:
-    target = TFLITE_FLAT_BUFFER
+
+def keras_hdf5_to_tflite(directory: str, input_file: str) -> bytes:
+    target = MT.TFLITE_FLAT_BUFFER
     output = p(target, directory)
 
     tflite = TFLiteConverter.from_keras_model_file(input_file).convert()
@@ -131,8 +141,9 @@ def keras_hdf5_to_tflite(directory: str, input_file: str) -> str:
 
     return conversion_step(target, directory)
 
-def keras_saved_model_to_tfjs_layers(directory: str, input_dir: str) -> str:
-    target = TFJS_LAYERS
+
+def keras_saved_model_to_tfjs_layers(directory: str, input_dir: str) -> bytes:
+    target = MT.TFJS_LAYERS
     output = p(target, directory)
     output_dir = join(dirname(output), "tfjs-layers-model")
 
@@ -141,8 +152,9 @@ def keras_saved_model_to_tfjs_layers(directory: str, input_dir: str) -> str:
 
     return conversion_step(target, directory)
 
-def keras_other_to_tfjs_layers(directory: str, input_file: str) -> str:
-    target = TFJS_LAYERS
+
+def keras_other_to_tfjs_layers(directory: str, input_file: str) -> bytes:
+    target = MT.TFJS_LAYERS
     output = p(target, directory)
     output_dir = join(dirname(output), "tfjs-layers-model")
 
@@ -151,15 +163,33 @@ def keras_other_to_tfjs_layers(directory: str, input_file: str) -> str:
 
     return conversion_step(target, directory)
 
-def tfjs_layers_to_keras_hdf5(directory: str, input_file: str) -> str:
-    target = KERAS_HDF5
+
+def tfjs_layers_to_keras_hdf5(directory: str, input_file: str) -> bytes:
+    target = MT.KERAS_HDF5
     output = p(target, directory)
 
     dispatch_tensorflowjs_to_keras_h5_conversion(input_file, output)
 
     return conversion_step(target, directory)
 
-def convert_model(model: Model) -> str:
+
+# fmt: off
+# [Input Format] => (dir, file) -> TFLite model as a string
+model_conversion_steps: Dict[ModelType, ConversionFunc] = {
+    MT.TFLITE_FLAT_BUFFER: lambda _, f: open(f, "rb").read(),
+    MT.TF_SAVED_MODEL:     tf_saved_model_to_tflite,
+    MT.KERAS_HDF5:         keras_hdf5_to_tflite,
+    MT.KERAS_SAVED_MODEL:  keras_saved_model_to_tfjs_layers,
+    MT.KERAS_OTHER:        keras_other_to_tfjs_layers,
+    MT.TFJS_LAYERS:        tfjs_layers_to_keras_hdf5,
+    MT.TFJS_GRAPH:         lambda _, __: _unimplemented(MT.TFJS_GRAPH),
+    MT.TF_HUB:             lambda _, __: _unimplemented(MT.TF_HUB),
+    MT.GRAPH_DEFS:         lambda _, __: _unimplemented(MT.GRAPH_DEFS),
+}
+# fmt: on
+
+
+def convert_model(model: Model) -> bytes:
     """
     :raises ModelAcquireError: When a model cannot be fetched.
     :raises ModelConversionError: When given a model that we don't know how to
@@ -171,7 +201,7 @@ def convert_model(model: Model) -> str:
     # Check that we've got a data source:
     try:
         source: str = model.WhichOneof("source")
-        data: str = getattr(mode, source)
+        data: Union[bytes, str] = getattr(model, source)
     except TypeError:
         raise ModelDataError(f"Model is missing a source (`{model}`).")
 
@@ -180,17 +210,23 @@ def convert_model(model: Model) -> str:
     model_type = model.type
 
     directory = mkdtemp(prefix=f"{__name__}-")
-    cleanup: Callable[[], None] = lambda: rmtree(directory) if DELETE_MODELS_AFTER_CONVERSION else None
+    cleanup: Callable[[], None] = lambda: rmtree(
+        directory
+    ) if DELETE_MODELS_AFTER_CONVERSION else None
 
     try:
         # Create a file for the model, no matter the source:
         orig_model = join(directory, "original")
 
         if source == "url":
-            download(data, filename=orig_model)
+            download(cast(str, data), filename=orig_model)
         elif source == "data":
-            with open(orig_model, "wb") as f: f.write(data)
-        else: raise ModelDataError(f"Model has a source type we don't know how to handle (`{source}`).")
+            with open(orig_model, "wb") as f:
+                f.write(cast(bytes, data))
+        else:
+            raise ModelDataError(
+                f"Model has a source type we don't know how to handle (`{source}`)."
+            )
 
         # Move the model into it's right place, unzipping it if needed:
         target_model_path: str = get_path_for_model_type(model_type, directory)
@@ -199,24 +235,32 @@ def convert_model(model: Model) -> str:
         # directory meaning it should have been given to us as a .zip file:
         if target_model_path[-1] == "/":
             # TODO: do we need to mkdir?
-            with zipfile.ZipFile(orig_model, mode="r") as z: z.extractall(path=target_model_path)
+            with zipfile.ZipFile(orig_model, mode="r") as z:
+                z.extractall(path=target_model_path)
 
         # Otherwise, just copy the file to the expected path:
-        else: copyfile(orig_model, target_model_path)
+        else:
+            copyfile(orig_model, target_model_path)
 
         # Finally, with all of that out of the way, kick off the conversion:
         tflite_str_model = conversion_step(model_type, directory)
 
     # Identify Acquire Errors and let other errors propagate through, unchanged:
-    except (ValueError, urllib.error) as e:
-        raise ModelAcquireError(f"Encountered an error while trying to get the model from `{data}`: `{e}`")
+    except (ValueError, URLError) as e:
+        raise ModelAcquireError(
+            f"Encountered an error while trying to get the model from `{data}`: `{e}`"
+        )
 
     except zipfile.BadZipFile as e:
-        raise ModelDataError(f"Encountered an error while trying to unzip the data provided for the model: `{e}`; "
-                             f"did you remember to zip the model folder? (We expect a zipped folder for models of type {model_type})")
+        raise ModelDataError(
+            f"Encountered an error while trying to unzip the data provided for the "
+            f"model: `{e}`; did you remember to zip the model folder? (We expect a "
+            f"zipped folder for models of type {model_type})"
+        )
 
     # If we hit any kind of error, clean up:
-    finally: cleanup()
+    finally:
+        cleanup()
 
     # If we made it, we're done!
     return tflite_str_model

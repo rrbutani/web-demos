@@ -99,7 +99,7 @@ export class Model {
   public static async load_model_from_file(file: string, type: ModelType):
     Promise<Model> {
     const model = new PbModel({
-      data: new PbModel.FromFile({ file }),
+      file: new PbModel.FromFile({ file }),
       type,
     });
 

@@ -141,7 +141,7 @@ message Model {
         FromFile file = 3;
     }
 
-    Type type = 3;
+    Type type = 4;
 }
 
 message Error {

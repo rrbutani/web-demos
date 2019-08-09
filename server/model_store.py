@@ -357,16 +357,6 @@ class ModelStore:
         self.models: List[LocalModel] = []
         self.model_table: Dict[Tuple[Optional[bytes], Optional[str]], Handle] = {}
 
-        # TODO: remove
-        j: Callable[[str], str] = lambda name: os.path.join(MODEL_DIR, name)
-        # For now, let's load mnist-lstm in as model 0:
-        assert 0 == self._load_from_file(j("mnist-lstm.tflite"))
-        # And mobilenet_v1_1.0_224_float as model 1:
-        assert 1 == self._load_from_file(j("mobilenet_v1_1.0_224_float.tflite"))
-        # And mobilenet_v1_1.0_224_quant as model 2:
-        assert 2 == self._load_from_file(j("mobilenet_v1_1.0_224_quant.tflite"))
-        dprint("loaded built-in models!!")
-
     # If we had literal types (const generics) this would be Union[None, False, Handle]
     Check = Union[None, bool, Handle]
 

@@ -80,7 +80,6 @@ def serve_build_file(example_name: str, path: str) -> Response:
 @app.route("/api/load_model", methods=["POST"])
 @api(json, protobuf(receives=LoadModelRequest, sends=LoadModelResponse, to_dict=False))
 def load_model() -> LoadModelResponse:
-    # TODO!
     pb_model: Model = request.received_message.model
 
     try:

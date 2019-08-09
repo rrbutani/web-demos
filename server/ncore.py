@@ -97,19 +97,3 @@ _: None = if_ncore(
         "\n****************************** Running on NCore!! ******************************\n"
     )
 )
-
-# try:
-#     tf.lite.experimental.load_delegate()
-
-# except ValueError as e:
-#     raise InvalidDelegateLibrary(f"Error while loading `{lib_path}`: {e}")
-
-
-# TODO:
-#   - import this from model_store
-#   - on every new model load, run this:
-#     ```
-#     delegates = if_ncore(get_ncore_delegate_instance) # Or: if_ncore(lambda: get_ncore_delegate_instance(options={}))
-#     Interpreter(..., experimental_delegates=delegates)
-#     ```
-#

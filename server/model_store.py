@@ -59,13 +59,13 @@ def equal_or_error(expected: T, actual: T, msg: str, ex: Callable[[str], Any]) -
 
 
 class LocalModel:
-    def __init__(self, model: Optional[str] = None, path: Optional[str] = None):
+    def __init__(self, model: Optional[bytes] = None, path: Optional[str] = None):
         """
         :raises ModelRegisterError: When given obviously incorrect models.
         """
         # String with the model's contents; used to set model_content in the
         # TFLite Interpreter's constructor.
-        self.model: Optional[str] = model
+        self.model: Optional[bytes] = model
 
         # Path for models that exist on disk. Models specified by path will be
         # loaded if self.model isn't set.
@@ -76,8 +76,8 @@ class LocalModel:
         # Validate the options we were passed:
         # (this is supposed to be a switch case, I'm sorry)
         {  # type: ignore
-            (True, True): self._check_str_model,
-            (True, False): self._check_str_model,
+            (True, True): self._check_bytes_model,
+            (True, False): self._check_bytes_model,
             (False, True): self._check_file_model,
             (False, False): lambda: raise_err(
                 ModelRegisterError("No Model specified!")
@@ -88,7 +88,7 @@ class LocalModel:
         self.def_shape: Optional[Tuple[int, ...]] = None
         self.def_rank: Optional[int] = None
 
-    def _check_str_model(self) -> None:
+    def _check_bytes_model(self) -> None:
         """
         :raises ModelRegisterError: On empty string models.
         """
@@ -355,7 +355,7 @@ class ModelStore:
     # TODO: why is this annotation required. https://github.com/python/mypy/pull/5677 says it isn't.
     def __init__(self) -> None:
         self.models: List[LocalModel] = []
-        self.model_table: Dict[Tuple[Optional[str], Optional[str]], Handle] = {}
+        self.model_table: Dict[Tuple[Optional[bytes], Optional[str]], Handle] = {}
 
         # TODO: remove
         j: Callable[[str], str] = lambda name: os.path.join(MODEL_DIR, name)
@@ -371,7 +371,7 @@ class ModelStore:
     Check = Union[None, bool, Handle]
 
     def _check_model_store(
-        self, model: Optional[str] = None, path: Optional[str] = None
+        self, model: Optional[bytes] = None, path: Optional[str] = None
     ) -> Check:
         """
         Takes the model string/path that we're trying to make a new model with.
@@ -386,7 +386,7 @@ class ModelStore:
             return None
 
         # If we've already loaded this model, return its handle:
-        model_ident: Tuple[Optional[str], Optional[str]] = (model, path)
+        model_ident: Tuple[Optional[bytes], Optional[str]] = (model, path)
         if model_ident in self.model_table:
             return self.model_table[model_ident]
 
@@ -417,7 +417,7 @@ class ModelStore:
             dprint(f"Using cache for model `{model}`")
             return check
 
-    def load(self, model: str) -> Handle:
+    def load(self, model: bytes) -> Handle:
         """
         :raises ModelRegisterError: When given an obviously incorrect model.
         :raises ModelStoreFullError: When the model store is unable to load more models.

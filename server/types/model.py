@@ -75,7 +75,7 @@ def get_path_for_model_type(model_type: ModelType, directory: str) -> str:
             f"isn't known!"
         )
 
-    return model
+    return join(directory, model)
 
 
 p: Callable[[ModelType, str], str] = get_path_for_model_type
@@ -109,6 +109,7 @@ def conversion_step(model_type: ModelType, directory: str) -> bytes:
         )
 
     try:
+        dprint(f"Converting a `{n(model_type)}` model with `{func}` -> `{model}`.")
         return func(directory, model)
     except ModelConversionError as e:
         raise e  # Pass this along unaltered
@@ -201,7 +202,7 @@ def convert_model(model: Model) -> bytes:
     # Check that we've got a data source:
     try:
         source: str = model.WhichOneof("source")
-        data: Union[bytes, str] = getattr(model, source)
+        data: Union[Model.FromBytes, Model.FromURL] = getattr(model, source)
     except TypeError:
         raise ModelDataError(f"Model is missing a source (`{model}`).")
 

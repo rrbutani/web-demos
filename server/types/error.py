@@ -49,7 +49,7 @@ error_code_map: Dict[Type[Exception], ErrorKind] = {
 
 # TODO: Switch usages of this to actually pass in Exceptions
 def into_error(err: Exception) -> Error:
-    kind: Error.Kind = error_code_map.get(type(err), default=Error.Kind.OTHER)
+    kind: Error.Kind = error_code_map.get(type(err), Error.Kind.OTHER)
 
     msg = " ".join(re.sub(r"([A-Z])", r" \1", err.__class__.__name__).split())
     msg = f"[{msg}] {err}"

@@ -46,6 +46,14 @@ else:
 MODEL_DIR = get_variable_path("MODEL_DIR", "local model directory")
 dprint(f"Using {MODEL_DIR} as the local model directory.")
 
+if os.path.isdir(MODEL_DIR):
+    dprint(f"The local model directory (`{MODEL_DIR}`) contains:")
+    for f in os.listdir(path=MODEL_DIR):
+        dprint(f" • {f}")
+    dprint("")
+else:
+    dprint(f"Warning: the local model directory (`{MODEL_DIR}`) doesn't seem to exist.")
+
 from inference_pb2 import (  # isort:skip
     Error,
     InferenceRequest,

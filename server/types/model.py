@@ -1,7 +1,9 @@
 import urllib
 import zipfile
+from json import load as load_json_file
 from os import environ
-from os.path import dirname, join
+from os.path import dirname, join, isfile
+import pathlib
 from shutil import copyfile, rmtree
 from tempfile import mkdtemp
 from typing import Any, Callable, Dict
@@ -17,7 +19,8 @@ from tensorflowjs.converters.converter import (  # type: ignore
     dispatch_tensorflowjs_to_keras_h5_conversion,
 )
 
-from ..types import Model, ModelHandle
+from ..types import Model, ModelHandle, MODEL_DIR
+from ..debug import dprint
 
 MT = Model.Type
 LocalHandle = int
@@ -54,13 +57,15 @@ model_type_to_path: Dict[ModelType, str] = {
     MT.KERAS_HDF5:         "keras_model.h5",
     MT.KERAS_SAVED_MODEL:  "keras_saved_model/",
     MT.KERAS_OTHER:        "keras_model_other.h5",
-    MT.TFJS_LAYERS:        "tfjs_layers_model.json",
+    MT.TFJS_LAYERS:        "tfjs_layers_model/",
     MT.TFJS_GRAPH:         "tfjs_graph_model/",
     MT.TF_HUB:             "tf_hub_model.tfhub", # placeholder
     MT.GRAPH_DEFS:         "graph_defs.gdefs", # placeholder
 }
 # fmt: on
 
+TFJS_LAYERS_MODEL_NAME="model.json" # Doesn't matter what this is; just needs
+                                    # to be consistent.
 
 def get_path_for_model_type(model_type: ModelType, directory: str) -> str:
     """
@@ -169,7 +174,7 @@ def tfjs_layers_to_keras_hdf5(directory: str, input_file: str) -> bytes:
     target = MT.KERAS_HDF5
     output = p(target, directory)
 
-    dispatch_tensorflowjs_to_keras_h5_conversion(input_file, output)
+    dispatch_tensorflowjs_to_keras_h5_conversion(join(input_file, TFJS_LAYERS_MODEL_NAME), output)
 
     return conversion_step(target, directory)
 
@@ -214,28 +219,63 @@ def convert_model(model: Model) -> bytes:
     cleanup: Callable[[], None] = lambda: rmtree(
         directory
     ) if DELETE_MODELS_AFTER_CONVERSION else None
+    mkdirp: Callable[[str], None] = lambda p: pathlib.Path(p).mkdir(parents=True, exist_ok=True)
 
     try:
         # Create a file for the model, no matter the source:
         orig_model = join(directory, "original")
 
-        if source == "url":
-            download(cast(str, data), filename=orig_model)
+        target_model_path: str = get_path_for_model_type(model_type, directory)
+
+        if source == "url" and model_type == MT.TFJS_LAYERS:
+            # TFJS Layers models are a special case since we need to also grab
+            # the weights.
+            url: str = cast(Model.FromURL, data).url
+            download(url, filename=orig_model)
+
+            # Get the next part of this script to do the right thing:
+            # (Unzip like normal, _unless_ we got a TFJS_LAYERS model as a URL
+            # -- in which case we've already made the directory structure and
+            # are not dealing with a .zip)
+            target_model_path = join(target_model_path, TFJS_LAYERS_MODEL_NAME)
+
+            # Now grab all the weight shards in the model. We'll stick these in
+            # the folder that they'll actually end up being used in.
+            base_url: str = dirname(url)
+            base_path: str = dirname(target_model_path)
+
+            mkdirp(base_path)
+
+            with open(orig_model, "r") as f:
+                model = load_json_file(f)
+
+            for w in [p for w in model["weightsManifest"] for p in w["paths"]]:
+                download(join(base_url, w), filename=join(base_path, w))
+
+        elif source == "url":
+            download(cast(Model.FromURL, data).url, filename=orig_model)
         elif source == "data":
             with open(orig_model, "wb") as f:
-                f.write(cast(bytes, data))
+                f.write(cast(Model.FromBytes, data).bytes)
+        elif source == "file":
+            file: str = join(MODEL_DIR, cast(Model.FromFile, data).file)
+
+            if not isfile(file):
+                raise ModelDataError(f"The specified file model {file} doesn't seem to exist on the server.")
+
+            copyfile(file, orig_model)
         else:
             raise ModelDataError(
                 f"Model has a source type we don't know how to handle (`{source}`)."
             )
 
         # Move the model into it's right place, unzipping it if needed:
-        target_model_path: str = get_path_for_model_type(model_type, directory)
 
         # If the model path we're trying to make ends in a slash, it's a
         # directory meaning it should have been given to us as a .zip file:
         if target_model_path[-1] == "/":
-            # TODO: do we need to mkdir?
+            mkdirp(target_model_path)
+
             with zipfile.ZipFile(orig_model, mode="r") as z:
                 z.extractall(path=target_model_path)
 

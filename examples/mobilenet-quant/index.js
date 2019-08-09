@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import * as client from 'web-demos-client';
+import { Model, ModelType } from 'web-demos-client';
 import * as tf from '@tensorflow/tfjs';
 
 import {IMAGENET_CLASSES} from './imagenet_classes';
@@ -31,12 +31,10 @@ let mobilenet;
 const mobilenetDemo = async () => {
   status('Loading model...');
 
-  mobilenet = await tf.loadLayersModel(MOBILENET_MODEL_PATH);
-
-  // Warmup the model. This isn't necessary, but makes the first prediction
-  // faster. Call `dispose` to release the WebGL memory allocated for the return
-  // value of `predict`.
-  mobilenet.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
+  mobilenet = await
+    // Model.load_model_from_url(MOBILENET_MODEL_PATH, ModelType.TFJS_GRAPH);
+    Model.load_model_from_file("mobilenet_v1_1.0_224_quant.tflite",
+      ModelType.TFLITE_FLAT_BUFFER);
 
   status('');
 
@@ -74,8 +72,7 @@ async function predict(imgElement) {
     const img = tf.browser.fromPixels(imgElement);
 
     // Make a prediction through mobilenet.
-    const [ result, metrics ] =
-      await client.Model.MobileNetQuantModel.predict_with_metrics(img);
+    const [ result, metrics ] = await mobilenet.predict_with_metrics(img);
 
     time_to_execute = metrics.time_to_execute;
     startTime2 = performance.now();
@@ -89,8 +86,11 @@ async function predict(imgElement) {
   const classes = await getTopKClasses(logits, TOPK_PREDICTIONS);
   const totalTime1 = performance.now() - startTime1;
   const totalTime2 = (time_to_execute / 1000) + performance.now() - startTime2;
-  status(`Done in ${Math.floor(totalTime1)} ms ` +
-      `(not including preprocessing/transit/serialization: ${Math.floor(totalTime2)} ms)`);
+
+  const t1 = Math.floor(totalTime1);
+  const t2 = Math.floor(totalTime2);
+  status(`Done in ${t1} ms ` +
+      `(not including preprocessing/transit/serialization: ${t2} ms)`);
 
   // Show the classes in the DOM.
   showResults(imgElement, classes);

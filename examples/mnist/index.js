@@ -14,7 +14,7 @@
  * limitations under the License.
  * =============================================================================
  */
-import * as client from 'web-demos-client';
+import { Model, ModelType } from 'web-demos-client';
 import * as tf from '@tensorflow/tfjs';
 
 // This is a helper class for loading and managing MNIST data specifically.
@@ -230,7 +230,7 @@ async function showPredictions(model) {
   // from GPU memory after execution without having to call dispose().
   // The tf.tidy callback runs synchronously.
   {
-    let output = await client.Model.MnistModel
+    let output = await model
       .predict(examples.xs.reshape([testExamples, 1, 28, 28]));
 
     // tf.argMax() returns the indices of the maximum values in the tensor along
@@ -283,6 +283,9 @@ ui.setTrainButtonCallback(async () => {
   const model = createModel();
   model.summary();
 
+  let remote_model = await
+      Model.load_model_from_file("mnist-lstm.tflite", ModelType.TFLITE_FLAT_BUFFER);
+
   ui.logStatus('Starting model training...');
-  await train(model, () => showPredictions(model));
+  await train(model, () => showPredictions(remote_model));
 });

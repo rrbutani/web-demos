@@ -96,6 +96,16 @@ export class Model {
     return await Model.load_model(model);
   }
 
+  public static async load_model_from_file(file: string, type: ModelType):
+    Promise<Model> {
+    const model = new PbModel({
+      data: new PbModel.FromFile({ file }),
+      type,
+    });
+
+    return await Model.load_model(model);
+  }
+
   private static async load_model(model: PbModel): Promise<Model> {
     const response: ModelResp = await proto_request(
       "/api/load_model",

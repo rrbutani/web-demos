@@ -128,11 +128,17 @@ message Model {
         bytes data = 1;
     }
 
+    message FromFile {
+        string file = 1;
+    }
+
     oneof source {
         FromURL url = 1;
         // Can't name this `bytes` or the type stubs plugin for protoc generates
         // typings that make mypy choke
         FromBytes data = 2;
+        // A file on the server; a 'built-in' model.
+        FromFile file = 3;
     }
 
     Type type = 3;

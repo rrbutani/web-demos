@@ -20,6 +20,9 @@ import PbMetrics = inference.Metrics;
 
 export type ModelType = PbModel.Type;
 
+const Type = PbModel.Type;
+export { Type };
+
 function print_error(err: PbError): string {
   return `Kind: ${err.kind}, Message: ${err.message}`;
 }
@@ -34,8 +37,8 @@ async function extract(resp: Response): Promise<Uint8Array> {
 }
 
 const headers = {
-  "Accept": "appplication/x-protobuf",
-  "Content-Type": "appplication/x-protobuf",
+  "Accept": "application/x-protobuf",
+  "Content-Type": "application/x-protobuf",
 };
 
 type URL = string; // TODO: this isn't great; it's a stop gap

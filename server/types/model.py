@@ -1,9 +1,9 @@
+import pathlib
 import urllib
 import zipfile
 from json import load as load_json_file
 from os import environ
-from os.path import dirname, join, isfile
-import pathlib
+from os.path import dirname, isfile, join
 from shutil import copyfile, rmtree
 from tempfile import mkdtemp
 from typing import Any, Callable, Dict
@@ -19,8 +19,8 @@ from tensorflowjs.converters.converter import (  # type: ignore
     dispatch_tensorflowjs_to_keras_h5_conversion,
 )
 
-from ..types import Model, ModelHandle, MODEL_DIR
 from ..debug import dprint
+from ..types import MODEL_DIR, Model, ModelHandle
 
 MT = Model.Type
 LocalHandle = int
@@ -64,8 +64,9 @@ model_type_to_path: Dict[ModelType, str] = {
 }
 # fmt: on
 
-TFJS_LAYERS_MODEL_NAME="model.json" # Doesn't matter what this is; just needs
-                                    # to be consistent.
+TFJS_MODEL_NAME = "model.json"  # Doesn't matter what this is; just needs
+# to be consistent.
+
 
 def get_path_for_model_type(model_type: ModelType, directory: str) -> str:
     """
@@ -174,7 +175,9 @@ def tfjs_layers_to_keras_hdf5(directory: str, input_file: str) -> bytes:
     target = MT.KERAS_HDF5
     output = p(target, directory)
 
-    dispatch_tensorflowjs_to_keras_h5_conversion(join(input_file, TFJS_LAYERS_MODEL_NAME), output)
+    dispatch_tensorflowjs_to_keras_h5_conversion(
+        join(input_file, TFJS_MODEL_NAME), output
+    )
 
     return conversion_step(target, directory)
 
@@ -219,7 +222,9 @@ def convert_model(model: Model) -> bytes:
     cleanup: Callable[[], None] = lambda: rmtree(
         directory
     ) if DELETE_MODELS_AFTER_CONVERSION else None
-    mkdirp: Callable[[str], None] = lambda p: pathlib.Path(p).mkdir(parents=True, exist_ok=True)
+    mkdirp: Callable[[str], None] = lambda p: pathlib.Path(p).mkdir(
+        parents=True, exist_ok=True
+    )
 
     try:
         # Create a file for the model, no matter the source:
@@ -227,17 +232,18 @@ def convert_model(model: Model) -> bytes:
 
         target_model_path: str = get_path_for_model_type(model_type, directory)
 
-        if source == "url" and model_type == MT.TFJS_LAYERS:
-            # TFJS Layers models are a special case since we need to also grab
-            # the weights.
+        if source == "url" and (model_type == MT.TFJS_LAYERS or model_type == MT.TFJS_GRAPH):
+            # TFJS models are a special case since we need to also grab the
+            # weights.
             url: str = cast(Model.FromURL, data).url
             download(url, filename=orig_model)
 
             # Get the next part of this script to do the right thing:
-            # (Unzip like normal, _unless_ we got a TFJS_LAYERS model as a URL
-            # -- in which case we've already made the directory structure and
-            # are not dealing with a .zip)
-            target_model_path = join(target_model_path, TFJS_LAYERS_MODEL_NAME)
+            # (Unzip like normal, _unless_ we got a TFJS model as a URL -- in
+            # which case we've already made the directory structure and are not
+            # dealing with a .zip. In the latter case, the next part will go
+            # effectively rename `orig_model` to `TFJS_MODEL_NAME`)
+            target_model_path = join(target_model_path, TFJS_MODEL_NAME)
 
             # Now grab all the weight shards in the model. We'll stick these in
             # the folder that they'll actually end up being used in.
@@ -247,21 +253,23 @@ def convert_model(model: Model) -> bytes:
             mkdirp(base_path)
 
             with open(orig_model, "r") as f:
-                model = load_json_file(f)
+                tfjs_model = load_json_file(f)
 
-            for w in [p for w in model["weightsManifest"] for p in w["paths"]]:
+            for w in [p for w in tfjs_model["weightsManifest"] for p in w["paths"]]:
                 download(join(base_url, w), filename=join(base_path, w))
 
         elif source == "url":
             download(cast(Model.FromURL, data).url, filename=orig_model)
         elif source == "data":
             with open(orig_model, "wb") as f:
-                f.write(cast(Model.FromBytes, data).bytes)
+                f.write(cast(Model.FromBytes, data).data)
         elif source == "file":
             file: str = join(MODEL_DIR, cast(Model.FromFile, data).file)
 
             if not isfile(file):
-                raise ModelDataError(f"The specified file model {file} doesn't seem to exist on the server.")
+                raise ModelDataError(
+                    f"The specified file model {file} doesn't seem to exist on the server."
+                )
 
             copyfile(file, orig_model)
         else:
@@ -296,7 +304,7 @@ def convert_model(model: Model) -> bytes:
         raise ModelDataError(
             f"Encountered an error while trying to unzip the data provided for the "
             f"model: `{e}`; did you remember to zip the model folder? (We expect a "
-            f"zipped folder for models of type {model_type})"
+            f"zipped folder for models of type {n(model_type)})"
         )
 
     # If we hit any kind of error, clean up:

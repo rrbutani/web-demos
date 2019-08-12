@@ -47,6 +47,7 @@ error_code_map: Dict[Type[Exception], ErrorKind] = {
 }
 # fmt: on
 
+
 def into_error(err: Exception) -> Error:
     kind: Error.Kind = error_code_map.get(type(err), Error.Kind.OTHER)
 

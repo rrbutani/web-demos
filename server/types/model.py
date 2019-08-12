@@ -6,7 +6,7 @@ from os import environ
 from os.path import dirname, isfile, join
 from shutil import copyfile, rmtree
 from tempfile import mkdtemp
-from typing import Any, Callable, Dict
+from typing import Any, BinaryIO, Callable, Dict
 from typing import NoReturn as Never
 from typing import Optional, Type, Union, cast
 from urllib.error import URLError
@@ -232,7 +232,9 @@ def convert_model(model: Model) -> bytes:
 
         target_model_path: str = get_path_for_model_type(model_type, directory)
 
-        if source == "url" and (model_type == MT.TFJS_LAYERS or model_type == MT.TFJS_GRAPH):
+        if source == "url" and (
+            model_type == MT.TFJS_LAYERS or model_type == MT.TFJS_GRAPH
+        ):
             # TFJS models are a special case since we need to also grab the
             # weights.
             url: str = cast(Model.FromURL, data).url
@@ -252,8 +254,8 @@ def convert_model(model: Model) -> bytes:
 
             mkdirp(base_path)
 
-            with open(orig_model, "r") as f:
-                tfjs_model = load_json_file(f)
+            with open(orig_model, "r") as j:
+                tfjs_model = load_json_file(j)
 
             for w in [p for w in tfjs_model["weightsManifest"] for p in w["paths"]]:
                 download(join(base_url, w), filename=join(base_path, w))

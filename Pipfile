@@ -24,7 +24,7 @@ black = "~=19.3b0"
 mypy = "~=0.720"
 isort = { version = "~=4.3.21", extras = ["pyproject"] }
 mypy-protobuf = "~=1.12"
-tensorflow-stubs = { git = "https://github.com/rrbutani/tensorflow-stubs", ref = "91341190bd15a979c5c761eb4b4f287ea16d8875" }
+tensorflow-stubs = { git = "https://github.com/rrbutani/tensorflow-stubs", ref = "6af8d6e73e80b1e7192534cab3b81c46923f1e0f" }
 numpy-stubs = { git = "https://github.com/numpy/numpy-stubs", ref = "a57ec5671096cf59530dcda21a93c0d880cc759e" }
 setuptools = "~=41.0.1"
 setuptools-metadata = "~=0.1.5"

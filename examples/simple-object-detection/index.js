@@ -23,6 +23,7 @@
  * programmatically. See `synthetic_images.js` for details.
  */
 
+import { Model, ModelType } from 'web-demos-client';
 import * as tf from '@tensorflow/tfjs';
 import {ObjectDetectionImageSynthesizer} from './synthetic_images';
 
@@ -106,8 +107,14 @@ async function runAndVisualizeInference(model) {
 
   const t0 = tf.util.now();
   // Runs inference with the model.
-  const modelOut = await model.predict(images).data();
-  inferenceTimeMs.textContent = `${(tf.util.now() - t0).toFixed(1)}`;
+  const [ results, metrics ] =
+    await model.predict_with_metrics(images.asType('float32'));
+  const t1 = (metrics.time_to_execute / 1000).toFixed(2);;
+
+  const modelOut = await results.data();
+  inferenceTimeMs.textContent =
+    `${(tf.util.now() - t0).toFixed(1)} ` +
+    `(not including preprocessing/transit/serialization: ${t1} ms)`;
 
   // Visualize the true and predicted bounding boxes.
   const targetsArray = Array.from(await targets.data());
@@ -142,38 +149,37 @@ async function runAndVisualizeInference(model) {
 }
 
 async function init() {
-  const LOCAL_MODEL_PATH = 'object_detection_model/model.json';
+  const HOSTED_MODEL_FILE = 'simple-object-detection.tflite';
   const HOSTED_MODEL_PATH =
       'https://storage.googleapis.com/tfjs-examples/simple-object-detection/dist/object_detection_model/model.json';
 
   // Attempt to load locally-saved model. If it fails, activate the
-  // "Load hosted model" button.
+  // "Load server built-in model" button.
   let model;
   try {
-    model = await tf.loadLayersModel(LOCAL_MODEL_PATH);
-    model.summary();
+    model = await Model.load_model_from_url(HOSTED_MODEL_PATH, ModelType.TFJS_LAYERS);
     testModel.disabled = false;
-    status.textContent = 'Loaded locally-saved model! Now click "Test Model".';
+    status.textContent = 'Loaded converted model! Now click "Test Model".';
     runAndVisualizeInference(model);
   } catch (err) {
-    status.textContent = 'Failed to load locally-saved model. ' +
-        'Please click "Load Hosted Model"';
+    status.textContent = 'Failed to convert hosted model. ' +
+        'Please click "Load Server Built-in Model"';
     loadHostedModel.disabled = false;
   }
 
   loadHostedModel.addEventListener('click', async () => {
     try {
-      status.textContent = `Loading hosted model from ${HOSTED_MODEL_PATH} ...`;
-      model = await tf.loadLayersModel(HOSTED_MODEL_PATH);
-      model.summary();
+      status.textContent = `Loading built-in server model '${HOSTED_MODEL_FILE}'...`;
+      model = await
+        Model.load_model_from_file(HOSTED_MODEL_FILE, ModelType.TFLITE_FLAT_BUFFER);
       loadHostedModel.disabled = true;
       testModel.disabled = false;
       status.textContent =
-          `Loaded hosted model successfully. Now click "Test Model".`;
+          `Loaded server built-in model successfully. Now click "Test Model".`;
       runAndVisualizeInference(model);
     } catch (err) {
       status.textContent =
-          `Failed to load hosted model from ${HOSTED_MODEL_PATH}`;
+          `Failed to load server built-in model from ${HOSTED_MODEL_PATH}`;
     }
   });
 

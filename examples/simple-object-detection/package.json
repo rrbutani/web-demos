@@ -14,6 +14,9 @@
     "canvas": "2.0.1",
     "node-fetch": "2.2.1"
   },
+  "alias": {
+    "web-demos-client": "../../client"
+  },
   "scripts": {
     "watch": "cross-env NODE_ENV=development parcel index.html --no-hmr --open",
     "build": "cross-env NODE_ENV=production parcel build index.html --no-minify --public-url ./",

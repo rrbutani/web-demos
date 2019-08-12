@@ -113,8 +113,7 @@ async function runAndVisualizeInference(model) {
 
   const modelOut = await results.data();
   inferenceTimeMs.textContent =
-    `${(tf.util.now() - t0).toFixed(1)} ` +
-    `(not including preprocessing/transit/serialization: ${t1} ms)`;
+    `${(tf.util.now() - t0).toFixed(1)} (just inference: ${t1} ms)`;
 
   // Visualize the true and predicted bounding boxes.
   const targetsArray = Array.from(await targets.data());

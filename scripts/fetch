@@ -12,6 +12,7 @@ declare -A MODELS=( \
     [mnist-lstm]="https://github.com/frogermcs/MNIST-TFLite/blob/47e5bb2639c6c2960e3a400e4b91309698e279f0/notebooks/mnist_model.tflite?raw=true" \
     [mobilenet_v1_1.0_224_float]="http://download.tensorflow.org/models/mobilenet_v1_2018_02_22/mobilenet_v1_1.0_224.tgz" \
     [mobilenet_v1_1.0_224_quant]="http://download.tensorflow.org/models/mobilenet_v1_2018_08_02/mobilenet_v1_1.0_224_quant.tgz" \
+    [simple-object-detection]="https://github.com/rrbutani/tflite-models/blob/632f65940cfe24370ad4bc1021deceea3476f207/simple-object-detection/simple-object-detection.tflite?raw=true" \
 )
 
 # $1: location to put model in; $2: URL of model

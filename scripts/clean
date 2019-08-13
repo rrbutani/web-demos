@@ -10,8 +10,11 @@
 
 SCRUB_VAR=SCRUB
 
+# shellcheck disable=SC2015
+[ -n "${!SCRUB_VAR+x}" ] && { flags="-f"; } || { flags="-i"; }
+
 # Remove files we know to be removable:
-git clean -dX ${!SCRUB_VAR+"-f"} ${!SCRUB_VAR-"-i"}
+git clean -dX "${flags}"
 
 # And then the env:
 pipenv clean

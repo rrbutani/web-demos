@@ -141,7 +141,7 @@ conditionally_run() {
     } || {
         # Otherwise, run the command..
         cmd="${*:3}"
-        print "\n${message:-"Running \`${cmd}\` in '$(basename "$(pwd)")'..."}" "$BOLD"
+        print "\n${message:-"Running \`${cmd}\` in '${dir-"$(basename "$(pwd)")"}'..."}" "$BOLD"
         "${@:3}" && {
             # ..and if it succeeded, update the marker file:
             mkdir -p "$(dirname "${2}")"
@@ -156,8 +156,47 @@ conditionally_run() {
 run_command_in_example() {
     # Check that the example project has a build script:
     { [ -f "${1}/package.json" ] &&
-        jq -e '.scripts.build' < "${1}/package.json" > /dev/null
+        jq -e '.scripts.build' < "${1}/package.json" &> /dev/null
     } || return 0;
+
+    # set -x
+    # Check if this is a nested project (has a demo project + a publish script):
+    if jq -e '.scripts."publish-local"' < "${1}/package.json" &> /dev/null &&
+            [ -d "${1}/demo" ] &&
+            [ -f "${1}/demo/package.json" ]; then
+        # If it is, set up the parent project conditionally, and then forward
+        # the command we were asked to run to the demo project.
+        dprint "Treating \`${1}\` as a nested example project."
+
+        local P="${1}"
+        # $1: dependency; $2: marker file; $3: npm command
+        run_in_demo_parent() {
+            # shellcheck disable=SC2086
+            (cd "${P}" && conditionally_run "${1}" "${BUILD_DIR}/${2}" npm ${3})
+        }
+
+        run_in_demo_parent "package.json" ".installed" "install" # Install deps
+        run_in_demo_parent "src" ".built" "run build"            # Build
+        run_in_demo_parent "dist" ".pubbed" "run publish-local"  # Local publish
+
+        unset run_in_demo_parent
+        export dir="$(basename "${1}")/demo"
+
+        if jq -e '.scripts."link-local"' < "${1}/demo/package.json" &> /dev/null; then
+            run_command_in_example "${1}/demo" "install yalc" "../dist" ".yalc"
+            run_command_in_example "${1}/demo" "run link-local" "../dist" ".linked"
+        fi
+
+        # Finally, run on the demo project:
+        local args
+        args=("${@}")
+        args[0]="${args[0]}/demo"
+        run_command_in_example "${args[@]}"
+
+        unset dir
+        return
+    fi
+    # set +x
 
     # If it does and if we were given a marker file, run conditionally:
     if [ -n "${4}" ]; then

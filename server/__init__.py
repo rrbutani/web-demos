@@ -58,7 +58,11 @@ def example_index_page() -> Response:
     examples = [
         (ex, name_to_title(ex))
         for ex in listdir(EX_DIR)
-        if isdir(join(EX_DIR, ex)) and isfile(join(EX_DIR, ex, "dist", "index.html"))
+        if isdir(join(EX_DIR, ex))
+        and (
+            isfile(join(EX_DIR, ex, "dist", "index.html"))
+            or isfile(join(EX_DIR, ex, "demo", "dist", "index.html"))
+        )
     ]
     examples.sort()
     return render_template("example-index-page.html", examples=examples)
@@ -72,7 +76,14 @@ def echo(string: str) -> str:
 @app.route("/ex/<string:example_name>/<path:path>")
 @app.route("/ex/<string:example_name>/", defaults={"path": "index.html"})
 def serve_build_file(example_name: str, path: str) -> Response:
-    p = join(example_name, "dist", path)
+    p = join("dist", path)
+
+    if isfile(join(EX_DIR, example_name, p)):
+        pass
+    elif isfile(join(EX_DIR, example_name, "demo", p)):
+        p = join("demo", p)
+
+    p = join(example_name, p)
     dprint(f"Trying: {p}")
     return send_from_directory(EX_DIR, p)
 

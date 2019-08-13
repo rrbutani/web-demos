@@ -17,8 +17,10 @@ ARG BASE_TYPE=slim-buster
 ARG BASE_VER=
 
 ARG PYTHON_VERSION=3.7.4
+ARG PIPENV_VERSION=2018.11.26
 ARG NODE_VERSION=10.15.2
 ARG NPM_VERSION=6.10.2
+ARG YARN_VERSION=1.17.3
 ARG PROTOC_VERSION=3.9.0
 ARG SHELLCHECK_VERSION="v0.6.0"
 
@@ -52,9 +54,11 @@ ARG BASE_BUILD_IMAGE=python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER}
 # Modified: August 1st, 2019
 
 FROM ${BASE_BUILD_IMAGE} as base
+ARG PYTHON_VERSION
+ARG PIPENV_VERSION
 ARG NODE_VERSION
 ARG NPM_VERSION
-ARG PYTHON_VERSION
+ARG YARN_VERSION
 ARG PROTOC_VERSION
 ARG SHELLCHECK_VERSION
 
@@ -104,9 +108,11 @@ RUN : \
         /var/tmp/* \
         /var/lib/apt/lists/*
 
-RUN pip3 install pipenv
+RUN pip3 install "pipenv==${PIPENV_VERSION}"
 
-RUN npm install -g "npm@${NPM_VERSION}"
+RUN : \
+ && npm install -g "npm@${NPM_VERSION}" \
+ && npm install -g "yarn@${YARN_VERSION}"
 
 RUN bash -c "mv $(which sh) /bin/sh-old && cp $(which bash) /bin/sh"
 

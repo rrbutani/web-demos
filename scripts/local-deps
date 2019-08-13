@@ -21,6 +21,7 @@ declare -A DEPS=( \
     [grep]='`apt install grep` or `brew install grep`?' \
     [pgrep]='`apt install procps` or `brew install procps`?' \
     [md5sum]='`apt install coreutils` or `brew install coreutils`?' \
+    [yarn]='`npm i -g yarn`?' \
 )
 
 # Check for dependencies:

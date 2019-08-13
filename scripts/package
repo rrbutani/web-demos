@@ -95,15 +95,6 @@ touch "${TARGET_DIR}/py.typed" # We're typed!
 touch "${TARGET_DIR}/__init__.py" # We're a module now
 echo "from . import ${SERVER_DIR}" >> "${TARGET_DIR}/__init__.py"
 
-# # Copy over the source maps if we're in debug mode:
-# [ -n "${DEBUG}" ] && {
-#     # shellcheck disable=SC2140
-#     for f in {"${CLIENT_DIR}/dist","${EXAMPLES_DIR}/"*"/dist"}/*.map; do
-#         copy "${f}"
-#     done
-# } || :
-
-shopt -s nullglob
 
 # $1: dist dir
 copy_assets() { for f in "${1}/"*.{css,js,html,jpg}; do copy "${f}"; done }
@@ -112,6 +103,7 @@ copy_dist_folder() {
     copy_assets "${1}"; if [ -n "${DEBUG}" ]; then copy_maps "${1}"; fi }
 
 # Dist files from the examples:
+shopt -s nullglob
 for dir in {"${EXAMPLES_DIR}","${CLIENT_DIR}"}/*; do
     # If it's a nested project, copy only the stuff in demo/dist:
     if [ -d "${dir}/demo/dist" ]; then copy_dist_folder "${dir}/demo"{,s}"/dist";
@@ -120,6 +112,7 @@ for dir in {"${EXAMPLES_DIR}","${CLIENT_DIR}"}/*; do
     # Else:
     else dprint "Warning: \`${dir}\` doesn't seem to be an example project."; fi
 done
+shopt -u nullglob
 
 # Figure out our dependencies:
 readonly REQ_FILE="requirements.txt"
@@ -282,19 +275,19 @@ if is_set CHECK_WHEEL; then
     export HOST=localhost
     export PORT=${PORT-7000}
 
-    "venv/bin/${EXC_NAME}" &
+    "venv/bin/${EXC_NAME}" & readonly server_pid=$!
 
     count=0
     wait_time=3
     while ! curl -sf "${HOST}:${PORT}" > /dev/null; do
-        [ ${count} -eq 20 ] && \
+        [ ${count} -eq 20 ] &&
             err "Server failed to start after $((count * wait_time)) seconds." 7
         ((count+=1)) # += instead of ++ so we don't leak an exit code
         echo -n "."
         sleep "${wait_time}"
     done
 
-    kill %1 || true
+    kill ${server_pid} || true
     wait
     cd ../../
     print "\nThe wheel appears to work!" "$CYAN"

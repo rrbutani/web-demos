@@ -1,9 +1,9 @@
 import pkg from './package.json'
 
-import typescript from 'rollup-plugin-typescript2'
+import typescript from 'rollup-plugin-typescript2';
 import resolve from 'rollup-plugin-node-resolve';
 import builtins from 'rollup-plugin-node-builtins';
-import commonJS from 'rollup-plugin-commonjs'
+import commonJS from 'rollup-plugin-commonjs';
 import sourcemaps from 'rollup-plugin-sourcemaps';
 import replace from 'rollup-plugin-replace';
 
@@ -59,13 +59,17 @@ export default
     { include: /node_modules/
     , namedExports:
       { 'node_modules/protobufjs/minimal.js':
-          [ "Reader", "Writer", "util", "roots" ]
+        [ "Reader"
+        , "Writer"
+        , "util"
+        , "roots"
+        ]
       }
     })
   , sourcemaps()
   ]
 , onwarn: warning => {
-  let {code} = warning;
+    let {code} = warning;
     if (code === 'CIRCULAR_DEPENDENCY' || code === 'CIRCULAR' ||
         code === 'THIS_IS_UNDEFINED') {
       return;

@@ -3,7 +3,7 @@ import {
   tensor as tfjs_tensor_constructor,
   Tensor as TfJsTensor,
 } from "@tensorflow/tfjs";
-import { chunk, invert, unzip } from "lodash";
+import { chunk, invert, unzip } from "lodash-es";
 import { inference } from "../build/inference";
 
 import { exhaust } from "./util";

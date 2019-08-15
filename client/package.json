@@ -15,22 +15,22 @@
 , "files":
   [ "dist" ]
 , "peer-dependencies":
-  { "@tensorflow/tfjs": "~1.2.2" }
+  { "@tensorflow/tfjs": "~1.2.7" }
 , "dependencies":
   { "protobufjs": "~6.8.8"
-  , "lodash": "~4.17.14"
-  , "@tensorflow/tfjs": "~1.2.2"
+  , "lodash": "~4.17.15"
+  , "@tensorflow/tfjs": "~1.2.7"
   , "cross-fetch": "~3.0.4"
   }
 , "devDependencies":
   { "typescript": "~3.5.3"
   , "tslint": "~5.18.0"
   , "ts-node": "~8.3.0"
-  , "rollup": "~1.16.7"
-  , "rollup-plugin-typescript2": "~0.21.2"
+  , "rollup": "~1.19.4"
+  , "rollup-plugin-typescript2": "~0.22.1"
   , "rollup-plugin-node-resolve": "~5.2.0"
   , "rollup-plugin-node-builtins": "~2.1.2"
-  , "rollup-plugin-commonjs": "~10.0.1"
+  , "rollup-plugin-commonjs": "~10.0.2"
   , "rollup-plugin-sourcemaps": "~0.4.2"
   , "rollup-plugin-replace": "~2.2.0"
   , "typescript-formatter": "~7.2.2"
@@ -38,11 +38,11 @@
   , "ts-jest": "~24.0.2"
   , "babel-jest": "~24.8.0"
   , "@babel/preset-env": "~7.5.5"
-  , "@types/jest": "~24.0.15"
-  , "@types/lodash": "~4.14.136"
-  , "@types/node": "~12.6.8"
+  , "@types/jest": "~24.0.17"
+  , "@types/lodash": "~4.17.3"
+  , "@types/node": "~12.7.1"
   , "cross-env": "~5.2.0"
-  , "coveralls": "~3.0.5"
+  , "coveralls": "~3.0.6"
   }
 , "scripts":
   { "build-messages":

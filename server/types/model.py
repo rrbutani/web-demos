@@ -267,6 +267,7 @@ def convert_model(model: Model) -> bytes:
                 f.write(cast(Model.FromBytes, data).data)
         elif source == "file":
             file: str = join(MODEL_DIR, cast(Model.FromFile, data).file)
+            dprint(f"Trying to load from local file: `{file}`.")
 
             if not isfile(file):
                 raise ModelDataError(

@@ -17,7 +17,8 @@
 
 import node from 'rollup-plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript2';
-import uglify from 'rollup-plugin-uglify';
+import commonJS from 'rollup-plugin-commonjs';
+import { terser } from 'rollup-plugin-terser';
 
 const PREAMBLE = `/**
     * @license
@@ -37,11 +38,11 @@ const PREAMBLE = `/**
     */`;
 
 function minify() {
-  return uglify({
+  return terser({
     output: {
       preamble: PREAMBLE,
     }
-  });
+  }, minify);
 }
 
 function config({plugins = [], output = {}}) {
@@ -53,19 +54,34 @@ function config({plugins = [], output = {}}) {
           compilerOptions: {module: 'ES2015'},
         },
       }),
-      node(), ...plugins
+      node({
+        mainFields: [
+          "module",
+          "browser",
+          "main",
+        ],
+        extensions: [
+          ".js",
+          ".jsx",
+          ".json",
+          ".mjs",
+          ".cjs",
+          ".ts",
+          ".tsx",
+        ]
+      }),
+      commonJS(),
+      ...plugins
     ],
     output: {
       banner: PREAMBLE,
       globals: {
         '@tensorflow/tfjs-core': 'tf',
-        '@tensorflow/tfjs-converter': 'tf',
       },
       ...output
     },
     external: [
       '@tensorflow/tfjs-core',
-      '@tensorflow/tfjs-converter',
     ]
   };
 }

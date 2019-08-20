@@ -2,6 +2,8 @@
 
 set -e
 
+# shellcheck disable=SC2034 # These vars are used by scripts that source this
+{                           # script; shellcheck cannot yet understand this.
 readonly PROJ_NAME="web_demos"
 readonly EXC_NAME="web-demos"
 readonly VERSION="0.0.1"
@@ -43,6 +45,7 @@ readonly BLUE='\e[1;34m'
 readonly PURPLE='\e[1;35m'
 readonly CYAN='\e[1;36m'
 readonly BOLD='\e[1;37m'
+}
 
 # $1: message; $2?: color
 print() {
@@ -361,4 +364,5 @@ test() {
     [[ "${*}" == $(roundtrip "${@}") ]]; return $?
 }
 
+# shellcheck disable=SC2034
 readonly marker=".__$(basename "${0}")"

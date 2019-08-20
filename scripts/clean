@@ -20,4 +20,4 @@ git clean -dX "${flags}"
 pipenv clean
 
 # If we're scrubbing, delete the virtualenv too:
-[ -n "${!SCRUB_VAR+x}" ] && pipenv --rm
+if [ -n "${!SCRUB_VAR+x}" ]; then pipenv --rm; fi

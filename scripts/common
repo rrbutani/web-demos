@@ -19,6 +19,8 @@ readonly MODEL_DIR="models"
 readonly PACKAGE_DIR="dist"
 readonly COVERAGE_DIR="${BUILD_DIR}/coverage"
 
+readonly BUILD_MARKER_NAME=".built"
+
 readonly SERVER_COV_HTML="${COVERAGE_DIR}/server_cov_html"
 readonly SERVER_COV_XML="${COVERAGE_DIR}/server_cov.xml"
 readonly SERVER_COV_ANNOTATE="${COVERAGE_DIR}/server_cov_annotate"
@@ -176,8 +178,12 @@ run_command_in_example() {
         }
 
         run_in_demo_parent "package.json" ".installed" "install" # Install deps
-        run_in_demo_parent "src" ".built" "run build"            # Build
-        run_in_demo_parent "dist" ".pubbed" "run publish-local"  # Local publish
+
+        # Build and publish locally if the client has already been built:
+        if [ -f "${CLIENT_DIR}/${BUILD_DIR}/${BUILD_MARKER_NAME}" ]; then
+            run_in_demo_parent "src" "${BUILD_MARKER_NAME}" "run build"
+            run_in_demo_parent "dist" ".pubbed" "run publish-local"
+        fi
 
         unset run_in_demo_parent
         export dir
@@ -185,7 +191,11 @@ run_command_in_example() {
 
         if jq -e '.scripts."link-local"' < "${1}/demo/package.json" &> /dev/null; then
             run_command_in_example "${1}/demo" "install yalc" "../dist" ".yalc"
-            run_command_in_example "${1}/demo" "run link-local" "../dist" ".linked"
+
+            # Local link if we've built the demo parent:
+            if [ -f "${CLIENT_DIR}/${BUILD_DIR}/${BUILD_MARKER_NAME}" ]; then
+                run_command_in_example "${1}/demo" "run link-local" "../dist" ".linked"
+            fi
         fi
 
         # Finally, run on the demo project:

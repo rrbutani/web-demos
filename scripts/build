@@ -68,8 +68,8 @@ if [ -n "${BUILD_THOROUGH}" ]; then
     run_command_in_examples "run build"
 else
     # If we're not being thorough, use the project folder as the dependency:
-    run_command_in_client_project "run build" "src" ".built"
-    run_command_in_examples "run build" "." ".built"
+    run_command_in_client_project "run build" "src" "${BUILD_MARKER_NAME}"
+    run_command_in_examples "run build" "." "${BUILD_MARKER_NAME}"
 fi
 
 print "\nBuild Successful!" "$PURPLE"

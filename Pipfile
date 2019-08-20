@@ -50,4 +50,4 @@ package = "scripts/package"
 upload-cov = "scripts/upload-coverage"
 check-scripts = "bash -c 'shellcheck scripts/*'"
 build-containers = "scripts/ship"
-lint-examples = "scripts/ex-lint" # TODO: permissions, TODO: add to CI
+lint-examples = "scripts/ex-lint" # TODO: add to CI

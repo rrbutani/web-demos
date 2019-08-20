@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+# Lints examples that have lint scripts.
+
+# shellcheck source=scripts/common
+. "$(dirname "${0}")/common" || { echo ERROR; exit 1; }
+
+# To lint examples, we need dependencies to be installed:
+# (we're going to assume that we don't need to build for now)
+resolve_deps install
+
+# $1: project directory
+lint_project() {
+    if [ -f "${1}/package.json" ] &&
+            jq -e '.scripts.lint' < "${1}/package.json"; then
+        # If we've got a lintable project on our hands, lint it!
+        (cd "${1}" && npm run lint)
+    fi
+}
+
+ec=0
+for ex in "${EXAMPLES_DIR}"/*; do
+    lint_project "${ex}" || ec=$?
+
+    # If we've got a nested project, lint it's demo as well:
+    if [ -d "${ex}/demo" ]; then
+        lint_project "${ex}/demo" || ec=$?
+    fi
+done
+
+exit $ec

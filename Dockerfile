@@ -8,7 +8,7 @@
 #                -> Check Scripts                  -> Upload Cov    -> Package + Test (anew, debug) -> Upload Debug Package
 #                                                                                              \
 #                                                                                               -> Debug Dist Container -> Upload Debug Container
-# Modified: August 2nd, 2019
+# Modified: August 16th, 2019
 
 #################################  Build Args  #################################
 
@@ -19,10 +19,10 @@ ARG BASE_VER=
 ARG PYTHON_VERSION=3.7.4
 ARG PIPENV_VERSION=2018.11.26
 ARG NODE_VERSION=10.15.2
-ARG NPM_VERSION=6.10.2
+ARG NPM_VERSION=6.10.3
 ARG YARN_VERSION=1.17.3
-ARG PROTOC_VERSION=3.9.0
-ARG SHELLCHECK_VERSION="v0.6.0"
+ARG PROTOC_VERSION=3.9.1
+ARG SHELLCHECK_VERSION="v0.7.0"
 
 ARG CORES=8
 

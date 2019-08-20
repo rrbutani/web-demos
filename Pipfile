@@ -4,32 +4,32 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [requires]
-python_version = "3.7"
+python_version = "3.7.4"
 
 [packages]
 flask = "~=1.1.1"
-tensorflowjs = "==1.0.1"
-"tf-nightly-2.0-preview" = "==2.0.0.dev20190715"
-"tensorflow-estimator-2.0-preview" = "==1.14.0.dev2019071500"
-numpy = "==1.15.1" # Locked by tensorflowjs
+tensorflowjs = "==1.2.6"
+"tf-nightly-2.0-preview" = "==2.0.0.dev20190820"
+"tensorflow-estimator-2.0-preview" = "==1.14.0.dev2019082001"
+numpy = "==1.16.4" # Locked by tensorflowjs
 flask-pbj = { git = "https://github.com/rrbutani/flask-pbj.git", ref = "0.2.3" }
-protobuf = "~=3.9.0"
+protobuf = "~=3.9.1"
 
 [dev-packages]
-pytest = "~=5.0.1"
+pytest = "~=5.1.0"
 pytest-cov = "~=2.7.1"
-coverage = "~=4.5.3"
-coveralls = "~=1.8.1"
+coverage = "~=4.5.4"
+coveralls = "~=1.8.2"
 black = "~=19.3b0"
 mypy = "~=0.720"
 isort = { version = "~=4.3.21", extras = ["pyproject"] }
-mypy-protobuf = "~=1.12"
+mypy-protobuf = "~=1.15"
 tensorflow-stubs = { git = "https://github.com/rrbutani/tensorflow-stubs", ref = "6af8d6e73e80b1e7192534cab3b81c46923f1e0f" }
 numpy-stubs = { git = "https://github.com/numpy/numpy-stubs", ref = "a57ec5671096cf59530dcda21a93c0d880cc759e" }
-setuptools = "~=41.0.1"
+setuptools = "~=41.1.0"
 setuptools-metadata = "~=0.1.5"
 pbr = { git = "https://github.com/rrbutani/pbr", ref = "a10ebf1390a10d7ed6a617a99f35cc883ebfcad5" }
-wheel = "~=0.33.4"
+wheel = "~=0.33.6"
 
 [pipenv]
 allow_prereleases = true
@@ -50,3 +50,4 @@ package = "scripts/package"
 upload-cov = "scripts/upload-coverage"
 check-scripts = "bash -c 'shellcheck scripts/*'"
 build-containers = "scripts/ship"
+lint-examples = "scripts/ex-lint" # TODO: permissions, TODO: add to CI

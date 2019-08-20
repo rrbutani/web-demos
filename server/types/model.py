@@ -14,7 +14,7 @@ from urllib.request import urlretrieve as download
 
 from tensorflow.compat.v1.lite import TFLiteConverter
 from tensorflowjs.converters.converter import (  # type: ignore
-    dispatch_keras_h5_to_tensorflowjs_conversion,
+    dispatch_keras_h5_to_tfjs_layers_model_conversion,
     dispatch_keras_saved_model_to_tensorflowjs_conversion,
     dispatch_tensorflowjs_to_keras_h5_conversion,
 )
@@ -165,7 +165,7 @@ def keras_other_to_tfjs_layers(directory: str, input_file: str) -> bytes:
     output = p(target, directory)
     output_dir = join(dirname(output), "tfjs-layers-model")
 
-    dispatch_keras_h5_to_tensorflowjs_conversion(input_file, output_dir=output_dir)
+    dispatch_keras_h5_to_tfjs_layers_model_conversion(input_file, output_dir=output_dir)
     copyfile(join(output_dir, "saved_model.json"), output)
 
     return conversion_step(target, directory)

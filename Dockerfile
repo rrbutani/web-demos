@@ -17,7 +17,7 @@ ARG BASE_TYPE=slim-buster
 ARG BASE_VER=
 
 ARG PYTHON_VERSION=3.7.4
-ARG PIPENV_VERSION=2018.11.26
+ARG PIPENV_SHA=8ec562efc412f2a62dae231061c1b58fffe0000a
 ARG NODE_VERSION=10.15.2
 ARG NPM_VERSION=6.10.3
 ARG YARN_VERSION=1.17.3
@@ -55,7 +55,7 @@ ARG BASE_BUILD_IMAGE=python:${PYTHON_VERSION}-${BASE_TYPE}${BASE_VER}
 
 FROM ${BASE_BUILD_IMAGE} as base
 ARG PYTHON_VERSION
-ARG PIPENV_VERSION
+ARG PIPENV_SHA
 ARG NODE_VERSION
 ARG NPM_VERSION
 ARG YARN_VERSION
@@ -108,7 +108,7 @@ RUN : \
         /var/tmp/* \
         /var/lib/apt/lists/*
 
-RUN pip3 install "pipenv==${PIPENV_VERSION}"
+RUN pip3 install "git+git://github.com/pypa/pipenv.git@${PIPENV_SHA}"
 
 RUN : \
  && npm install -g "npm@${NPM_VERSION}" \

@@ -38,6 +38,7 @@
   , "ts-jest": "~24.0.2"
   , "babel-jest": "~24.9.0"
   , "@babel/preset-env": "~7.5.5"
+  , "@babel/plugin-transform-modules-commonjs": "~7.5.0"
   , "@types/jest": "~24.0.18"
   , "@types/lodash-es": "~4.17.3"
   , "@types/node": "~12.7.2"
@@ -71,9 +72,15 @@
     [ "<rootDir>/src/**/*.{ts,tsx}" ]
   , "transform":
     { "^.+\\.tsx?$": "ts-jest"
-    , "^.+\\.jsx?$": "babel-jest"
+    , "^.+\\.jsx?$":
+      [ "babel-jest"
+      , { "plugins":
+          [ "@babel/plugin-transform-modules-commonjs"]
+        }
+      ]
     }
-  , "transformIgnorePatterns": []
+  , "transformIgnorePatterns":
+    [ "/!<rootDir>\\/node_modules\\/lodash-es/" ]
   , "testMatch":
     [ "<rootDir>/tests/**/*.{ts,tsx}" ]
   , "moduleFileExtensions":

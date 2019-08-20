@@ -16,7 +16,7 @@ flask-pbj = { git = "https://github.com/rrbutani/flask-pbj.git", ref = "0.2.3" }
 protobuf = "~=3.9.1"
 
 [dev-packages]
-pytest = "~=5.1.0"
+pytest = "~=5.1.1"
 pytest-cov = "~=2.7.1"
 coverage = "~=4.5.4"
 coveralls = "~=1.8.2"

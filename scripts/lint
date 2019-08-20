@@ -11,5 +11,9 @@ resolve_deps install install-dev build
 # Once there's a release of pytest that include this commit
 # (https://github.com/pytest-dev/pytest/pull/5593), we'll add `${TEST_DIRS}` to
 # the list of things mypy should lint below.
+# Update: the above is in 5.1.0+, but the package doesn't include a py.typed
+# file (as per PEP 561) so mypy doesn't understand that pytest actually
+# includes some typings. This issue is the one to follow:
+# https://github.com/pytest-dev/pytest/issues/3342
 # TODO: `"mypy ${SERVER_DIR} ${TESTS_DIR}"`
 server_client_pair "mypy ${SERVER_DIR}" -- "run lint" -- "Linting"

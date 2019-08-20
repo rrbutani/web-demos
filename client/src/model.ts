@@ -43,17 +43,17 @@ const headers = {
 
 type URL = string; // TODO: this isn't great; it's a stop gap
 
-interface IPReq<Req, Resp> {
+interface PReq<Req, Resp> {
   encode(message: Req, writer?: Writer): Writer;
   decode(reader: (Reader | Uint8Array), length?: number): Resp;
 }
 
-interface IPRsp {
+interface PRsp {
   response?: string;
   error?: (inference.IError | null);
 }
 
-async function proto_request<Req, Rsp extends IPRsp, W extends IPReq<Req, Rsp>>(
+async function proto_request<Req, Rsp extends PRsp, W extends PReq<Req, Rsp>>(
   endpoint: URL, req: Req, witness: W): Promise<Rsp> {
   const raw_response = await fetch(
     endpoint,

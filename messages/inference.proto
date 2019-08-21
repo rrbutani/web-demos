@@ -180,6 +180,8 @@ message Metrics {
 
 message ModelHandle { int64 id = 1; }
 
+message Tensors { repeated Tensor tensors = 1; }
+
 // Finally, our request/response messages:
 
 message LoadModelRequest { Model model = 1; }
@@ -193,12 +195,12 @@ message LoadModelResponse {
 
 message InferenceRequest {
   ModelHandle handle = 1;
-  Tensor tensor = 2;
+  Tensors tensors = 2;
 }
 
 message InferenceResponse {
   oneof response {
-    Tensor tensor = 1;
+    Tensors tensors = 1;
     Error error = 2;
   }
 

@@ -9,204 +9,198 @@ package inference;
 // We're going to represent tensors as a flat array + the tensor's dimensions +
 // its data type.
 message Tensor {
-    // From the tensorflow.js [docs](js.tensorflow.org/api/1.1.2/#tensor):
-    //   - dtype ('float32'|'int32'|'bool'|'complex64'|'string')
-    //
-    // We'll use a oneof with flat arrays of different types to give us both the
-    // flat array and the data type.
+  // From the tensorflow.js [docs](js.tensorflow.org/api/1.1.2/#tensor):
+  //   - dtype ('float32'|'int32'|'bool'|'complex64'|'string')
 
-    message FloatArray {
-        repeated float array = 1;
-    }
+  message Complex {
+    int64 real = 1;
+    int64 imaginary = 2;
+  }
 
-    message IntArray {
-        repeated int32 array = 1;
-    }
+  // We'll use a oneof with flat arrays of different types to give us both the
+  // flat array and the data type.
 
-    message BoolArray {
-        repeated bool array = 1;
-    }
+  message FloatArray { repeated float array = 1; }
 
-    // TODO: Add support!
-    message Complex {
-        int64 real = 1;
-        int64 imaginary = 2;
-    }
+  message IntArray { repeated int32 array = 1; }
 
-    message ComplexArray {
-        repeated Complex array = 1;
-    }
+  message BoolArray { repeated bool array = 1; }
 
-    message StringArray {
-        repeated string array = 1;
-    }
+  message ComplexArray { repeated Complex array = 1; }
 
-    // Flat array + data type:
-    oneof flat_array {
-        FloatArray floats = 1;
-        IntArray ints = 2;
-        BoolArray bools = 3;
-        ComplexArray complex_nums = 4;
-        StringArray strings = 5;
-    }
+  message StringArray { repeated string array = 1; }
 
-    // Dimensions:
-    repeated uint64 dimensions = 6;
+  // Flat array + data type:
+  oneof flat_array {
+    FloatArray floats = 1;
+    IntArray ints = 2;
+    BoolArray bools = 3;
+    ComplexArray complex_nums = 4;
+    StringArray strings = 5;
+  }
+
+  // Dimensions:
+  repeated uint64 dimensions = 6;
 }
 
 message Model {
-    enum Type {
-        TFLITE_FLAT_BUFFER = 0; // No conversion needed.
-                                // (Provided as a single .tflite file)
+  enum Type {
+    TFLITE_FLAT_BUFFER = 0; // No conversion needed.
+                            //
+                            // (Provided as a single .tflite file)
 
-        TF_SAVED_MODEL = 1;     // [TODO] => [TFLiteConverter] -> TFLiteFlatBuffer
-                                // (Provided as a .zip)
-                                // `TFLiteConverter.from_saved_model()`
+    TF_SAVED_MODEL = 1; // => [TFLiteConverter] -> TFLiteFlatBuffer
+                        //
+                        // (Provided as a .zip)
+                        //
+                        // `TFLiteConverter.from_saved_model()`
 
-        KERAS_HDF5 = 2;         // [TODO] => [TFLiteConverter] -> TFLiteFlatBuffer
-                                // (Provided as a single .h5 file)
-                                // `TFLiteConverter.from_keras_model_file()`
+    KERAS_HDF5 = 2; // => [TFLiteConverter] -> TFLiteFlatBuffer
+                    //
+                    // (Provided as a single .h5 file)
+                    //
+                    // `TFLiteConverter.from_keras_model_file()`
 
-        KERAS_SAVED_MODEL = 3;  // [TODO] => [TFJSConverter] -> TFJSLayersModel => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
-                                // Comes from `tf.contrib.saved_model.save_keras_model()`; (Provided as a .zip)
-                                // `TFJSConverter:keras_saved_model -> tfjs_layers_model` + `TFJSConverter:tfjs_layers -> keras` + `TFLiteConverter.from_keras_model_file()`
-                                // NOTE: Unclear if TFLiteConverter can convert
-                                // this straight to TFLiteFlatBuffer. I
-                                // _suspect_ that KerasSavedModel and SavedModel
-                                // are really the same thing. (the tfjs
-                                // converter docs suggest that KerasSavedModels
-                                // are easily convertible to TFLiteFlatBuffers)
+    KERAS_SAVED_MODEL =
+        3; // => [TFJSConverter] -> TFJSLayersModel => [TFJSConverter] ->
+           // KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
+           //
+           // Comes from `tf.contrib.saved_model.save_keras_model()`; (Provided
+           // as a .zip)
+           //
+           // `TFJSConverter:keras_saved_model -> tfjs_layers_model` +
+           // `TFJSConverter:tfjs_layers -> keras` +
+           // `TFLiteConverter.from_keras_model_file()`
+           //
+           // NOTE: Unclear if TFLiteConverter can convert this straight to
+           // TFLiteFlatBuffer. I _suspect_ that KerasSavedModel and SavedModel
+           // are really the same thing. (the tfjs converter docs suggest that
+           // KerasSavedModels are easily convertible to TFLiteFlatBuffers)
 
-        KERAS_OTHER = 4;        // [TODO] => [TFJSConverter] -> TFJSLayersModel => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
-                                // Format unknown, assuming single file.
-                                // `TFJSConverter:keras -> tfjs_layers_model` + `TFJSConverter:tfjs_layers -> keras` + `TFLiteConverter.from_keras_model_file()`
-                                // NOTE: Unclear how this differs from HDF5
-                                // Keras models. The path for conversion is
-                                // different than HDF5 Keras models (TFJS
-                                // converter is involved) because of this; the
-                                // only place that suggests there's some other
-                                // kind of Keras model than HDF5 Keras models
-                                // and Saved Models Keras Models is the TFJS
-                                // converter docs. Keras/Tensorflow Keras docs
-                                // make reference to a checkpoint format that's
-                                // the default; perhaps that's what this is.
-                                // On the other hand, the tensorflowjs
-                                // converter calls a kerasHDF5 function for this
-                                // format...
+    KERAS_OTHER =
+        4; // => [TFJSConverter] -> TFJSLayersModel => [TFJSConverter] ->
+           // KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
+           //
+           // Format unknown, assuming single file.
+           //
+           // `TFJSConverter:keras -> tfjs_layers_model` +
+           // `TFJSConverter:tfjs_layers -> keras` +
+           // `TFLiteConverter.from_keras_model_file()`
+           //
+           // NOTE: Unclear how this differs from HDF5 Keras models. The path
+           // for conversion is different than HDF5 Keras models (TFJS converter
+           // is involved) because of this; the only place that suggests there's
+           // some other kind of Keras model than HDF5 Keras models and Saved
+           // Models Keras Models is the TFJS converter docs. Keras/Tensorflow
+           // Keras docs make reference to a checkpoint format that's the
+           // default; perhaps that's what this is. On the other hand, the
+           // tensorflowjs converter calls a kerasHDF5 function for this
+           // format...
 
-        TFJS_LAYERS = 5;        // => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] -> TFLiteFlatBuffer
-                                // JSON file.
-                                // `TFJSConverter:tfjs_layers -> keras` + `TFLiteConverter.from_keras_model_file()`
+    TFJS_LAYERS = 5; // => [TFJSConverter] -> KerasHDF5 => [TFLiteConverter] ->
+                     // TFLiteFlatBuffer
+                     //
+                     // JSON file.
+                     //
+                     // `TFJSConverter:tfjs_layers -> keras` +
+                     // `TFLiteConverter.from_keras_model_file()`
 
-        /* ------------------------------------------------------------------ */
-        TFJS_GRAPH = 6;         // TODO: add support
-                                // NOTE: Doesn't appear to be possible to
-                                // easily convert a TFJSGraphModel to anything
-                                // else (we can, however, convert things _to_
-                                // TFJSGraphModels).
+    /* ---------------------------------------------------------------------- */
+    TFJS_GRAPH = 6; // TODO: add support
+                    // NOTE: Doesn't appear to be possible to easily convert a
+                    // TFJSGraphModel to anything else (we can, however, convert
+                    // things _to_ TFJSGraphModels).
 
-        TF_HUB = 7;             // TODO: add support
-                                // NOTE: May not be possible since
-                                // TFJSGraphModel is involved
+    TF_HUB = 7; // TODO: add support
+                // NOTE: May not be possible since TFJSGraphModel is involved
 
-        GRAPH_DEFS = 8;         // [TODO] => [TFLiteConverter] => KerasSavedModel
-                                // Format unknown.
-                                // `TFLiteConverter.from_session()`
+    GRAPH_DEFS = 8; // [TODO] => [TFLiteConverter] => KerasSavedModel
+                    //
+                    // Format unknown.
+                    //
+                    // `TFLiteConverter.from_session()`
 
-        // If KerasSavedModel == SavedModel, we can get rid of the
-        // keras_saved_model entry (merged with saved_model) and also change
-        // the tfjs_layers_model -> TFLiteFlatBuffer path to use
-        // keras_saved_model as an intermediary (unclear what if anything the
-        // latter buys us).
-    }
+    // If KerasSavedModel == SavedModel, we can get rid of the keras_saved_model
+    // entry (merged with saved_model) and also change the tfjs_layers_model ->
+    // TFLiteFlatBuffer path to use keras_saved_model as an intermediary
+    // (unclear what if anything the latter buys us).
+  }
 
-    message FromURL {
-        string url = 1;
-    }
+  message FromURL { string url = 1; }
 
-    message FromBytes {
-        bytes data = 1;
-    }
+  message FromBytes { bytes data = 1; }
 
-    message FromFile {
-        string file = 1;
-    }
+  message FromFile { string file = 1; }
 
-    oneof source {
-        FromURL url = 1;
-        // Can't name this `bytes` or the type stubs plugin for protoc generates
-        // typings that make mypy choke
-        FromBytes data = 2;
-        // A file on the server; a 'built-in' model.
-        FromFile file = 3;
-    }
+  oneof source {
+    // URL.
+    FromURL url = 1;
+    // Can't name this `bytes` or the type stubs plugin for protoc generates
+    // typings that make mypy choke.
+    FromBytes data = 2;
+    // A file on the server; a 'built-in' model.
+    FromFile file = 3;
+  }
 
-    Type type = 4;
+  Type type = 4;
 }
 
 message Error {
-    enum Kind {
-        OTHER = 0;
+  enum Kind {
+    OTHER = 0;
 
-        INVALID_TENSOR_MESSAGE = 1;
-        MISSHAPEN_TENSOR = 2;
-        TENSOR_CONVERSION_ERROR = 3;
-        TENSOR_TYPE_ERROR = 4;
-        UNKNOWN_TENSOR_ERROR = 10;
+    INVALID_TENSOR_MESSAGE = 1;
+    MISSHAPEN_TENSOR = 2;
+    TENSOR_CONVERSION_ERROR = 3;
+    TENSOR_TYPE_ERROR = 4;
+    UNKNOWN_TENSOR_ERROR = 10;
 
-        INVALID_HANDLE_ERROR = 11;
-        MODEL_REGISTER_ERROR = 12;
-        MODEL_STORE_FULL_ERROR = 13;
-        MODEL_ACQUIRE_ERROR = 14;
-        MODEL_DATA_ERROR = 15;
-        MODEL_CONVERSION_ERROR = 16;
-        MODEL_LOAD_ERROR = 17;
-        UNKNOWN_MODEL_ERROR = 20;
+    INVALID_HANDLE_ERROR = 11;
+    MODEL_REGISTER_ERROR = 12;
+    MODEL_STORE_FULL_ERROR = 13;
+    MODEL_ACQUIRE_ERROR = 14;
+    MODEL_DATA_ERROR = 15;
+    MODEL_CONVERSION_ERROR = 16;
+    MODEL_LOAD_ERROR = 17;
+    UNKNOWN_MODEL_ERROR = 20;
 
-        NCORE_NOT_PRESENT = 21;
-        INVALID_DELEGATE_LIBRARY = 22;
-        UNKNOWN_NCORE_ERROR = 30;
-    }
+    NCORE_NOT_PRESENT = 21;
+    INVALID_DELEGATE_LIBRARY = 22;
+    UNKNOWN_NCORE_ERROR = 30;
+  }
 
-    Kind kind = 1;
-    string message = 2;
+  Kind kind = 1;
+  string message = 2;
 }
 
 message Metrics {
-    int64 time_to_execute = 1; // in μs
-    string trace_url = 2;
+  int64 time_to_execute = 1; // in μs
+  string trace_url = 2;
 }
 
-message ModelHandle {
-    int64 id = 1;
-}
+message ModelHandle { int64 id = 1; }
 
-// LoadModelRequest = Model
-// LoadModelResponse = oneof { ModelHandle, Error }
-// InferenceRequest = { ModelHandle, Tensor }
-// InferenceResponse = { oneof { Tensor, Error }, Metrics }
+// Finally, our request/response messages:
 
-message LoadModelRequest {
-    Model model = 1;
-}
+message LoadModelRequest { Model model = 1; }
 
 message LoadModelResponse {
-    oneof response {
-        ModelHandle handle = 1;
-        Error error = 2;
-    }
+  oneof response {
+    ModelHandle handle = 1;
+    Error error = 2;
+  }
 }
 
 message InferenceRequest {
-    ModelHandle handle = 1;
-    Tensor tensor = 2;
+  ModelHandle handle = 1;
+  Tensor tensor = 2;
 }
 
 message InferenceResponse {
-    oneof response {
-        Tensor tensor = 1;
-        Error error = 2;
-    }
+  oneof response {
+    Tensor tensor = 1;
+    Error error = 2;
+  }
 
-    Metrics metrics = 3;
+  Metrics metrics = 3;
 }

@@ -5,10 +5,10 @@ import { Reader, Writer } from "protobufjs";
 import { inference } from "../build/inference";
 
 import { Metrics } from "./metrics";
-import { pb_to_tfjs_tensor, tfjs_to_pb_tensor } from "./tensor";
+import { pb_to_tfjs_tensors, tfjs_to_pb_tensors } from "./tensor";
 import { dprint } from "./util";
 
-import PbTensor = inference.Tensor;
+import PbTensors = inference.Tensors;
 import PbModel = inference.Model;
 import ModelReq = inference.LoadModelRequest;
 import ModelResp = inference.LoadModelResponse;
@@ -135,11 +135,11 @@ export class Model {
     this.handle = handle;
   }
 
-  public async predict_with_metrics(tensor: TfJsTensor):
-    Promise<[TfJsTensor, Metrics]> {
+  public async predict_with_metrics(tensor: TfJsTensor | TfJsTensor[]):
+    Promise<[TfJsTensor | TfJsTensor[], Metrics]> {
     const request: InfReq = new InfReq({
       handle: this.handle,
-      tensor: await tfjs_to_pb_tensor(tensor),
+      tensors: await tfjs_to_pb_tensors(tensor),
     });
 
     const response: InfResp = await proto_request(
@@ -148,7 +148,8 @@ export class Model {
       { encode: InfReq.encode, decode: InfResp.decode },
     );
 
-    if (response.response === "tensor" && response.tensor instanceof PbTensor) {
+    if (response.response === "tensors" &&
+        response.tensors instanceof PbTensors) {
       if (!(response.metrics instanceof PbMetrics)) {
         throw Error(`No Metrics in response.`);
       }
@@ -156,7 +157,7 @@ export class Model {
       const metrics: Metrics = Metrics.from(response.metrics);
       dprint(`Took ${metrics.time_to_execute} μs.`);
 
-      return [pb_to_tfjs_tensor(response.tensor), metrics];
+      return [pb_to_tfjs_tensors(response.tensors), metrics];
     } else {
       throw Error(
         "Invalid Response; expected a tensor or an error, but got: " +
@@ -165,7 +166,8 @@ export class Model {
     }
   }
 
-  public async predict(tensor: TfJsTensor): Promise<TfJsTensor> {
+  public async predict(tensor: TfJsTensor | TfJsTensor[]
+      ): Promise<TfJsTensor | TfJsTensor[]> {
     return (await this.predict_with_metrics(tensor))[0];
   }
 }

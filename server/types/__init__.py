@@ -64,4 +64,5 @@ from inference_pb2 import (  # isort:skip
     Model,
     ModelHandle,
     Tensor,
+    Tensors,
 )

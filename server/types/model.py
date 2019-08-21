@@ -191,9 +191,9 @@ model_conversion_steps: Dict[ModelType, ConversionFunc] = {
     MT.KERAS_SAVED_MODEL:  keras_saved_model_to_tfjs_layers,
     MT.KERAS_OTHER:        keras_other_to_tfjs_layers,
     MT.TFJS_LAYERS:        tfjs_layers_to_keras_hdf5,
-    MT.TFJS_GRAPH:         lambda _, __: _unimplemented(MT.TFJS_GRAPH),
-    MT.TF_HUB:             lambda _, __: _unimplemented(MT.TF_HUB),
-    MT.GRAPH_DEFS:         lambda _, __: _unimplemented(MT.GRAPH_DEFS),
+    MT.TFJS_GRAPH:         lambda _, __: _unimplemented(MT.TFJS_GRAPH), # Can't do
+    MT.TF_HUB:             lambda _, __: _unimplemented(MT.TF_HUB),     # TODO
+    MT.GRAPH_DEFS:         lambda _, __: _unimplemented(MT.GRAPH_DEFS), # TODO
 }
 # fmt: on
 

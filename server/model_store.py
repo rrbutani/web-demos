@@ -1,5 +1,6 @@
 import os
 import time
+from functools import reduce
 from typing import Any, Callable, Dict, Iterable, List
 from typing import NoReturn as Never
 from typing import Optional, Tuple, TypeVar, Union, cast
@@ -23,6 +24,11 @@ Interpreter = tf.lite.Interpreter
 
 Error = str
 Tensor = np.ndarray
+Tensors = List[Tensor]
+
+ordinal: Callable[[int], str] = lambda n: (
+    str(n) + {1: "st", 2: "nd", 3: "rd"}.get(n if (n < 20) else (n % 10), "th")
+)
 
 
 class ModelRegisterError(Exception):
@@ -85,8 +91,8 @@ class LocalModel:
         }[(from_str, from_file)]()
 
         self.interp: Optional[tf.lite.Interpreter] = None
-        self.def_shape: Optional[Tuple[int, ...]] = None
-        self.def_rank: Optional[int] = None
+        # self.def_shapes: Optional[List[Tuple[int, ...]]] = None
+        # self.def_ranks: Optional[List[int]] = None
 
     def _check_bytes_model(self) -> None:
         """
@@ -144,21 +150,21 @@ class LocalModel:
                     f"(model = `{self.model}`, path = `{self.path}`)"
                 )
 
-            # Finally, some more initialization:
-            self.def_shape = tuple(self.interp.get_input_details()[0]["shape"])
-            self.def_rank = len(self.def_shape)
+            # # Finally, some more initialization:
+            # self.def_shapes = [ tuple(inp["shape"]) for inp in self.interp.get_input_details() ]
+            # self.def_ranks = [ len(shape) for shape in self.def_shapes ]
 
             self.interp.allocate_tensors()
 
             dprint("Loaded new model.")
 
-    def _resize_internal(self, shape: Tuple[int, ...]) -> None:
+    def _resize_internal(self, idx: int, shape: Tuple[int, ...]) -> None:
         """
         :raises RuntimeError: When the interpreter is unable to resize the tensors.
         """
         assert self.interp is not None
 
-        input_details = self.interp.get_input_details()[0]
+        input_details = self.interp.get_input_details()[idx]
         current_shape = tuple(input_details["shape"])
         input_index = input_details["index"]
 
@@ -169,7 +175,7 @@ class LocalModel:
             dprint("Success!")
 
     def _resize(
-        self, shape: Tuple[int, ...], backup: Optional[Tuple[int, ...]] = None
+        self, idx: int, shape: Tuple[int, ...], backup: Optional[Tuple[int, ...]] = None
     ) -> bool:
         """
         :raises RuntimeError: When the interpreter is unable to resize the tensors.
@@ -181,14 +187,14 @@ class LocalModel:
 
         def throw(shape: Iterable[int], e: Exception) -> Never:
             raise TensorTypeError(
-                "Unable to resize the model's input tensor to"
+                f"Unable to resize the model's {ordinal(idx)} input tensor to"
                 f" match the given tensor. Attempted `{shape}`"
                 f" last and got `{e}`."
             )
 
         # Try the first shape:
         try:
-            self._resize_internal(shape)
+            self._resize_internal(idx, shape)
             return False
         except RuntimeError as e:
             if backup is None:
@@ -196,18 +202,18 @@ class LocalModel:
 
         # Try the second shape:
         try:
-            self._resize_internal(backup)
+            self._resize_internal(idx, backup)
             return True
         except RuntimeError as e:
             throw(backup, e)
 
-    def _check_tensor(self, tensor: Tensor) -> Tuple[Tensor, int]:
+    def _check_tensor(self, idx: int, tensor: Tensor) -> Tuple[Tensor, int]:
         """
         :raises TensorTypeError: When the given tensor cannot be used.
         """
         assert self.interp is not None
 
-        dtype = self.interp.get_input_details()[0]["dtype"]
+        dtype = self.interp.get_input_details()[idx]["dtype"]
 
         # Handle data types that aren't representable on the TFJS side:
         if (
@@ -229,15 +235,22 @@ class LocalModel:
         manual_batch_size = 0
         shape, rank = tensor.shape, len(tensor.shape)
 
-        # Because of where this is called, this _must_ be true but mypy doesn't
-        # yet know this.
-        assert self.def_shape is not None and self.def_rank is not None
+        # # Because of where this is called, this _must_ be true but mypy doesn't
+        # # yet know this.
+        # assert self.def_shapes is not None and self.def_ranks is not None
+
+        # def_shape, def_rank = self.def_shapes[idx], self.def_ranks[idx]
+
+        input_details = self.interp.get_input_details()[idx]
+
+        def_shape: Tuple[int, ...] = input_details["shape"]
+        def_rank: int = len(def_shape)
 
         # If we've got an extra dimension (and if the other dimensions match our
         # original shape), we'll try to load the input tensor as a batch:
-        if rank == self.def_rank + 1 and shape[1:] == self.def_shape:
+        if rank == def_rank + 1 and shape[1:] == def_shape:
             # Try native batches and manual batches as a backup:
-            if self._resize(shape, shape[1:]):
+            if self._resize(idx, shape, shape[1:]):
                 # If we're going with manual batches:
                 manual_batch_size = shape[0]
 
@@ -245,40 +258,36 @@ class LocalModel:
         # the first dimension _and_ the first dimension is expected to be 1,
         # we'll also try to use the input tensor as a batch:
         elif (
-            rank == self.def_rank
-            and shape[1:] == self.def_shape[1:]
-            and shape[0] != self.def_shape[0]
-            and self.def_shape[0] == 1
+            rank == def_rank
+            and shape[1:] == def_shape[1:]
+            and shape[0] != def_shape[0]
+            and def_shape[0] == 1
         ):
             # Native batches or manual batches if that doesn't work:
-            if self._resize(shape, self.def_shape):
+            if self._resize(idx, shape, def_shape):
                 # If manual batches:
                 manual_batch_size = shape[0]
-                tensor = np.reshape(tensor, (shape[0],) + self.def_shape)
+                tensor = np.reshape(tensor, (shape[0],) + def_shape)
 
         # If our model is expecting a batch of one, but the input tensor is
         # singular, wrap the input tensor to make it a batch of one:
-        elif (
-            rank == self.def_rank - 1
-            and self.def_shape[0] == 1
-            and shape == self.def_shape[1:]
-        ):
-            self._resize(self.def_shape)
-            tensor = np.reshape(tensor, self.def_shape)
+        elif rank == def_rank - 1 and def_shape[0] == 1 and shape == def_shape[1:]:
+            self._resize(idx, def_shape)
+            tensor = np.reshape(tensor, def_shape)
 
         # If the input tensor matches the shape we're looking for, use it as is:
-        elif shape == self.def_shape:
-            self._resize(shape)
+        elif shape == def_shape:
+            self._resize(idx, shape)
 
         # Otherwise, we can't use the input tensor:
         else:
-            def_shape = list(str(x) for x in self.def_shape)
-            shapes = [def_shape, ["X"] + def_shape]
+            def_shape_str = list(str(x) for x in def_shape)
+            shapes = [def_shape_str, ["X"] + def_shape_str]
             if def_shape[0] == 1:
                 exp = (
                     f"`{shapes[0]}`, `{shapes[1]}` (batch), "
-                    f"`{['X'] + def_shape[1:]}` (batch), or "
-                    f"`{def_shape[1:]}` (singular)"
+                    f"`{['X'] + def_shape_str[1:]}` (batch), or "
+                    f"`{def_shape_str[1:]}` (singular)"
                 )
             else:
                 exp = f"`{shapes[0]}` or `{shapes[1]}` (batch)"
@@ -298,36 +307,48 @@ class LocalModel:
 
         return tensor, manual_batch_size
 
-    def _run_batch(self, tensor: Tensor, batch_size: int) -> Tuple[Tensor, Metrics]:
+    def _run_batch(
+        self, batched_tensors: List[Tensor], manual_batch_size: int
+    ) -> Tuple[Tensors, Metrics]:
+        """
+        Takes a list of tensors, each of which is batched.
+        As in, batched_tensor: [num_tensors][num_batches][*(nth tensor shape)]
+        """
         assert self.interp is not None
 
-        input_idx = self.interp.get_input_details()[0]["index"]
-        output_idx = self.interp.get_output_details()[0]["index"]
+        input_idxs = [inp["index"] for inp in self.interp.get_input_details()]
+        output_idxs = [out["index"] for out in self.interp.get_output_details()]
 
-        output, exec_time = None, 0.0
+        output: List[Optional[Tensor]] = [None for i in range(len(output_idxs))]
+        exec_time = 0.0
 
-        for i in range(batch_size):
-            self.interp.set_tensor(input_idx, tensor[i])
+        for batch_num in range(manual_batch_size):
+            for i, input_idx in enumerate(input_idxs):
+                self.interp.set_tensor(input_idx, batched_tensors[i][batch_num])
 
             begin = time.clock()
             self.interp.invoke()
             exec_time += time.clock() - begin
 
-            output_part = self.interp.get_tensor(output_idx)
-            if output is None:
-                output = output_part
-            else:
-                output = np.append(output, output_part, axis=0)
+            for i, output_idx in enumerate(output_idxs):
+                output_part = self.interp.get_tensor(output_idx)
+                if output[i] is None:
+                    output[i] = output_part
+                else:
+                    output[i] = np.append(output[i], output_part, axis=0)
 
         metrics = Metrics().time_to_execute(
             int(exec_time * (10 ** 6))
         )  # in microseconds
         # .trace("") # TODO!!
 
-        assert output is not None
-        return output, metrics
+        # Appease mypy:
+        for tensor in output:
+            assert tensor is not None
 
-    def predict(self, tensor: Optional[Tensor]) -> Tuple[Tensor, Metrics]:
+        return cast(Tensors, output), metrics
+
+    def predict(self, tensors: Optional[Tensors]) -> Tuple[Tensors, Metrics]:
         """
         :raises TensorTypeError: When the given tensor doesn't match the model.
         :raises ModelLoadError: If the given model cannot be loaded.
@@ -336,15 +357,99 @@ class LocalModel:
         # Load the model if it's not already loaded:
         self._prepare_interpreter()
 
-        # Check the input tensor:
-        if tensor is None:
-            raise TensorTypeError("Got an empty Tensor.")
+        # Check that we actually got something:
+        if tensors is None:
+            raise TensorTypeError("Got an empty set of input Tensors.")
 
-        tensor, manual_batch_size = self._check_tensor(tensor)
+        # mypy doesn't yet know this can't be None after
+        # self._prepare_interpreter() is called
+        assert self.interp is not None
+
+        # Check that we have the _right_ number of input tensors:
+        expected_input_tensors = len(self.interp.get_input_details())
+        actual_input_tensors = len(tensors)
+
+        if expected_input_tensors != actual_input_tensors:
+            raise TensorTypeError(
+                f"We were expecting {expected_input_tensors} input tensors, but "
+                f"we got {actual_input_tensors} tensors."
+            )
+
+        # Then go check that each of those tensors is valid and matches what the
+        # model was expecting:
+        checked_tensors: List[Tuple[Tensor, int]] = [
+            self._check_tensor(*t) for t in enumerate(tensors)
+        ]
+
+        # Here's the tricky bit: batching when we have multiple input tensors.
+        # In order for this to work, all the input tensors must agree on the
+        # number of manual batches:
+        manual_batch_sizes = [s for _, s in checked_tensors]
+        same_batch_size: bool = reduce(
+            lambda l, r: l and r,
+            (s == manual_batch_sizes[0] for _, s in checked_tensors),
+        )
+
+        if not same_batch_size:
+            raise TensorTypeError(
+                f"The given input tensors don't agree on a manual batch size."
+                f"We tried to use these batch sizes: `{manual_batch_sizes}`."
+                f"The input tensors had these shapes after resizing: "
+                f"`{[t.shape for t, _ in checked_tensors]}.`"
+            )
+
+        # Note that the case where some but not all of the input tensors manage
+        # to get their input tensors resized is handled here: the tensors that
+        # did not manage to get their input tensor resized would have a manual
+        # batch size that isn't 1.
+        #
+        # We're definitely assuming that the model won't allow resizing input
+        # tensors in ways that aren't supported. For example, for a model that
+        # takes two tensors ([10, 10] and [5, 15]) and with a batch size of 5,
+        # hopefully, if the model allows the first tensor to be resized to
+        # [5, 10, 10], it wouldn't allow the second tensor to be resize to, say,
+        # [9, 5, 15] (i.e. hopefully it'll recognize that the batch size will
+        # be the same).
+        #
+        # We no longer cache the expected shape/rank in case the interpreter
+        # does go update these for other input tensors when an input is resized.
+        #
+        # If the above isn't true, we'll get runtime errors, probably.
+        # FWIW, I haven't yet come across any models that actually allow input
+        # tensor resizing.
+        #
+        # But anyways, assuming the above is true (i.e. the model enforces
+        # that tensors have the same _native_ batch size), this should be sound.
+        # On our end we just need to make sure the _manual_ batch sizes are the
+        # same, which we just did.
+
+        # If the tensors all do agree on a batch size, we now have to consider
+        # the shapes of our input tensors and the batch. Using our
+        # ([10, 10], [5, 15]) input tensor example again, if we've got a manual
+        # batch size of 7, the list of our checked tensors is going to look like
+        # this:
+        #   [ [7, 10, 10], [7, 5, 15] ]
+        #   i.e. [num_input_tensors][num_batches][*(nth input tensor shape)]]
+        #
+        # Ideally, we'd have something like this:
+        #   [ [10, 10], [5, 15]
+        #   , [10, 10], [5, 15]
+        #   , [10, 10], [5, 15]
+        #   , [10, 10], [5, 15]
+        #   , [10, 10], [5, 15]
+        #   , [10, 10], [5, 15]
+        #   , [10, 10], [5, 15]
+        #   ]
+        #   i.e. [num_batches][num_input_tensors][*(nth input tensor shape)]]
+        #
+        # But no matter. We'll just adjust _run_batch to use the first form so
+        # we don't have to reshape things.
+
+        batched_tensors: List[Tensor] = [t for t, _ in checked_tensors]
 
         # And finally, try to run inference:
         try:
-            return self._run_batch(tensor, manual_batch_size)
+            return self._run_batch(batched_tensors, manual_batch_sizes[0])
         except Exception as e:
             raise Exception(
                 f"Encountered an error while trying to run inference: `{e}`."
@@ -352,7 +457,7 @@ class LocalModel:
 
 
 class ModelStore:
-    # TODO: why is this annotation required. https://github.com/python/mypy/pull/5677 says it isn't.
+    # TODO: why is this annotation required. https://git.io/fjbSz says it isn't.
     def __init__(self) -> None:
         self.models: List[LocalModel] = []
         self.model_table: Dict[Tuple[Optional[bytes], Optional[str]], Handle] = {}

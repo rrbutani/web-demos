@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sized, Tuple, Type, Type
 import numpy as np
 from google.protobuf.message import Message
 
-from ..types import Tensor
+from ..types import Tensor, Tensors
 
 # TFLite Tensors are really just numpy arrays.
 
@@ -54,6 +54,7 @@ class MisshapenTensor(ValueError):
 
 
 T = TypeVar("T")
+TFLiteTensor = np.ndarray
 
 
 def _get_oneof_pair(
@@ -88,7 +89,14 @@ def check_shape(shape: Iterable[int], array: Sized) -> None:
         )
 
 
-def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
+def pb_to_tflite_tensors(pb: Tensors) -> List[TFLiteTensor]:
+    """
+    :raises MisshapenTensor: On tensors with inconsistent shapes.
+    :raises InvalidTensorMessage: On tensors that are missing fields.
+    """
+
+
+def _pb_to_tflite_tensor(pb: Tensor) -> TFLiteTensor:
     """
     :raises MisshapenTensor: On tensors with inconsistent shapes.
     :raises InvalidTensorMessage: On tensors that are missing fields.
@@ -105,7 +113,14 @@ def pb_to_tflite_tensor(pb: Tensor) -> np.ndarray:
     return np.ndarray(shape, dtype=dtype, buffer=np.array(arr, dtype=dtype))
 
 
-def tflite_tensor_to_pb(tensor: np.ndarray) -> Tensor:
+def tflite_tensors_to_pb(pb: List[TFLiteTensor]) -> Tensors:
+    """
+    :raises TensorConversionError: On tensors that cannot be serialized.
+    :raises MisshapenTensor: On tensors with inconsistent shapes.
+    """
+
+
+def _tflite_tensor_to_pb(tensor: TFLiteTensor) -> Tensor:
     """
     :raises TensorConversionError: On tensors that cannot be serialized.
     :raises MisshapenTensor: On tensors with inconsistent shapes.

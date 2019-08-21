@@ -20,7 +20,7 @@ from .types import (
 from .types.error import Error, into_error
 from .types.metrics import Metrics
 from .types.model import Model, ModelHandle, convert_handle, convert_model, into_handle
-from .types.tensor import Tensor, pb_to_tflite_tensor, tflite_tensor_to_pb
+from .types.tensor import Tensors, pb_to_tflite_tensors, tflite_tensors_to_pb
 
 # convert: Foreign type -> Local type
 # into: Local type -> Foreign type
@@ -105,17 +105,17 @@ def load_model() -> LoadModelResponse:
 @app.route("/api/inference", methods=["POST"])
 @api(json, protobuf(receives=InferenceRequest, sends=InferenceResponse, to_dict=False))
 def run_inference() -> InferenceResponse:
-    pb_tensor: Tensor = request.received_message.tensor
+    pb_tensor: Tensors = request.received_message.tensors
     pb_handle: ModelHandle = request.received_message.handle
 
     try:
-        tensor = pb_to_tflite_tensor(pb_tensor)
+        tensors = pb_to_tflite_tensors(pb_tensor)
         handle = model_store.get(convert_handle(pb_handle))
 
-        tensor, metrics = handle.predict(tensor)
+        tensors, metrics = handle.predict(tensors)
 
         return InferenceResponse(
-            tensor=tflite_tensor_to_pb(tensor), metrics=metrics.into()
+            tensors=tflite_tensors_to_pb(tensors), metrics=metrics.into()
         )
     except Exception as e:
         return InferenceResponse(error=into_error(e))

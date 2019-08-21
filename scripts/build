@@ -52,7 +52,7 @@ build_messages_for_client() {
 
 # In order to build, we need local dependencies and project dependencies.
 # We also need dev-dependencies now because of the protoc mypy plugin.
-resolve_deps local-deps install install-dev
+resolve_deps local-deps install-dev install
 
 # Build the proto files first (the client and the examples will need them):
 shopt -s globstar

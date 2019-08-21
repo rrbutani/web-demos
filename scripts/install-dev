@@ -15,6 +15,7 @@ pipenv_dev_install() {
 }
 
 # Next, pipenv:
-PIP_IGNORE_INSTALLED=1 \
-run_command_in_server pipenv_dev_install Pipfile "${marker}" ||
-    err "Failed to install python dev dependencies." $?
+{ PIP_IGNORE_INSTALLED=1 \
+  run_command_in_server pipenv_dev_install Pipfile "${marker}" &&
+    touch "${marker%%"${marker:(-4)}"}"
+} || err "Failed to install python dev dependencies." $?

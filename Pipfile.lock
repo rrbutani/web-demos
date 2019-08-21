@@ -322,11 +322,11 @@
         },
         "tb-nightly": {
             "hashes": [
-                "sha256:7031cfc6668c819741a8b111cd2f4d28f187401299184742c3d3be37194b8358",
-                "sha256:da17aa40728e133f665c6aac8ac620fa13f6ce0b08b49b82819c9b62f917c392"
+                "sha256:0743e7855bf4b40bbd2ea546eef11acb80ca6e7f8f350fc6170a71a0b971a75b",
+                "sha256:b29a692c87dba70eb9db3f26440e298c6575eb23881c3a0ac77fdf9172c003c6"
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
-            "version": "==1.15.0a20190820"
+            "version": "==1.15.0a20190821"
         },
         "tensorboard": {
             "hashes": [
@@ -391,16 +391,16 @@
         },
         "tf-nightly-2.0-preview": {
             "hashes": [
+                "sha256:06eb6bbccc753fcaa957a9a677e144dd6b3e9e964c4164778c02a8801ffe9948",
+                "sha256:0a11039073927ecff638f7586ed4123c66f741d17574c34d3d068f53e3459235",
+                "sha256:1e977dc82adc38f931b4e78f66922d3d8d04c3289afe1486a8883d8e061176b9",
                 "sha256:4f55513968e9df4472477616e169acff8361afff7ca65c58bbe38b4d0a0f79a8",
-                "sha256:f54c31c2a993df05c7f82d85ea075d67313d9e73b80a3fc3c110d53e48e81d6a",
                 "sha256:a29d24b285ca65be0c57799aa6fea244a359ea2bbb442fb0e39f643fda706c08",
+                "sha256:b130c9ec9aa4a78e4519013995c32f400992dd0486779948273b26f9d24b69b0",
                 "sha256:bd105c43c7f87d34d58cd5862460888b59cd88d2167569d404ff830b2c9a29df",
                 "sha256:ccbde539307d86e93d679a310744aefbc083e79e9df73d4092e9dd0349e1e96b",
-                "sha256:0a11039073927ecff638f7586ed4123c66f741d17574c34d3d068f53e3459235",
-                "sha256:06eb6bbccc753fcaa957a9a677e144dd6b3e9e964c4164778c02a8801ffe9948",
-                "sha256:b130c9ec9aa4a78e4519013995c32f400992dd0486779948273b26f9d24b69b0",
                 "sha256:e3eaabf03da55399f4a1b735e349845c6eae22d2cd85de1ca369cb6ac4d30403",
-                "sha256:1e977dc82adc38f931b4e78f66922d3d8d04c3289afe1486a8883d8e061176b9"
+                "sha256:f54c31c2a993df05c7f82d85ea075d67313d9e73b80a3fc3c110d53e48e81d6a"
             ],
             "index": "pypi",
             "version": "==2.0.0.dev20190820"

@@ -23,6 +23,8 @@ readonly COVERAGE_DIR="${BUILD_DIR}/coverage"
 
 readonly BUILD_MARKER_NAME=".built"
 
+readonly TFLITE_MODELS_REPO_SHA="b0bbac036a67984144b7efaf4972d3e3aabbd4c0"
+
 readonly SERVER_COV_HTML="${COVERAGE_DIR}/server_cov_html"
 readonly SERVER_COV_XML="${COVERAGE_DIR}/server_cov.xml"
 readonly SERVER_COV_ANNOTATE="${COVERAGE_DIR}/server_cov_annotate"

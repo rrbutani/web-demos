@@ -9,8 +9,8 @@ import pytest
 from server.debug import dprint as print
 from server.types import Tensor
 from server.types.tensor import (
-    pb_to_tflite_tensor,
-    tflite_tensor_to_pb,
+    _pb_to_tflite_tensor,
+    _tflite_tensor_to_pb,
     type_map_pb2numpy,
 )
 
@@ -70,7 +70,7 @@ def rand_tensor(
 
 
 def cycle(orig: np.ndarray) -> np.ndarray:
-    new = pb_to_tflite_tensor(tflite_tensor_to_pb(orig))
+    new = _pb_to_tflite_tensor(_tflite_tensor_to_pb(orig))
 
     print(orig.dtype)
     print(orig.dtype.kind)

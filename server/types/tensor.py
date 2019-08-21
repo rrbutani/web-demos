@@ -94,6 +94,7 @@ def pb_to_tflite_tensors(pb: Tensors) -> List[TFLiteTensor]:
     :raises MisshapenTensor: On tensors with inconsistent shapes.
     :raises InvalidTensorMessage: On tensors that are missing fields.
     """
+    return list(map(_pb_to_tflite_tensor, pb.tensors))
 
 
 def _pb_to_tflite_tensor(pb: Tensor) -> TFLiteTensor:
@@ -118,6 +119,9 @@ def tflite_tensors_to_pb(pb: List[TFLiteTensor]) -> Tensors:
     :raises TensorConversionError: On tensors that cannot be serialized.
     :raises MisshapenTensor: On tensors with inconsistent shapes.
     """
+    tensors: List[Tensor] = list(map(_tflite_tensor_to_pb, pb))
+
+    return Tensors(tensors=tensors)
 
 
 def _tflite_tensor_to_pb(tensor: TFLiteTensor) -> Tensor:

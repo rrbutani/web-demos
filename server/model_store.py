@@ -91,8 +91,6 @@ class LocalModel:
         }[(from_str, from_file)]()
 
         self.interp: Optional[tf.lite.Interpreter] = None
-        # self.def_shapes: Optional[List[Tuple[int, ...]]] = None
-        # self.def_ranks: Optional[List[int]] = None
 
     def _check_bytes_model(self) -> None:
         """
@@ -149,10 +147,6 @@ class LocalModel:
                     f"Failed to load the model. Got: `{e}`."
                     f"(model = `{self.model}`, path = `{self.path}`)"
                 )
-
-            # # Finally, some more initialization:
-            # self.def_shapes = [ tuple(inp["shape"]) for inp in self.interp.get_input_details() ]
-            # self.def_ranks = [ len(shape) for shape in self.def_shapes ]
 
             self.interp.allocate_tensors()
 
@@ -234,12 +228,6 @@ class LocalModel:
         # the input tensor's shape will differ if it's a batch.
         manual_batch_size = 0
         shape, rank = tensor.shape, len(tensor.shape)
-
-        # # Because of where this is called, this _must_ be true but mypy doesn't
-        # # yet know this.
-        # assert self.def_shapes is not None and self.def_ranks is not None
-
-        # def_shape, def_rank = self.def_shapes[idx], self.def_ranks[idx]
 
         input_details = self.interp.get_input_details()[idx]
 

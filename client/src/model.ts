@@ -126,9 +126,6 @@ export class Model {
     }
   }
 
-  // public static MnistModel = new Model(new Handle({ id: 0 }));
-  // public static MobileNetFloatModel = new Model(new Handle({ id: 1 }));
-  // public static MobileNetQuantModel = new Model(new Handle({ id: 2 }));
   public handle: Handle;
 
   private constructor(handle: Handle) {
@@ -149,7 +146,7 @@ export class Model {
     );
 
     if (response.response === "tensors" &&
-        response.tensors instanceof PbTensors) {
+      response.tensors instanceof PbTensors) {
       if (!(response.metrics instanceof PbMetrics)) {
         throw Error(`No Metrics in response.`);
       }
@@ -166,13 +163,8 @@ export class Model {
     }
   }
 
-  public async predict(tensor: TfJsTensor | TfJsTensor[]
-      ): Promise<TfJsTensor | TfJsTensor[]> {
+  public async predict(tensor: TfJsTensor | TfJsTensor[],
+  ): Promise<TfJsTensor | TfJsTensor[]> {
     return (await this.predict_with_metrics(tensor))[0];
   }
 }
-
-// TODO: remove!! (after model loading works)
-// export const MnistModel = Model.MnistModel;
-// export const MobileNetFloatModel = Model.MobileNetFloatModel;
-// export const MobileNetQuantModel = Model.MobileNetQuantModel;

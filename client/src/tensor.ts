@@ -103,7 +103,8 @@ function invert_map<T extends Record<PropertyKey, PropertyKey>>(obj: T):
 
 const type_map_pb2tfjs: P2TTypeMap = invert_map(type_map_tfjs2pb);
 
-export function pb_to_tfjs_tensors(pb_tensors: PbTensors): TfJsTensor[] | TfJsTensor {
+export function pb_to_tfjs_tensors(pb_tensors: PbTensors,
+): TfJsTensor[] | TfJsTensor {
   const tensors = pb_tensors.tensors!; // TODO: handle undefined
 
   if (tensors.length === 1) {
@@ -145,11 +146,13 @@ export function pb_to_tfjs_tensor(pb_tensor: PbTensor): TfJsTensor {
   }
 }
 
-function is_tensor_array(tensors: TfJsTensor[] | TfJsTensor): tensors is TfJsTensor[] {
+function is_tensor_array(tensors: TfJsTensor[] | TfJsTensor,
+): tensors is TfJsTensor[] {
   return tensors instanceof Array;
 }
 
-export async function tfjs_to_pb_tensors(tensors: TfJsTensor[] | TfJsTensor): Promise<PbTensors> {
+export async function tfjs_to_pb_tensors(tensors: TfJsTensor[] | TfJsTensor,
+): Promise<PbTensors> {
   if (!is_tensor_array(tensors)) {
     tensors = [tensors];
   }

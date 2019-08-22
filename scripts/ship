@@ -56,7 +56,4 @@ if is_set CHECK_SCRIPTS; then
         pipenv run check-scripts
 fi
 
-# TODO: container for uploading to PyPI + calling it here with
-# ${EXC_NAME}-package as a build arg
-
 print "All done!" "${CYAN}"

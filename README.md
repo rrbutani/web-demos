@@ -1,25 +1,46 @@
 # Web Demos
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 
-TensorFlow.js + TFLite Web Demos. A work in progress.
+TensorFlow.js + TFLite Web Demos. These are demos for TFLite borrowed from the [TensorFlow.js Examples](https://github.com/tensorflow/tfjs-examples) and the [TensorFlow.js Models Repo](https://github.com/tensorflow/tfjs-models).
 
-Flask Server in [`server/`](server), examples in [`examples/`](examples). The server's client-side counterpart lives in [`examples/client/`](examples/client).
+Flask Server in [`server/`](server), examples in [`examples/`](examples). The server's client-side counterpart lives in [`client/`](client).
 
-Currently requires:
-  - jq
-  - a modern-ish version of bash (4+)
-  - realpath
-  - curl (to fetch models)
-  - tar (to fetch models)
-  - npm
-  - [pipenv](https://github.com/pypa/pipenv) (older versions may have trouble)
-  - libssl (for pip)
-  - a modern-ish glibc/libstdc++ (for tensorflow)
-  - a modern-ish version of git (for the clean script)
+### Running the Server
+The options, ranked by difficulty:
+  - Docker:
+    + Build the image: (`docker build -t web-demos https://github.centtech.com/Neural/web-demos`)
+    + And then run it: (`docker run -Pt web-demos`)
+    + `docker ps` should tell you what port it decided to expose
+  - Python Wheel:
+    + `pip install <path to the wheel>`; `web-demos` should now be in your `${PATH}`
+    + The tricky bit is making a wheel (`pipenv run package` will make one for you)
+    + Unless you already have a wheel, use docker or the `pipenv` dev environment setup
+  - `pipenv` (dev environment setup):
+    + Install [this particular version](https://github.com/pypa/pipenv/tree/8ec562efc412f2a62dae231061c1b58fffe0000a) of pipenv:
+      * `pip3 install "git+git://github.com/pypa/pipenv.git@${8ec562efc412f2a62dae231061c1b58fffe0000a}"`
+    + Install [`pyenv`](https://github.com/pyenv/pyenv) or Python 3.7+
+    + Make sure you have a modern-ish version of bash (4+; macOS users may need to upgrade)
+    + Run `pipenv run run`
+      * You'll be prompted to install additional dependencies if needed
+      * There's a full list [here](scripts/local-deps#L10-24), but as of now this requires:
+        - jq
+        - a modern-ish version of bash (4+)
+        - realpath
+        - curl (to fetch models)
+        - tar (to fetch models)
+        - npm
+        - yarn
+        - [pipenv](https://github.com/pypa/pipenv)
+        - libssl (for pip)
+        - a modern-ish glibc/libstdc++ (for tensorflow)
+        - a modern-ish version of git (for the clean script)
+  - Manually:
+    + If you don't want to use `pipenv`, you can run the server with `python -m server` or just `./server/__main__.py`. But you'll need to make sure you've got the right python version/dependencies installed manually *and* you'll have to go build the client and then the example packages! The dependencies are listed [in the Pipfile](Pipfile#L10-L16).
 
-Run with `pipenv run run`. It _should_ just work.
+### Development Environment Setup
+If you're making changes to the examples/server/client, you probably want to use the `pipenv` setup as described above.
 
-We've got other targets too:
+Here are some of the other targets that the [Pipfile](Pipfile) offers:
   - `pipenv run deps` grabs dependencies (for the server and the examples)
   - `pipenv run dev-deps` grabs dev dependencies (for the server)
   - `pipenv run fetch` fetchs the local models (for the server)
@@ -32,27 +53,28 @@ We've got other targets too:
   - `pipenv run check` checks formatting and runs the linters
   - `pipenv run watch` rebuilds the components of the project as changes are made
   - `pipenv run package` builds a python wheel with all the assets rolled in
-  - `pipenv run upload-cov` [TODO]
-  - `pipenv run check-scripts` [TODO]
+  - `pipenv run check-scripts`
+  - `pipenv run lint-examples`
 
-If you're just looking to run the server and use the example, `pipenv run run` should be all you need.
+### Adding new models:
+The models that the server grabs are all defined within [this script](scripts/fetch#L15-24). Models can be specified by a URL leading to a `.tflite` model or by a URL leading to a .tar.gz containing a `.tflite` model (there's more information in the script).
 
-If you don't want to use `pipenv`, you can run the server with `python -m server` or just `./server/__main__.py`. But you'll need to make sure you've got the right python version/dependencies installed manually *and* you'll have to go build the client and then the example packages! The dependencies are listed [in the Pipfile](Pipfile#L10-L16).
+Examples can reference models by their filename ([here's an example](examples/coco-ssd/src/index.ts#L133-L134)) or by[ providing a URL and a model type](examples/coco-ssd/src/index.ts#L126-L127) (in the latter case, the server will go grab the model and try to use it).
 
-Currently:
- - [x] TODO: license (apache 2.0 as well)
-     * [ ] blurb about it being the same as the things we used from external sources
- - [x] TODO: format all
- - [x] TODO: rename
- - [ ] TODO: write README
- - [ ] TODO: credits
- - [x] TODO: use exceptions instead of explicit err return types
- - [x] TODO: debug env var for the server
- - [x] TODO: debug env var for the client
- - [ ] TODO: add badges for black, license (apache), etc.
- - [ ] TODO: docker container that builds and then runs the entire thing (args for  PORT that go and expose the same port after)
- - [ ] TODO: comment protobuf file(s)
- - [ ] TODO: reorder targets in this readme and add the lint target
- - [ ] TODO: Document the build system env vars (DEBUG_BUILD, FORCE_REBUILD)
- - [ ] TODO: Finish alt coveralls script to merge locally
+### Adding new examples:
+This project is set up to support the example project structure used by examples in the [tfjs-examples repo](https://github.com/tensorflow/tfjs-examples) (parcel based JavaScript project that uses TensorFlow.js) and the structure used by examples in the [tfjs-models repo](https://github.com/tensorflow/tfjs-models) (rollup.js based TypeScript project + a nested demo project that uses Parcel, Yalc, JavaScript, and TensorFlow.js).
 
+These commits provide a good reference for how to add a tfjs-examples style example:
+  - just to _build_ with the client library: 058f38a52838a968e1cd06bbbd4066b09ae72c09
+    + this commit explains some more: 27fcfd25ebb03246a3a08080b2e593d8964e816d
+  - making the TypeScript library in the project use the client: dfaecd7de3b329ac2afecccbc8d5ee48b6653ff9
+  - actually making the demo (JavaScript project) use the client: c9aa63c8bcdc2994698cc46aecc50e562a98a1cd
+
+And these should be helpful for adding a tfjs-models style example:
+  - just one step: d0c4fe008c89d05f1bee059a3f54f973158b6946
+
+Model conversion doesn't (currently) seem to work reliably automatically; as in the above commit it probably makes sense to add a backup model that's a local file on the server to fall back on if getting the server to convert a model with the client API fails.
+
+Some of the converted models that this project uses (along with steps detailing how the models were converted) are in [this repo](https://github.com/rrbutani/tflite-models).
+
+Good Luck!

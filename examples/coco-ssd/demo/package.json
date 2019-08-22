@@ -36,7 +36,7 @@
     "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
     "parcel-bundler": "~1.10.3",
-    "yalc": "^1.0.0-pre.32"
+    "yalc": "^1.0.0-pre.33"
   },
   "eslintConfig": {
     "extends": "google",

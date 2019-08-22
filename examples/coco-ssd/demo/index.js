@@ -15,13 +15,13 @@
  * =============================================================================
  */
 
-import * as cocoSsd from '@tensorflow-models/coco-ssd'
+import * as cocoSsd from '@tensorflow-models/coco-ssd';
 
 import imageURL from './image1.jpg';
 import image2URL from './image2.jpg';
 
 let modelPromise;
-let baseModel = 'lite_mobilenet_v2';
+// let baseModel = 'lite_mobilenet_v2';
 
 window.onload = () => modelPromise = cocoSsd.load();
 
@@ -51,6 +51,8 @@ runButton.onclick = async () => {
 
 
   const c = document.getElementById('canvas');
+  c.width = image.width;
+  c.height = image.height;
   const context = c.getContext('2d');
   context.drawImage(image, 0, 0);
   context.font = '10px Arial';

@@ -15,17 +15,18 @@
  * =============================================================================
  */
 
-import * as tfconv from '@tensorflow/tfjs-converter';
 import * as tf from '@tensorflow/tfjs-core';
 
 import {CLASSES} from './classes';
+
+import { Model, ModelType } from 'client';
 
 const BASE_PATH = 'https://storage.googleapis.com/tfjs-models/savedmodel/';
 
 export {version} from './version';
 
 export type ObjectDetectionBaseModel =
-    'mobilenet_v1'|'mobilenet_v2'|'lite_mobilenet_v2';
+    'mobilenet_v1'|'mobilenet_v2'|'lite_mobilenet_v2'|'mobilenet_v1_habana'|'resnet_fpn';
 
 export interface DetectedObject {
   bbox: [number, number, number, number];  // [x, y, width, height]
@@ -37,8 +38,9 @@ export interface DetectedObject {
  * Coco-ssd model loading is configurable using the following config dictionary.
  *
  * `base`: ObjectDetectionBaseModel. It determines wich PoseNet architecture
- * to load. The supported architectures are: 'mobilenet_v1', 'mobilenet_v2' and
- * 'lite_mobilenet_v2'. It is default to 'lite_mobilenet_v2'.
+ * to load. The supported architectures are: 'mobilenet_v1', 'mobilenet_v2',
+ * 'lite_mobilenet_v2', 'mobilenet_v1_habana', and 'resnet_fpn'. It defaults to
+ * 'mobilenet_v1_habana'.
  *
  * `modelUrl`: An optional string that specifies custom url of the model. This
  * is useful for area/countries that don't have access to the model hosted on
@@ -55,39 +57,79 @@ export async function load(config: ModelConfig = {}) {
         `Cannot find TensorFlow.js. If you are using a <script> tag, please ` +
         `also include @tensorflow/tfjs on the page before using this model.`);
   }
-  const base = config.base || 'lite_mobilenet_v2';
+  const base = config.base || 'mobilenet_v1_habana';
   const modelUrl = config.modelUrl;
-  if (['mobilenet_v1', 'mobilenet_v2', 'lite_mobilenet_v2'].indexOf(base) ===
+  if (['mobilenet_v1', 'mobilenet_v2', 'lite_mobilenet_v2', 'mobilenet_v1_habana', 'resnet_fpn'].indexOf(base) ===
       -1) {
     throw new Error(
         `ObjectDetection constructed with invalid base model ` +
-        `${base}. Valid names are 'mobilenet_v1',` +
-        ` 'mobilenet_v2' and 'lite_mobilenet_v2'.`);
+        `${base}. Valid names are 'mobilenet_v1', 'mobilenet_v2', 'lite_mobilenet_v2', 'mobilenet_v1_habana', and 'resnet_fpn'.`);
   }
 
   const objectDetection = new ObjectDetection(base, modelUrl);
   await objectDetection.load();
+
+  console.log("Model loaded!");
   return objectDetection;
 }
 
 export class ObjectDetection {
-  private modelPath: string;
-  private model: tfconv.GraphModel;
+  private modelUrl: string;
+  private modelFile: string;
+  private imageSize: [number, number];
+  private model: Model;
 
   constructor(base: ObjectDetectionBaseModel, modelUrl?: string) {
-    this.modelPath =
+    this.modelUrl =
         modelUrl || `${BASE_PATH}${this.getPrefix(base)}/model.json`;
+
+    this.modelFile = this.getBuiltInFileName(base);
+    this.imageSize = this.getTargetImageSize(base);
   }
 
   private getPrefix(base: ObjectDetectionBaseModel) {
     return base === 'lite_mobilenet_v2' ? `ssd${base}` : `ssd_${base}`;
   }
 
+  private getBuiltInFileName(base: ObjectDetectionBaseModel): string {
+    switch (base) {
+      case 'mobilenet_v1': return "ssd_mobilenet_v1_quantized_coco.tflite";
+      case 'mobilenet_v2': return "ssd_mobilenet_v2_quantized_coco.tflite";
+      case 'lite_mobilenet_v2': return "ssdlite_mobilenet_v2_coco.tflite";
+      case 'mobilenet_v1_habana': return "ssd_mobilenet_v1_quantized_coco_habana.tflite";
+      case 'resnet_fpn': return "ssd_resnet_50_fpn_coco.tflite";
+      // // TODO ^^^^^
+      // default: return "detect.tflite";
+    }
+  }
+
+  private getTargetImageSize(base: ObjectDetectionBaseModel): [number, number] {
+    switch (base) {
+      case 'mobilenet_v1':
+      case 'mobilenet_v2':
+      case 'lite_mobilenet_v2':
+      case 'mobilenet_v1_habana':
+        return [300, 300];
+      case 'resnet_fpn':
+        return [640, 640];
+    }
+  }
+
   async load() {
-    this.model = await tfconv.loadGraphModel(this.modelPath);
+    try {
+      this.model = await Model.load_model_from_url(
+          this.modelUrl, ModelType.TFJS_GRAPH);
+    } catch (err) {
+      console.log(`Failed to convert model from URL (${this.modelUrl}); got: `
+          + `error: ${err.kind}, ${err.message}.`);
+      console.log(`Trying a built in model file now... (${this.modelFile})`);
+
+      this.model = await Model.load_model_from_file(
+            this.modelFile, ModelType.TFLITE_FLAT_BUFFER);
+    }
 
     // Warmup the model.
-    const result = await this.model.executeAsync(tf.zeros([1, 300, 300, 3])) as
+    const result = await this.model.predict(tf.zeros([1, ...this.imageSize, 3]).asType('int32')) as
         tf.Tensor[];
     result.map(async (t) => await t.data());
     result.map(async (t) => t.dispose());
@@ -105,100 +147,106 @@ export class ObjectDetection {
   private async infer(
       img: tf.Tensor3D|ImageData|HTMLImageElement|HTMLCanvasElement|
       HTMLVideoElement,
-      maxNumBoxes: number): Promise<DetectedObject[]> {
+      _maxNumBoxes = 20): Promise<DetectedObject[]> {
+    let height, width;
+
+    console.log("yo!")
+
     const batched = tf.tidy(() => {
       if (!(img instanceof tf.Tensor)) {
         img = tf.browser.fromPixels(img);
       }
+
+      console.log("yo!")
+      height = img.shape[0];
+      width = img.shape[1];
+      console.log("yo!")
+
       // Reshape to a single-element batch so we can pass it to executeAsync.
+      img = tf.image.resizeBilinear(img, this.imageSize);
+      console.log(`resizing to ${this.imageSize}...`);
       return img.expandDims(0);
     });
-    const height = batched.shape[1];
-    const width = batched.shape[2];
+
+    console.log(`batched: ${batched}`);
+
+    console.log(`height: ${height}, width: ${width}`);
 
     // model returns two tensors:
     // 1. box classification score with shape of [1, 1917, 90]
     // 2. box location with shape of [1, 1917, 1, 4]
     // where 1917 is the number of box detectors, 90 is the number of classes.
     // and 4 is the four coordinates of the box.
-    const result = await this.model.executeAsync(batched) as tf.Tensor[];
+    const batchedResult = await this.model.predict(batched) as tf.Tensor[];
 
-    const scores = result[0].dataSync() as Float32Array;
-    const boxes = result[1].dataSync() as Float32Array;
+    console.log(batched);
+    console.log(batchedResult);
+
+    // const scores = batchedResult[0].dataSync() as Float32Array;
+    // const boxes = batchedResult[1].dataSync() as Float32Array;
+
+    const boxes = batchedResult[0].dataSync() as Float32Array;
+    const classes = batchedResult[1].dataSync() as Float32Array;
+    const scores = batchedResult[2].dataSync() as Float32Array;
+    const num_detections = batchedResult[3].dataSync() as Float32Array;
+
+    console.log(boxes);
+    console.log(scores);
+    console.log(classes);
+    console.log(num_detections);
 
     // clean the webgl tensors
     batched.dispose();
-    tf.dispose(result);
-
-    const [maxScores, classes] =
-        this.calculateMaxScores(scores, result[0].shape[1], result[0].shape[2]);
-
-    const prevBackend = tf.getBackend();
-    // run post process in cpu
-    tf.setBackend('cpu');
-    const indexTensor = tf.tidy(() => {
-      const boxes2 =
-          tf.tensor2d(boxes, [result[1].shape[1], result[1].shape[3]]);
-      return tf.image.nonMaxSuppression(
-          boxes2, maxScores, maxNumBoxes, 0.5, 0.5);
-    });
-
-    const indexes = indexTensor.dataSync() as Float32Array;
-    indexTensor.dispose();
-
-    // restore previous backend
-    tf.setBackend(prevBackend);
+    tf.dispose(batchedResult);
 
     return this.buildDetectedObjects(
-        width, height, boxes, maxScores, indexes, classes);
+        width, height, boxes, Array.from(scores), num_detections[0], Array.from(classes));
   }
 
   private buildDetectedObjects(
       width: number, height: number, boxes: Float32Array, scores: number[],
-      indexes: Float32Array, classes: number[]): DetectedObject[] {
-    const count = indexes.length;
+      num_detections: number, classes: number[]): DetectedObject[] {
+    const count = num_detections;
     const objects: DetectedObject[] = [];
+
     for (let i = 0; i < count; i++) {
-      const bbox = [];
-      for (let j = 0; j < 4; j++) {
-        bbox[j] = boxes[indexes[i] * 4 + j];
-      }
-      const minY = bbox[0] * height;
-      const minX = bbox[1] * width;
-      const maxY = bbox[2] * height;
-      const maxX = bbox[3] * width;
+      const bbox = Array(4);
+      const minY = boxes[4 * i + 0] * height;
+      const minX = boxes[4 * i + 1] * width;
+      const maxY = boxes[4 * i + 2] * height;
+      const maxX = boxes[4 * i + 3] * width;
       bbox[0] = minX;
       bbox[1] = minY;
       bbox[2] = maxX - minX;
       bbox[3] = maxY - minY;
       objects.push({
         bbox: bbox as [number, number, number, number],
-        class: CLASSES[classes[indexes[i]] + 1].displayName,
-        score: scores[indexes[i]]
+        class: CLASSES[classes[i] + 1].displayName,
+        score: scores[i]
       });
     }
     return objects;
   }
 
-  private calculateMaxScores(
-      scores: Float32Array, numBoxes: number,
-      numClasses: number): [number[], number[]] {
-    const maxes = [];
-    const classes = [];
-    for (let i = 0; i < numBoxes; i++) {
-      let max = Number.MIN_VALUE;
-      let index = -1;
-      for (let j = 0; j < numClasses; j++) {
-        if (scores[i * numClasses + j] > max) {
-          max = scores[i * numClasses + j];
-          index = j;
-        }
-      }
-      maxes[i] = max;
-      classes[i] = index;
-    }
-    return [maxes, classes];
-  }
+  // private calculateMaxScores(
+  //     scores: Float32Array, numBoxes: number,
+  //     numClasses: number): [number[], number[]] {
+  //   const maxes = [];
+  //   const classes = [];
+  //   for (let i = 0; i < numBoxes; i++) {
+  //     let max = Number.MIN_VALUE;
+  //     let index = -1;
+  //     for (let j = 0; j < numClasses; j++) {
+  //       if (scores[i * numClasses + j] > max) {
+  //         max = scores[i * numClasses + j];
+  //         index = j;
+  //       }
+  //     }
+  //     maxes[i] = max;
+  //     classes[i] = index;
+  //   }
+  //   return [maxes, classes];
+  // }
 
   /**
    * Detect objects for an image returning a list of bounding boxes with
@@ -223,8 +271,8 @@ export class ObjectDetection {
    * are done with the model.
    */
   dispose() {
-    if (this.model) {
-      this.model.dispose();
-    }
+    // if (this.model) {
+    //   this.model.dispose();
+    // }
   }
 }

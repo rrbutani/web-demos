@@ -21,6 +21,7 @@ declare -A MODELS=( \
     [ssdlite_mobilenet_v2_coco]="${COCO_SSD_REPO_LINK}/ssdlite_mobilenet_v2_coco.tflite?raw=true" \
     [ssd_resnet_50_fpn_coco]="${COCO_SSD_REPO_LINK}/ssd_resnet_50_fpn_coco.tflite?raw=true" \
     [ssd_mobilenet_v1_quantized_coco_habana]="${COCO_SSD_REPO_LINK}/ssd_mobilenet_v1_quantized_coco_habana.tflite?raw=true" \
+    [posenet_mobilenet_v1_100_257x257_multi_kpt_stripped.tflite]="https://storage.googleapis.com/download.tensorflow.org/models/tflite/posenet_mobilenet_v1_100_257x257_multi_kpt_stripped.tflite" \
 )
 
 # $1: location to put model in; $2: URL of model

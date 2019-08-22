@@ -20,10 +20,16 @@ import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import imageURL from './image1.jpg';
 import image2URL from './image2.jpg';
 
-let modelPromise;
+let model;
+
+const image_div = document.getElementById('uploaded-images');
+const end_div = document.getElementById('end');
+
+const max_width = window.innerWidth * 4.0 / 9.0;
+const max_height = window.innerHeight * 2.0 / 3.0;
 // let baseModel = 'lite_mobilenet_v2';
 
-window.onload = () => modelPromise = cocoSsd.load();
+window.onload = async () => model = await cocoSsd.load();
 
 const button = document.getElementById('toggle');
 button.onclick = () => {
@@ -32,29 +38,28 @@ button.onclick = () => {
 
 const select = document.getElementById('base_model');
 select.onchange = async (event) => {
-  const model = await modelPromise;
   model.dispose();
-  modelPromise = cocoSsd.load(
+  model = await cocoSsd.load(
       {base: event.srcElement.options[event.srcElement.selectedIndex].value});
+  console.log('model loaded');
 };
 
 const image = document.getElementById('image');
 image.src = imageURL;
+// image.width = 300; // TODO
+// image.height = 300; // TODO
 
-const runButton = document.getElementById('run');
-runButton.onclick = async () => {
-  const model = await modelPromise;
-  console.log('model loaded');
+async function single_image(image, canvas) {
   console.time('predict1');
   const result = await model.detect(image);
   console.timeEnd('predict1');
 
-
-  const c = document.getElementById('canvas');
+  const c = canvas;
   c.width = image.width;
   c.height = image.height;
+
   const context = c.getContext('2d');
-  context.drawImage(image, 0, 0);
+  context.drawImage(image, 0, 0, c.width, c.height);
   context.font = '10px Arial';
 
   console.log('number of detections: ', result.length);
@@ -69,4 +74,52 @@ runButton.onclick = async () => {
         result[i].score.toFixed(3) + ' ' + result[i].class, result[i].bbox[0],
         result[i].bbox[1] > 10 ? result[i].bbox[1] - 5 : 10);
   }
+}
+
+const runButton = document.getElementById('run');
+runButton.onclick = async () => {
+  await single_image(image, document.getElementById('canvas'))
 };
+
+const filesElement = document.getElementById('files');
+filesElement.addEventListener('change', evt => {
+  let files = evt.target.files;
+  // Display thumbnails & issue call to predict each image.
+  for (let i = 0, f; f = files[i]; i++) {
+    // Only process image files (skip non image files)
+    if (!f.type.match('image.*')) {
+      continue;
+    }
+    let reader = new FileReader();
+    const idx = i;
+    // Closure to capture the file information.
+    reader.onload = e => {
+      // Fill the image & call predict.
+      let div = document.createElement('div');
+      let img = document.createElement('img');
+      let can = document.createElement('canvas');
+
+      div.appendChild(img);
+      div.appendChild(can);
+
+      image_div.insertBefore(div, end_div.nextSibling);
+
+      img.src = e.target.result;
+      img.onload = () => {
+        if (img.width > max_width) {
+          img.height *= (max_width / img.width);
+          img.width = max_width;
+        }
+
+        if (img.height > max_height) {
+          img.width *= (max_height / img.height);
+          img.height = max_height;
+        }
+        single_image(img, can)
+      };
+    };
+
+    // Read in the image file as a data URL.
+    reader.readAsDataURL(f);
+  }
+});

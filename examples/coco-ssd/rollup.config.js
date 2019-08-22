@@ -42,7 +42,7 @@ function minify() {
     output: {
       preamble: PREAMBLE,
     }
-  }, minify);
+  });
 }
 
 function config({plugins = [], output = {}}) {

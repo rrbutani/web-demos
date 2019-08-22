@@ -231,7 +231,7 @@ class LocalModel:
 
         input_details = self.interp.get_input_details()[idx]
 
-        def_shape: Tuple[int, ...] = input_details["shape"]
+        def_shape: Tuple[int, ...] = tuple(input_details["shape"])
         def_rank: int = len(def_shape)
 
         # If we've got an extra dimension (and if the other dimensions match our

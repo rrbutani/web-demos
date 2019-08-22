@@ -22,12 +22,11 @@ import image2URL from './image2.jpg';
 
 let model;
 
-const image_div = document.getElementById('uploaded-images');
-const end_div = document.getElementById('end');
+const imageDiv = document.getElementById('uploaded-images');
+const endDiv = document.getElementById('end');
 
-const max_width = window.innerWidth * 4.0 / 9.0;
-const max_height = window.innerHeight * 2.0 / 3.0;
-// let baseModel = 'lite_mobilenet_v2';
+const maxWidth = window.innerWidth * 4.0 / 9.0;
+const maxHeight = window.innerHeight * 2.0 / 3.0;
 
 window.onload = async () => model = await cocoSsd.load();
 
@@ -38,18 +37,21 @@ button.onclick = () => {
 
 const select = document.getElementById('base_model');
 select.onchange = async (event) => {
+  runButton.disabled = true;
+  filesElement.disabled = true;
+
   model.dispose();
   model = await cocoSsd.load(
       {base: event.srcElement.options[event.srcElement.selectedIndex].value});
-  console.log('model loaded');
+
+  runButton.disabled = false;
+  filesElement.disabled = false;
 };
 
 const image = document.getElementById('image');
 image.src = imageURL;
-// image.width = 300; // TODO
-// image.height = 300; // TODO
 
-async function single_image(image, canvas) {
+async function singleImage(image, canvas) {
   console.time('predict1');
   const result = await model.detect(image);
   console.timeEnd('predict1');
@@ -78,22 +80,22 @@ async function single_image(image, canvas) {
 
 const runButton = document.getElementById('run');
 runButton.onclick = async () => {
-  await single_image(image, document.getElementById('canvas'))
+  await singleImage(image, document.getElementById('canvas'));
 };
 
 const filesElement = document.getElementById('files');
-filesElement.addEventListener('change', evt => {
+filesElement.addEventListener('change', (evt) => {
   let files = evt.target.files;
-  // Display thumbnails & issue call to predict each image.
+
   for (let i = 0, f; f = files[i]; i++) {
     // Only process image files (skip non image files)
     if (!f.type.match('image.*')) {
       continue;
     }
+
     let reader = new FileReader();
-    const idx = i;
-    // Closure to capture the file information.
-    reader.onload = e => {
+
+    reader.onload = (e) => {
       // Fill the image & call predict.
       let div = document.createElement('div');
       let img = document.createElement('img');
@@ -102,20 +104,21 @@ filesElement.addEventListener('change', evt => {
       div.appendChild(img);
       div.appendChild(can);
 
-      image_div.insertBefore(div, end_div.nextSibling);
+      imageDiv.insertBefore(div, endDiv.nextSibling);
 
       img.src = e.target.result;
       img.onload = () => {
-        if (img.width > max_width) {
-          img.height *= (max_width / img.width);
-          img.width = max_width;
+        if (img.width > maxWidth) {
+          img.height *= (maxWidth / img.width);
+          img.width = maxWidth;
         }
 
-        if (img.height > max_height) {
-          img.width *= (max_height / img.height);
-          img.height = max_height;
+        if (img.height > maxHeight) {
+          img.width *= (maxHeight / img.height);
+          img.height = maxHeight;
         }
-        single_image(img, can)
+
+        singleImage(img, can);
       };
     };
 

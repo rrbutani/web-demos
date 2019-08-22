@@ -6,7 +6,7 @@ set -e
 {                           # script; shellcheck cannot yet understand this.
 readonly PROJ_NAME="web_demos"
 readonly EXC_NAME="web-demos"
-readonly VERSION="0.1.0"
+readonly VERSION="0.2.0"
 readonly README="README.md"
 
 readonly BUILD_DIR="build"

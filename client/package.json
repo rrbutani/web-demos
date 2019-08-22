@@ -1,5 +1,5 @@
 { "name": "web-demos-client"
-, "version": "0.1.0"
+, "version": "0.2.0"
 , "description": "client for the inference server"
 , "homepage": "https://centtech.github.com/Neural/web-demos/blob/master/README.md"
 , "repository":

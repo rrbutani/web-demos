@@ -69,7 +69,7 @@ export class MobileNet implements BaseModel {
     this.outputStride = outputStride;
   }
 
-  predict(input: tf.Tensor3D): {[key: string]: tf.Tensor3D} {
+  async predict(input: tf.Tensor3D): Promise<{[key: string]: tf.Tensor3D}> {
     return tf.tidy(() => {
       const asFloat = toFloatIfInt(input);
       const asBatch = asFloat.expandDims(0);

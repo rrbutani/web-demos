@@ -22,9 +22,12 @@ import {mobileNetCheckpoint, resNet50Checkpoint} from './checkpoints';
 import {assertValidOutputStride, assertValidResolution, MobileNet, MobileNetMultiplier} from './mobilenet';
 import {decodeMultiplePoses} from './multi_pose/decode_multiple_poses';
 import {ResNet} from './resnet';
+import {MobileNetTFLite} from './mobilenet_tflite';
 import {decodeSinglePose} from './single_pose/decode_single_pose';
 import {Pose, PosenetInput} from './types';
 import {getInputTensorDimensions, padAndResizeTo, scaleAndFlipPoses, toTensorBuffers3D} from './util';
+
+import { Model, ModelType } from 'client';
 
 export type PoseNetInputResolution =
     161|193|257|289|321|353|385|417|449|481|513|801|1217;
@@ -62,7 +65,7 @@ export interface BaseModel {
    * displacementFwd: A Tensor3D that represents the forward displacement.
    * displacementBwd: A Tensor3D that represents the backward displacement.
    */
-  predict(input: tf.Tensor3D): {[key: string]: tf.Tensor3D};
+  predict(input: tf.Tensor3D): Promise<{[key: string]: tf.Tensor3D}>;
   /**
    * Releases the CPU and GPU memory allocated by the model.
    */
@@ -333,7 +336,7 @@ export class PoseNet {
         padAndResizeTo(input, [inputResolution, inputResolution]);
 
     const {heatmapScores, offsets, displacementFwd, displacementBwd} =
-        this.baseModel.predict(resized);
+        await this.baseModel.predict(resized);
 
     const [scoresBuffer, offsetsBuffer, displacementsFwdBuffer, displacementsBwdBuffer] =
         await toTensorBuffers3D(
@@ -394,7 +397,7 @@ export class PoseNet {
         padAndResizeTo(input, [inputResolution, inputResolution]);
 
     const {heatmapScores, offsets, displacementFwd, displacementBwd} =
-        this.baseModel.predict(resized);
+        await this.baseModel.predict(resized);
 
     const pose = await decodeSinglePose(heatmapScores, offsets, outputStride);
     const poses = [pose];
@@ -461,6 +464,41 @@ async function loadResNet(config: ModelConfig): Promise<PoseNet> {
   const graphModel = await tfconv.loadGraphModel(config.modelUrl || url);
   const resnet = new ResNet(graphModel, outputStride);
   return new PoseNet(resnet, config.inputResolution);
+}
+
+export async function loadMobileNetTFLite(): Promise<PoseNet> {
+  const config: ModelConfig = {
+    architecture: "MobileNetV1",
+    outputStride: 32,
+    inputResolution: 257,
+    multiplier: 1,
+    modelUrl: "https://storage.googleapis.com/download.tensorflow.org/models/tflite/posenet_mobilenet_v1_100_257x257_multi_kpt_stripped.tflite",
+  };
+
+  if (tf == null) {
+    throw new Error(
+        `Cannot find TensorFlow.js. If you are using a <script> tag, please ` +
+        `also include @tensorflow/tfjs on the page before using this
+        model.`);
+  }
+
+  const modelFilename: string = "posenet_mobilenet_v1_100_257x257_multi_kpt_stripped.tflite";
+  let model: Model;
+
+  try {
+    model = await
+      Model.load_model_from_file(modelFilename, ModelType.TFLITE_FLAT_BUFFER);
+  } catch (err) {
+    console.log(`Failed to load the TFLite model by file name ${modelFilename}; ` +
+      `Got this error: '${err.kind}, ${err.message}'.`);
+    console.log(`Trying to load from URL (${config.modelUrl}) next.`);
+
+    model = await
+      Model.load_model_from_url(config.modelUrl, ModelType.TFLITE_FLAT_BUFFER);
+  }
+
+  const mobilenet = new MobileNetTFLite(model, config.outputStride);
+  return new PoseNet(mobilenet, config.inputResolution);
 }
 
 /**

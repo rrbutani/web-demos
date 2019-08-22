@@ -27,10 +27,10 @@
 , "include":
   [ "src/"
   , "tests/"
+  , "scripts"
   ]
 , "exclude":
   [ "node_modules/"
-  , "scripts/"
   ]
 , "compileOnSave": true
 }

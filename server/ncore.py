@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar
 
 import tensorflow as tf
 
-from .debug import dprint
+from .debug import dprint, if_debug
 
 NCORE_PATH: str = "/dev/ncore_pci"
 
@@ -96,4 +96,8 @@ _: None = if_ncore(
     lambda: print(
         "\n****************************** Running on NCore!! ******************************\n"
     )
+)
+
+_: None = if_ncore(
+    lambda: if_debug(lambda: os.environ.update({"NCORE_DELEGATE_DEBUG": "1"}))
 )

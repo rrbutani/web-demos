@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sized, Tuple, Type, Type
 import numpy as np
 from google.protobuf.message import Message
 
+from ..debug import dprint
 from ..types import Tensor, Tensors
 
 # TFLite Tensors are really just numpy arrays.
@@ -111,7 +112,12 @@ def _pb_to_tflite_tensor(pb: Tensor) -> TFLiteTensor:
 
     check_shape(shape, arr)
 
-    return np.ndarray(shape, dtype=dtype, buffer=np.array(arr, dtype=dtype))
+    tensor: TFLiteTensor = np.ndarray(
+        shape, dtype=dtype, buffer=np.array(arr, dtype=dtype)
+    )
+
+    dprint(f"[INPUT] arr: {tensor}; shape: {shape}")
+    return tensor
 
 
 def tflite_tensors_to_pb(pb: List[TFLiteTensor]) -> Tensors:
@@ -148,6 +154,8 @@ def _tflite_tensor_to_pb(tensor: TFLiteTensor) -> Tensor:
         raise TensorConversionError(
             f"Failed to create a protobuf array; tried to use `({klass})`"
         )
+
+    dprint(f"[OUTPUT] tensor: {tensor}; shape: {shape}")
 
     # mypy can't figure out that array will be one of the acceptable types for
     # field in Tensor because of the values in type_map_numpy2pb, but this is

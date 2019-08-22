@@ -1,10 +1,10 @@
 { "name": "web-demos-client"
 , "version": "0.1.0"
 , "description": "client for the inference server"
-, "homepage": "https://centtech.github.com/rahul/web-demos#TODOTODO"
+, "homepage": "https://centtech.github.com/Neural/web-demos/blob/master/README.md"
 , "repository":
   { "type": "git"
-  , "url": "https://centtech.github.com/rahul/web-demos.git"
+  , "url": "https://centtech.github.com/Neural/web-demos.git"
   }
 , "license": "Apache-2.0"
 , "private": true

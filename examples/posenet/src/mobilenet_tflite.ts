@@ -28,11 +28,13 @@ export class MobileNetTFLite implements BaseModel {
   }
 
   async predict(input: tf.Tensor3D): Promise<{[key: string]: tf.Tensor3D}> {
-    return tf.tidy(() => {
+    // return tf.tidy(() => {
       const asFloat = toFloatIfInt(input);
       const asBatch = asFloat.expandDims(0);
-      const [offsets4d, heatmaps4d, displacementFwd4d, displacementBwd4d] =
-          this.model.predict(asBatch) as tf.Tensor<tf.Rank>[];
+      const res = await this.model.predict(asBatch);
+
+      const [heatmaps4d, offsets4d, displacementFwd4d, displacementBwd4d] =
+          res as tf.Tensor<tf.Rank>[];
 
       const heatmaps = heatmaps4d.squeeze() as tf.Tensor3D;
       const heatmapScores = heatmaps.sigmoid();
@@ -45,7 +47,7 @@ export class MobileNetTFLite implements BaseModel {
             displacementFwd: displacementFwd as tf.Tensor3D,
             displacementBwd: displacementBwd as tf.Tensor3D
       }
-    });
+    // });
   }
 
   dispose() {}

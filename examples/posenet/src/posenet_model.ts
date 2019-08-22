@@ -33,6 +33,9 @@ export type PoseNetArchitecture = 'ResNet50'|'MobileNetV1';
 export type PoseNetDecodingMethod = 'single-person'|'multi-person';
 export type PoseNetQuantBytes = 1|2|4;
 
+// export type ModelType = ModelType;
+// export type ModelTypist = Model;
+
 /**
  * PoseNet supports using various convolution neural network models
  * (e.g. ResNet and MobileNetV1) as its underlying base model.

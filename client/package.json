@@ -10,7 +10,7 @@
 , "private": true
 , "source": "src/index.ts"
 , "module": "dist/client.esm.js"
-, "types": "dist/src/client.d.ts"
+, "types": "dist/src/index.d.ts"
 , "files":
   [ "dist" ]
 , "peer-dependencies":
@@ -43,12 +43,11 @@
   , "@types/node": "~12.7.2"
   , "cross-env": "~5.2.0"
   , "coveralls": "~3.0.6"
-  , "dts-bundle": "~0.7.3"
   }
 , "scripts":
   { "build-messages":
       "cross-env TS_NODE_PROJECT=scripts/tsconfig.json ts-node ./scripts/build-messages.ts"
-  , "build": "rollup -c && dts-bundle --name client --main dist/src/index.d.ts"
+  , "build": "rollup -c"
   , "watch": "rollup -cw"
   , "lint": "tslint -p . -t stylish"
   , "format": "tsfmt -r && tslint -p . -t stylish --fix"

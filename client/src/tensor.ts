@@ -4,7 +4,7 @@ import {
   Tensor as TfJsTensor,
 } from "@tensorflow/tfjs";
 import { chunk, invert, unzip } from "lodash-es";
-import { inference } from "inference_proto";
+import { inference } from "../build/inference";
 
 import { exhaust } from "./util";
 

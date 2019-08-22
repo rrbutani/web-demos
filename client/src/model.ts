@@ -2,7 +2,7 @@ import { Tensor as TfJsTensor } from "@tensorflow/tfjs";
 import { fetch } from "cross-fetch";
 import { Reader, Writer } from "protobufjs";
 
-import { inference } from "inference_proto";
+import { inference } from "../build/inference";
 
 import { Metrics } from "./metrics";
 import { pb_to_tfjs_tensors, tfjs_to_pb_tensors } from "./tensor";

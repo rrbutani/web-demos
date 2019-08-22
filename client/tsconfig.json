@@ -1,8 +1,5 @@
 { "compilerOptions":
-  { "baseUrl": "."
-  , "paths":
-    { "inference_proto": ["build/inference"] }
-  , "declaration": true
+  { "declaration": true
   , "declarationDir": "./dist"
   , "declarationMap": true
   , "module": "es6"

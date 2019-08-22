@@ -98,6 +98,6 @@ _: None = if_ncore(
     )
 )
 
-_: None = if_ncore(
+__: None = if_ncore(
     lambda: if_debug(lambda: os.environ.update({"NCORE_DELEGATE_DEBUG": "1"}))
 )

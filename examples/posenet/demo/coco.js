@@ -172,13 +172,14 @@ async function reloadNetTestImageAndEstimatePoses(net) {
     guiState.net.dispose();
   }
   toggleLoadingUI(true);
-  guiState.net = await posenet.load({
-    architecture: guiState.model.architecture,
-    outputStride: guiState.model.outputStride,
-    inputResolution: guiState.model.inputResolution,
-    multiplier: guiState.model.multiplier,
-    quantBytes: guiState.model.quantBytes,
-  });
+  guiState.net = await posenet.loadMobileNetTFLite();
+  // guiState.net = await posenet.load({
+  //   architecture: guiState.model.architecture,
+  //   outputStride: guiState.model.outputStride,
+  //   inputResolution: guiState.model.inputResolution,
+  //   multiplier: guiState.model.multiplier,
+  //   quantBytes: guiState.model.quantBytes,
+  // });
   toggleLoadingUI(false);
   testImageAndEstimatePoses(guiState.net);
 }
@@ -196,11 +197,11 @@ const defaultResNetInputResolution = 257;
 let guiState = {
   net: null,
   model: {
-    architecture: 'MobileNetV1',
-    outputStride: defaultMobileNetStride,
-    inputResolution: defaultMobileNetInputResolution,
-    multiplier: defaultMobileNetMultiplier,
-    quantBytes: defaultQuantBytes,
+    architecture: 'MobileNetV1 TFLite',
+    outputStride: 32,
+    inputResolution: 257,
+    multiplier: 1.0,
+    quantBytes: 0
   },
   image: 'tennis_in_crowd.jpg',
   multiPoseDetection: {
@@ -219,11 +220,11 @@ function setupGui(net) {
   const gui = new dat.GUI();
 
   let architectureController = null;
-  guiState[tryResNetButtonName] = function() {
-    architectureController.setValue('ResNet50')
-  };
-  gui.add(guiState, tryResNetButtonName).name(tryResNetButtonText);
-  updateTryResNetButtonDatGuiCss();
+  // guiState[tryResNetButtonName] = function() {
+  //   architectureController.setValue('ResNet50')
+  // };
+  // gui.add(guiState, tryResNetButtonName).name(tryResNetButtonText);
+  // updateTryResNetButtonDatGuiCss();
 
   // Input resolution:  Internally, this parameter affects the height and width
   // of the layers in the neural network. The higher the value of the input
@@ -232,15 +233,15 @@ function setupGui(net) {
   model.open();
   let inputResolutionController = null;
   function updateGuiInputResolution(inputResolutionArray) {
-    if (inputResolutionController) {
-      inputResolutionController.remove();
-    }
-    inputResolutionController =
-        model.add(guiState.model, 'inputResolution', inputResolutionArray);
-    inputResolutionController.onChange(async function(inputResolution) {
-      guiState.model.inputResolution = +inputResolution;
-      reloadNetTestImageAndEstimatePoses(guiState.net);
-    });
+  //   if (inputResolutionController) {
+  //     inputResolutionController.remove();
+  //   }
+  //   inputResolutionController =
+  //       model.add(guiState.model, 'inputResolution', inputResolutionArray);
+  //   inputResolutionController.onChange(async function(inputResolution) {
+  //     guiState.model.inputResolution = +inputResolution;
+  //     reloadNetTestImageAndEstimatePoses(guiState.net);
+  //   });
   }
   // Output stride:  Internally, this parameter affects the height and width of
   // the layers in the neural network. The lower the value of the output stride
@@ -248,15 +249,15 @@ function setupGui(net) {
   // faster the speed but lower the accuracy.
   let outputStrideController = null;
   function updateGuiOutputStride(outputStrideArray) {
-    if (outputStrideController) {
-      outputStrideController.remove();
-    }
-    outputStrideController =
-        model.add(guiState.model, 'outputStride', outputStrideArray);
-    outputStrideController.onChange((outputStride) => {
-      guiState.model.outputStride = +outputStride;
-      reloadNetTestImageAndEstimatePoses(guiState.net);
-    });
+  //   if (outputStrideController) {
+  //     outputStrideController.remove();
+  //   }
+  //   outputStrideController =
+  //       model.add(guiState.model, 'outputStride', outputStrideArray);
+  //   outputStrideController.onChange((outputStride) => {
+  //     guiState.model.outputStride = +outputStride;
+  //     reloadNetTestImageAndEstimatePoses(guiState.net);
+  //   });
   }
 
   // Multiplier: this parameter affects the number of feature map channels in
@@ -264,15 +265,15 @@ function setupGui(net) {
   // speed, the lower the value the faster the speed but lower the accuracy.
   let multiplierController = null;
   function updateGuiMultiplier(multiplierArray) {
-    if (multiplierController) {
-      multiplierController.remove();
-    }
-    multiplierController =
-        model.add(guiState.model, 'multiplier', multiplierArray);
-    multiplierController.onChange((multiplier) => {
-      guiState.model.multiplier = +multiplier;
-      reloadNetTestImageAndEstimatePoses(guiState.net);
-    });
+  //   if (multiplierController) {
+  //     multiplierController.remove();
+  //   }
+  //   multiplierController =
+  //       model.add(guiState.model, 'multiplier', multiplierArray);
+  //   multiplierController.onChange((multiplier) => {
+  //     guiState.model.multiplier = +multiplier;
+  //     reloadNetTestImageAndEstimatePoses(guiState.net);
+  //   });
   }
 
   // QuantBytes: this parameter affects weight quantization in the ResNet50
@@ -281,36 +282,43 @@ function setupGui(net) {
   // the lower the value, the shorter the loading time but lower the accuracy.
   let quantBytesController = null;
   function updateGuiQuantBytes(quantBytesArray) {
-    if (quantBytesController) {
-      quantBytesController.remove();
-    }
-    quantBytesController =
-        model.add(guiState.model, 'quantBytes', quantBytesArray);
-    quantBytesController.onChange((quantBytes) => {
-      guiState.model.quantBytes = +quantBytes;
-      reloadNetTestImageAndEstimatePoses(guiState.net);
-    });
+  //   if (quantBytesController) {
+  //     quantBytesController.remove();
+  //   }
+  //   quantBytesController =
+  //       model.add(guiState.model, 'quantBytes', quantBytesArray);
+  //   quantBytesController.onChange((quantBytes) => {
+  //     guiState.model.quantBytes = +quantBytes;
+  //     reloadNetTestImageAndEstimatePoses(guiState.net);
+  //   });
   }
 
   function updateGui() {
-    updateGuiInputResolution([257, 353, 449, 513, 801]);
-    if (guiState.model.architecture.includes('ResNet50')) {
+    updateGuiInputResolution([257/*, 353, 449, 513, 801*/]);
+    if (guiState.model.architecture.includes('MobileNetV1 TFLite')) {
+      updateGuiOutputStride([32]);
+      updateGuiMultiplier([1.0]);
+    } else if (guiState.model.architecture.includes('ResNet50')) {
       updateGuiOutputStride([32, 16]);
       updateGuiMultiplier([1.0]);
     } else {
       updateGuiOutputStride([8, 16]);
       updateGuiMultiplier([0.5, 0.75, 1.0]);
     }
-    updateGuiQuantBytes([1, 2, 4])
+    updateGuiQuantBytes([1/*, 2, 4*/])
   }
 
   // Architecture: there are a few PoseNet models varying in size and
   // accuracy. 1.01 is the largest, but will be the slowest. 0.50 is the
   // fastest, but least accurate.
   architectureController =
-      model.add(guiState.model, 'architecture', ['MobileNetV1', 'ResNet50']);
+      model.add(guiState.model, 'architecture', ['MobileNetV1 TFLite', /*'MobileNetV1', 'ResNet50'*/]);
   architectureController.onChange(async function(architecture) {
-    if (architecture.includes('ResNet50')) {
+    if (architecture.includes('MobileNetV1 TFLite')) {
+      guiState.model.inputResolution = 257;
+      guiState.model.outputStride = 32;
+      guiState.model.multiplier = 1.0;
+    } else if (architecture.includes('ResNet50')) {
       guiState.model.inputResolution = defaultResNetInputResolution;
       guiState.model.outputStride = defaultResNetStride;
       guiState.model.multiplier = defaultResNetMultiplier;
@@ -362,13 +370,14 @@ function setupGui(net) {
  */
 export async function bindPage() {
   toggleLoadingUI(true);
-  const net = await posenet.load({
-    architecture: guiState.model.architecture,
-    outputStride: guiState.model.outputStride,
-    inputResolution: guiState.model.inputResolution,
-    multiplier: guiState.model.multiplier,
-    quantBytes: guiState.model.quantBytes
-  });
+  const net = await posenet.loadMobileNetTFLite();
+  // const net = await posenet.load({
+  //   architecture: guiState.model.architecture,
+  //   outputStride: guiState.model.outputStride,
+  //   inputResolution: guiState.model.inputResolution,
+  //   multiplier: guiState.model.multiplier,
+  //   quantBytes: guiState.model.quantBytes
+  // });
   toggleLoadingUI(false);
   setupGui(net);
   await testImageAndEstimatePoses(net);

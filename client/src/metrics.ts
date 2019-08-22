@@ -1,4 +1,4 @@
-import { inference } from "../build/inference";
+import { inference } from "inference_proto";
 
 import PbMetrics = inference.Metrics;
 

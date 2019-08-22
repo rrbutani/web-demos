@@ -1,6 +1,10 @@
 { "compilerOptions":
-  { "declaration": true
+  { "baseUrl": "."
+  , "paths":
+    { "inference_proto": ["build/inference"] }
+  , "declaration": true
   , "declarationDir": "./dist"
+  , "declarationMap": true
   , "module": "es6"
   , "moduleResolution": "node"
   , "noImplicitAny": true
@@ -18,16 +22,15 @@
   , "pretty": true
   , "noFallthroughCasesInSwitch": true
   , "allowUnreachableCode": false
-  , "declaration": true
-  , "declarationMap": true
   , "skipLibCheck": true
   }
 , "include":
   [ "src/"
   , "tests/"
-  , "scripts/"
   ]
 , "exclude":
-  [ "node_modules/" ]
+  [ "node_modules/"
+  , "scripts/"
+  ]
 , "compileOnSave": true
 }
